@@ -15,6 +15,8 @@ struct DashboardView: View {
     @Query private var transactions: [Transaction]
     
     @State private var showingAddTransaction = false
+    @State private var showingAllTransactions = false
+    @State private var selectedTransaction: Transaction?
     
     private var totalSpentThisMonth: Decimal {
         let calendar = Calendar.current
@@ -42,6 +44,13 @@ struct DashboardView: View {
         let change = Double(truncating: (totalSpentThisMonth - totalSpentLastMonth) as NSDecimalNumber)
         let lastMonth = Double(truncating: totalSpentLastMonth as NSDecimalNumber)
         return (change / lastMonth) * 100
+    }
+    
+    private var recentTransactions: [Transaction] {
+        transactions
+            .sorted { $0.date > $1.date }
+            .prefix(5)
+            .map { $0 }
     }
     
     var body: some View {
@@ -129,16 +138,30 @@ struct DashboardView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Upcoming Section
+                    // Latest Transactions Section
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Upcoming")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
+                        HStack {
+                            Text("Latest Transactions")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Button(action: { showingAllTransactions = true }) {
+                                Text("View All")
+                                    .font(.subheadline)
+                                    .foregroundColor(.teal)
+                            }
+                        }
                         
-                        HStack(spacing: 12) {
-                            UpcomingItem(icon: "house.fill", title: "Rent", amount: "$2,200", dueDate: "Due Nov 1")
-                            UpcomingItem(icon: "car.fill", title: "Car Payment", amount: "$450", dueDate: "Due Nov 5")
+                        LazyVStack(spacing: 8) {
+                            ForEach(recentTransactions) { transaction in
+                                Button(action: { selectedTransaction = transaction }) {
+                                    RecentTransactionRow(transaction: transaction)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -169,6 +192,12 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingAddTransaction) {
             AddTransactionView()
+        }
+        .sheet(isPresented: $showingAllTransactions) {
+            AllTransactionsView()
+        }
+        .sheet(item: $selectedTransaction) { transaction in
+            EditTransactionView(transaction: transaction)
         }
     }
 }
@@ -227,35 +256,99 @@ struct CardGoalRow: View {
     }
 }
 
-struct UpcomingItem: View {
-    let icon: String
-    let title: String
-    let amount: String
-    let dueDate: String
+struct RecentTransactionRow: View {
+    let transaction: Transaction
+    
+    private var merchantIcon: String {
+        switch transaction.merchant.lowercased() {
+        case let merchant where merchant.contains("apple"):
+            return "apple.logo"
+        case let merchant where merchant.contains("starbucks"):
+            return "cup.and.saucer"
+        case let merchant where merchant.contains("doordash"):
+            return "takeoutbag.and.cup.and.straw"
+        case let merchant where merchant.contains("whole foods"):
+            return "leaf"
+        case let merchant where merchant.contains("uber"):
+            return "car"
+        case let merchant where merchant.contains("netflix"):
+            return "tv"
+        case let merchant where merchant.contains("amazon"):
+            return "shippingbox"
+        default:
+            return "creditcard"
+        }
+    }
+    
+    private var iconColor: Color {
+        switch transaction.merchant.lowercased() {
+        case let merchant where merchant.contains("apple"):
+            return .black
+        case let merchant where merchant.contains("starbucks"):
+            return .green
+        case let merchant where merchant.contains("doordash"):
+            return .teal
+        case let merchant where merchant.contains("whole foods"):
+            return .green
+        case let merchant where merchant.contains("uber"):
+            return .blue
+        case let merchant where merchant.contains("netflix"):
+            return .red
+        case let merchant where merchant.contains("amazon"):
+            return .orange
+        default:
+            return .gray
+        }
+    }
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(.teal)
+        HStack(spacing: 12) {
+            // Merchant Icon
+            Circle()
+                .fill(iconColor)
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: merchantIcon)
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                )
             
-            Text(title)
-                .font(.headline)
+            // Transaction Details
+            VStack(alignment: .leading, spacing: 2) {
+                Text(transaction.merchant)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 8) {
+                    if let card = transaction.card {
+                        Text("\(card.name) •••\(card.last4)")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    
+                    Text(transaction.date, style: .date)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Text(transaction.date, style: .time)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            }
+            
+            Spacer()
+            
+            // Amount
+            Text("-$\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
-            Text(amount)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.yellow)
-            
-            Text(dueDate)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
         }
-        .frame(maxWidth: .infinity)
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(Color.blue.opacity(0.1))
-        .cornerRadius(12)
+        .cornerRadius(8)
     }
 }
 
