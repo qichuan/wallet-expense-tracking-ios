@@ -37,7 +37,8 @@ final class Card {
     
     var progressPercentage: Double {
         guard totalGoal > 0 else { return 0 }
-        return Double(truncating: currentSpent as NSDecimalNumber) / Double(truncating: totalGoal as NSDecimalNumber)
+        let percentage = Double(truncating: currentSpent as NSDecimalNumber) / Double(truncating: totalGoal as NSDecimalNumber)
+        return max(0, min(1, percentage))
     }
     
     var remainingAmount: Decimal {

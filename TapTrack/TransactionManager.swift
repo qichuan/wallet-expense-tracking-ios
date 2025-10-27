@@ -168,26 +168,54 @@ class TransactionManager: ObservableObject {
         return categorySpending
     }
     
-    func exportToCSV() -> String {
-        let request = FetchDescriptor<Transaction>()
+    func exportToCSV(from startDate: Date? = nil, to endDate: Date? = nil) -> String {
+        var request = FetchDescriptor<Transaction>()
+        
+        print("Exporting CSV from \(startDate?.description ?? "nil") to \(endDate?.description ?? "nil")")
+        
+        // First, check total transactions in database
+        let totalRequest = FetchDescriptor<Transaction>()
+        do {
+            let totalTransactions = try modelContext.fetch(totalRequest)
+            print("Total transactions in database: \(totalTransactions.count)")
+        } catch {
+            print("Error fetching total transactions: \(error)")
+        }
+        
+        // Add date filtering if provided
+        if let startDate = startDate, let endDate = endDate {
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: startDate)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate)) ?? endDate
+            
+            print("Date range: \(startOfDay) to \(endOfDay)")
+            
+            request.predicate = #Predicate { transaction in
+                transaction.date >= startOfDay && transaction.date < endOfDay
+            }
+        }
         
         do {
             let transactions = try modelContext.fetch(request)
-            var csvString = "Date,Merchant,Amount,Category,Card\n"
+            print("Found \(transactions.count) transactions")
+            
+            var csvString = "Merchant,Amount,Account,Date,Note\n"
             
             for transaction in transactions {
                 let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .short
-                dateFormatter.timeStyle = .short
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                 
-                let dateString = dateFormatter.string(from: transaction.date)
-                let merchant = transaction.merchant.replacingOccurrences(of: ",", with: ";")
+                let merchant = escapeCSVField(transaction.merchant)
                 let amount = String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber))
-                let category = transaction.category ?? "Other"
-                let card = transaction.card?.name ?? "Unknown"
+                let account = escapeCSVField(transaction.card?.name ?? "Unknown")
+                let dateString = dateFormatter.string(from: transaction.date)
+                let note = escapeCSVField(transaction.note ?? "")
                 
-                csvString += "\(dateString),\(merchant),\(amount),\(category),\(card)\n"
+                csvString += "\(merchant),\(amount),\(account),\(dateString),\(note)\n"
             }
+            
+            print("Generated CSV content length: \(csvString.count)")
+            print("CSV content preview: \(String(csvString.prefix(200)))")
             
             return csvString
         } catch {
@@ -196,40 +224,48 @@ class TransactionManager: ObservableObject {
         }
     }
     
+    private func escapeCSVField(_ field: String) -> String {
+        // Escape commas and quotes in CSV fields
+        let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+        if escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") {
+            return "\"\(escaped)\""
+        }
+        return escaped
+    }
+    
     func importFromCSV(_ csvString: String) {
         let lines = csvString.components(separatedBy: "\n")
         
         for (index, line) in lines.enumerated() {
             if index == 0 || line.isEmpty { continue } // Skip header and empty lines
             
-            let components = line.components(separatedBy: ",")
+            let components = parseCSVLine(line)
             guard components.count >= 4 else { continue }
             
-            let dateString = components[0]
-            let merchant = components[1]
-            let amountString = components[2]
-            let category = components.count > 3 ? components[3] : nil
-            let cardName = components.count > 4 ? components[4] : nil
+            let merchant = components[0]
+            let amountString = components[1]
+            let accountName = components[2]
+            let dateString = components[3]
+            let note = components.count > 4 ? components[4] : nil
             
             guard let amount = Decimal(string: amountString) else { continue }
             
             let dateFormatter = DateFormatter()
-            dateFormatter.dateStyle = .short
-            dateFormatter.timeStyle = .short
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let date = dateFormatter.date(from: dateString) ?? Date()
             
             var matchedCard: Card? = nil
-            if let cardNameUnwrapped = cardName, !cardNameUnwrapped.isEmpty {
+            if !accountName.isEmpty && accountName != "Unknown" {
                 // Find matching card by exact name
                 let cardRequest = FetchDescriptor<Card>(
                     predicate: #Predicate { card in
-                        card.name == cardNameUnwrapped
+                        card.name == accountName
                     }
                 )
                 do {
                     matchedCard = try modelContext.fetch(cardRequest).first
                 } catch {
-                    print("Error fetching card for name \(cardNameUnwrapped): \(error)")
+                    print("Error fetching card for name \(accountName): \(error)")
                 }
             }
             
@@ -237,7 +273,8 @@ class TransactionManager: ObservableObject {
                 merchant: merchant,
                 amount: amount,
                 date: date,
-                category: category,
+                category: nil, // Category not in new format
+                note: note?.isEmpty == true ? nil : note,
                 card: matchedCard
             )
             
@@ -253,5 +290,43 @@ class TransactionManager: ObservableObject {
         } catch {
             print("Error saving imported data: \(error)")
         }
+    }
+    
+    private func parseCSVLine(_ line: String) -> [String] {
+        var components: [String] = []
+        var currentField = ""
+        var inQuotes = false
+        var i = line.startIndex
+        
+        while i < line.endIndex {
+            let char = line[i]
+            
+            if char == "\"" {
+                // Look ahead safely to see if this is an escaped quote ("")
+                let nextIndex = line.index(after: i)
+                if inQuotes && nextIndex < line.endIndex && line[nextIndex] == "\"" {
+                    // Escaped quote
+                    currentField += "\""
+                    i = line.index(after: nextIndex)
+                } else {
+                    // Toggle quote state
+                    inQuotes.toggle()
+                    i = nextIndex
+                }
+            } else if char == "," && !inQuotes {
+                // Field separator
+                components.append(currentField)
+                currentField = ""
+                i = line.index(after: i)
+            } else {
+                currentField.append(char)
+                i = line.index(after: i)
+            }
+        }
+        
+        // Add the last field
+        components.append(currentField)
+        
+        return components
     }
 }

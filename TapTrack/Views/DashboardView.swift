@@ -260,45 +260,11 @@ struct RecentTransactionRow: View {
     let transaction: Transaction
     
     private var merchantIcon: String {
-        switch transaction.merchant.lowercased() {
-        case let merchant where merchant.contains("apple"):
-            return "apple.logo"
-        case let merchant where merchant.contains("starbucks"):
-            return "cup.and.saucer"
-        case let merchant where merchant.contains("doordash"):
-            return "takeoutbag.and.cup.and.straw"
-        case let merchant where merchant.contains("whole foods"):
-            return "leaf"
-        case let merchant where merchant.contains("uber"):
-            return "car"
-        case let merchant where merchant.contains("netflix"):
-            return "tv"
-        case let merchant where merchant.contains("amazon"):
-            return "shippingbox"
-        default:
-            return "creditcard"
-        }
+        MerchantUtils.icon(for: transaction.category)
     }
     
     private var iconColor: Color {
-        switch transaction.merchant.lowercased() {
-        case let merchant where merchant.contains("apple"):
-            return .black
-        case let merchant where merchant.contains("starbucks"):
-            return .green
-        case let merchant where merchant.contains("doordash"):
-            return .teal
-        case let merchant where merchant.contains("whole foods"):
-            return .green
-        case let merchant where merchant.contains("uber"):
-            return .blue
-        case let merchant where merchant.contains("netflix"):
-            return .red
-        case let merchant where merchant.contains("amazon"):
-            return .orange
-        default:
-            return .gray
-        }
+        MerchantUtils.color(for: transaction.category)
     }
     
     var body: some View {
