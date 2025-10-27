@@ -105,6 +105,14 @@ struct TransactionRow: View {
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
                 }
+                
+                if let note = transaction.note, !note.isEmpty {
+                    Text(note)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                        .italic()
+                        .lineLimit(2)
+                }
             }
             
             Spacer()
