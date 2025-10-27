@@ -19,6 +19,7 @@ struct EditTransactionView: View {
     @State private var amount: String
     @State private var selectedCard: Card?
     @State private var category: String
+    @State private var note: String
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
     
@@ -30,6 +31,7 @@ struct EditTransactionView: View {
         self._amount = State(initialValue: String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber)))
         self._selectedCard = State(initialValue: transaction.card)
         self._category = State(initialValue: transaction.category ?? "")
+        self._note = State(initialValue: transaction.note ?? "")
         self._transactionDate = State(initialValue: transaction.date)
     }
     
@@ -64,6 +66,12 @@ struct EditTransactionView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
+                }
+                
+                Section("Note") {
+                    TextField("Add a note (optional)", text: $note, axis: .vertical)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .lineLimit(3...6)
                 }
                 
                 Section {
@@ -113,6 +121,7 @@ struct EditTransactionView: View {
         transaction.amount = amountDecimal
         transaction.date = transactionDate
         transaction.category = category.isEmpty ? nil : category
+        transaction.note = note.isEmpty ? nil : note
         transaction.card = selectedCard
         
         // Add the new amount to the selected card

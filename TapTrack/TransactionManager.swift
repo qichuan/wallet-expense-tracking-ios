@@ -19,7 +19,7 @@ class TransactionManager: ObservableObject {
         self.modelContext = modelContext
     }
     
-    func addTransaction(merchant: String, amount: Decimal, card: Card, category: String? = nil) {
+    func addTransaction(merchant: String, amount: Decimal, card: Card, category: String? = nil, note: String? = nil) {
         isLoading = true
         errorMessage = nil
         
@@ -28,6 +28,7 @@ class TransactionManager: ObservableObject {
             amount: amount,
             date: Date(),
             category: category,
+            note: note,
             card: card
         )
         

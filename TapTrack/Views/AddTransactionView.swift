@@ -20,6 +20,7 @@ struct AddTransactionView: View {
     @State private var amount = ""
     @State private var selectedCard: Card?
     @State private var category = ""
+    @State private var note = ""
     @State private var transactionDate = Date()
     
     private let categories = ["Groceries", "Dining Out", "Transport", "Entertainment", "Shopping", "Other"]
@@ -60,6 +61,12 @@ struct AddTransactionView: View {
                     }
                     .pickerStyle(MenuPickerStyle())
                 }
+                
+                Section("Note") {
+                    TextField("Add a note (optional)", text: $note, axis: .vertical)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .lineLimit(3...6)
+                }
             }
             .navigationTitle("Add Transaction")
             .navigationBarTitleDisplayMode(.inline)
@@ -94,6 +101,7 @@ struct AddTransactionView: View {
             amount: amountDecimal,
             date: transactionDate,
             category: category.isEmpty ? nil : category,
+            note: note.isEmpty ? nil : note,
             card: card
         )
         

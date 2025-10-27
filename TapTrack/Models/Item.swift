@@ -58,14 +58,16 @@ final class Transaction {
     var amount: Decimal
     var date: Date
     var category: String?
+    var note: String?
     var card: Card?
     
-    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, card: Card? = nil) {
+    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, note: String? = nil, card: Card? = nil) {
         self.id = UUID()
         self.merchant = merchant
         self.amount = amount
         self.date = date
         self.category = category
+        self.note = note
         self.card = card
     }
 }

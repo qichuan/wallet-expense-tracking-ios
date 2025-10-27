@@ -83,16 +83,16 @@ extension ModelContainer {
         let now = Date()
         
         let merchants = [
-            ("Apple Store", "Shopping"),
-            ("Starbucks", "Dining Out"),
-            ("DoorDash", "Dining Out"),
-            ("Whole Foods Market", "Groceries"),
-            ("Uber", "Transport"),
-            ("Netflix", "Entertainment"),
-            ("Shell", "Transport"),
-            ("Target", "Shopping"),
-            ("McDonald's", "Dining Out"),
-            ("Amazon", "Shopping")
+            ("Apple Store", "Shopping", "New iPhone case"),
+            ("Starbucks", "Dining Out", "Morning coffee"),
+            ("DoorDash", "Dining Out", "Lunch delivery"),
+            ("Whole Foods Market", "Groceries", "Weekly groceries"),
+            ("Uber", "Transport", "Airport ride"),
+            ("Netflix", "Entertainment", "Monthly subscription"),
+            ("Shell", "Transport", "Gas fill-up"),
+            ("Target", "Shopping", "Household items"),
+            ("McDonald's", "Dining Out", "Quick dinner"),
+            ("Amazon", "Shopping", "Online order")
         ]
         
         var transactions: [Transaction] = []
@@ -109,6 +109,7 @@ extension ModelContainer {
                     amount: amount,
                     date: date,
                     category: merchant.1,
+                    note: merchant.2,
                     card: card
                 )
                 
