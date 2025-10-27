@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @AppStorage("autoSyncWallet") private var autoSyncWallet = true
+    @State private var showingCSVManager = false
     
     var body: some View {
         NavigationView {
@@ -80,7 +82,7 @@ struct SettingsView: View {
                             SettingsRow(
                                 icon: "square.and.arrow.up",
                                 title: "Import from CSV",
-                                action: {}
+                                action: { showingCSVManager = true }
                             )
                             
                             Divider()
@@ -89,7 +91,7 @@ struct SettingsView: View {
                             SettingsRow(
                                 icon: "square.and.arrow.down",
                                 title: "Export to CSV",
-                                action: {}
+                                action: { showingCSVManager = true }
                             )
                         }
                         .background(Color.gray.opacity(0.2))
@@ -158,6 +160,9 @@ struct SettingsView: View {
                 .padding(.bottom, 100)
             }
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+        }
+        .sheet(isPresented: $showingCSVManager) {
+            CSVManagerView()
         }
     }
 }
