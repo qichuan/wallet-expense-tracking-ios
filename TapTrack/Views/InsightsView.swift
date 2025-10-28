@@ -17,6 +17,7 @@ struct InsightsView: View {
     private enum Granularity: Int, CaseIterable { case day, week, month, year }
     @State private var selectedGranularity: Granularity = .day
     @State private var selectedDate: Date = Date()
+    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     
     private var filteredTransactions: [Transaction] {
         let (start, end) = currentRange()
@@ -208,6 +209,34 @@ struct InsightsView: View {
         return min...max
     }
     
+    private func availableYears() -> [Int] {
+        let cal = Calendar.current
+        let years = transactions.map { cal.component(.year, from: $0.date) }
+        let set = Set(years)
+        return set.sorted()
+    }
+    
+    private func availableMonths() -> [Date] {
+        let cal = Calendar.current
+        let monthStarts = transactions.map { tx -> Date in
+            let comps = cal.dateComponents([.year, .month], from: tx.date)
+            return cal.date(from: comps) ?? tx.date
+        }
+        let unique = Array(Set(monthStarts)).sorted()
+        return unique
+    }
+    
+    private func monthLabel(for date: Date) -> String {
+        let df = DateFormatter()
+        df.dateFormat = "MMM yyyy" // e.g., Oct 2025
+        return df.string(from: date)
+    }
+
+    // MARK: - Recent Transactions for current range
+    private var recentTransactionsInRange: [Transaction] {
+        filteredTransactions.sorted { $0.date > $1.date }
+    }
+    
     private var monthlyTrends: [MonthlyTrend] {
         let calendar = Calendar.current
         let now = Date()
@@ -272,9 +301,27 @@ struct InsightsView: View {
                                     .foregroundColor(.white)
                             }
                             
-                            DatePicker("", selection: $selectedDate, in: availableDateRange(), displayedComponents: .date)
+                            if selectedGranularity == .year {
+                                Picker("", selection: $selectedYear) {
+                                    ForEach(availableYears(), id: \.self) { year in
+                                        Text(String(year)).tag(year)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
                                 .labelsHidden()
-                                .colorScheme(.dark)
+                            } else if selectedGranularity == .month {
+                                Picker("", selection: $selectedDate) {
+                                    ForEach(availableMonths(), id: \.self) { monthStart in
+                                        Text(monthLabel(for: monthStart)).tag(monthStart)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                                .labelsHidden()
+                            } else {
+                                DatePicker("", selection: $selectedDate, in: availableDateRange(), displayedComponents: .date)
+                                    .labelsHidden()
+                                    .colorScheme(.dark)
+                            }
                             
                             Button(action: { step(1) }) {
                                 Image(systemName: "chevron.right")
@@ -282,6 +329,25 @@ struct InsightsView: View {
                             }
                         }
                         .padding(.horizontal)
+                        .onChange(of: selectedGranularity) { _, newValue in
+                            if newValue == .year {
+                                selectedYear = Calendar.current.component(.year, from: selectedDate)
+                            } else if newValue == .month {
+                                // Snap to the latest month that has data
+                                if let latestMonth = availableMonths().last {
+                                    selectedDate = latestMonth
+                                }
+                            } else {
+                                // When leaving year mode, keep selectedDate as-is (already set to Jan 1 of selectedYear below)
+                            }
+                        }
+                        .onChange(of: selectedYear) { _, newYear in
+                            if selectedGranularity == .year {
+                                if let jan1 = Calendar.current.date(from: DateComponents(year: newYear, month: 1, day: 1)) {
+                                    selectedDate = jan1
+                                }
+                            }
+                        }
                     }
                     
                     // Spending Breakdown Section
@@ -360,6 +426,29 @@ struct InsightsView: View {
                         .background(Color.blue.opacity(0.1))
                         .cornerRadius(16)
                         .padding(.horizontal)
+                    }
+
+                    // Recent transactions (only for Day/Week)
+                    if (selectedGranularity == .day || selectedGranularity == .week) && !recentTransactionsInRange.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Recent Transactions")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal)
+
+                            VStack(spacing: 8) {
+                                ForEach(recentTransactionsInRange) { tx in
+                                    TransactionRow(transaction: tx)
+                                }
+                            }
+                            .padding()
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(16)
+                            .padding(.horizontal)
+                        }
                     }
                 }
                 .padding(.bottom, 100)

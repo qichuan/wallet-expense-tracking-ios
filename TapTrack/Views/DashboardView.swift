@@ -158,7 +158,7 @@ struct DashboardView: View {
                         LazyVStack(spacing: 8) {
                             ForEach(recentTransactions) { transaction in
                                 Button(action: { selectedTransaction = transaction }) {
-                                    RecentTransactionRow(transaction: transaction)
+                                    TransactionRow(transaction: transaction)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -256,67 +256,7 @@ struct CardGoalRow: View {
     }
 }
 
-struct RecentTransactionRow: View {
-    let transaction: Transaction
-    
-    private var merchantIcon: String {
-        MerchantUtils.icon(for: transaction.category)
-    }
-    
-    private var iconColor: Color {
-        MerchantUtils.color(for: transaction.category)
-    }
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Merchant Icon
-            Circle()
-                .fill(iconColor)
-                .frame(width: 36, height: 36)
-                .overlay(
-                    Image(systemName: merchantIcon)
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                )
-            
-            // Transaction Details
-            VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.merchant)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                
-                HStack(spacing: 8) {
-                    if let card = transaction.card {
-                        Text("\(card.name) •••\(card.last4)")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    
-                    Text(transaction.date, style: .date)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Text(transaction.date, style: .time)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-            }
-            
-            Spacer()
-            
-            // Amount
-            Text("-$\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(8)
-    }
-}
+// RecentTransactionRow removed; standardized on TransactionRow
 
 struct WeeklySpendingChart: View {
     let transactions: [Transaction]
