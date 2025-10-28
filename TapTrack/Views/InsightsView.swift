@@ -120,7 +120,7 @@ struct InsightsView: View {
                             // Donut Chart
                             ZStack {
                                 DonutChart(data: spendingByCategory)
-                                    .frame(height: 200)
+                                    .frame(height: 240) // Bigger circle
                                 
                                 VStack(spacing: 4) {
                                     Text("Total Spent")
@@ -203,56 +203,32 @@ struct MonthlyTrend: Identifiable {
 struct DonutChart: View {
     let data: [CategorySpending]
     
-    private var totalAmount: Decimal {
-        data.reduce(0) { $0 + $1.amount }
+    private var totalAmount: Double {
+        Double(truncating: data.reduce(0) { $0 + $1.amount } as NSDecimalNumber)
+    }
+    
+    private var segments: [(start: Double, end: Double, color: Color)] {
+        guard totalAmount > 0 else { return [] }
+        var cumulative: Double = 0
+        return data.map { item in
+            let value = Double(truncating: item.amount as NSDecimalNumber)
+            let fraction = value / totalAmount
+            let start = cumulative
+            let end = cumulative + fraction
+            cumulative = end
+            return (start: start, end: end, color: item.color)
+        }
     }
     
     var body: some View {
         ZStack {
-            ForEach(Array(data.enumerated()), id: \.offset) { index, category in
-                let startAngle = Angle.degrees(calculateStartAngle(for: index))
-                let endAngle = Angle.degrees(calculateEndAngle(for: index))
-                
-                SectorShape(startAngle: startAngle, endAngle: endAngle)
-                    .fill(category.color)
-                    .frame(width: 150, height: 150)
+            ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
+                Circle()
+                    .trim(from: seg.start, to: seg.end)
+                    .stroke(seg.color, style: StrokeStyle(lineWidth: 12, lineCap: .butt, lineJoin: .round))
+                    .rotationEffect(.degrees(-90))
             }
         }
-    }
-    
-    private func calculateStartAngle(for index: Int) -> Double {
-        let previousAmount = data.prefix(index).reduce(0) { $0 + $1.amount }
-        let percentage = Double(truncating: previousAmount as NSDecimalNumber) / Double(truncating: totalAmount as NSDecimalNumber)
-        return percentage * 360 - 90
-    }
-    
-    private func calculateEndAngle(for index: Int) -> Double {
-        let currentAmount = data.prefix(index + 1).reduce(0) { $0 + $1.amount }
-        let percentage = Double(truncating: currentAmount as NSDecimalNumber) / Double(truncating: totalAmount as NSDecimalNumber)
-        return percentage * 360 - 90
-    }
-}
-
-struct SectorShape: Shape {
-    let startAngle: Angle
-    let endAngle: Angle
-    
-    func path(in rect: CGRect) -> Path {
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
-        
-        var path = Path()
-        path.move(to: center)
-        path.addArc(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
-        path.closeSubpath()
-        
-        // Inner circle
-        let innerRadius = radius * 0.6
-        path.move(to: center)
-        path.addArc(center: center, radius: innerRadius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
-        path.closeSubpath()
-        
-        return path
     }
 }
 
