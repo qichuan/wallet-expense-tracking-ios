@@ -39,14 +39,14 @@ struct InsightsView: View {
     
     private var spendingByCategory: [CategorySpending] {
         let categories = Dictionary(grouping: filteredTransactions) { transaction in
-            transaction.category ?? "Other"
+            MerchantUtils.normalizedCategory(for: transaction.category)
         }
         
         return categories.map { category, transactions in
             CategorySpending(
                 category: category,
                 amount: transactions.reduce(0) { $0 + $1.amount },
-                color: categoryColor(for: category)
+                color: MerchantUtils.color(for: category)
             )
         }.sorted { $0.amount > $1.amount }
     }
@@ -79,63 +79,15 @@ struct InsightsView: View {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Button(action: {}) {
-                            Image(systemName: "chevron.left")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                        }
-                        
-                        Spacer()
                         
                         Text("Spending Analysis")
-                            .font(.title2)
+                            .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Spacer()
-                        
-                        Button(action: {}) {
-                            Image(systemName: "xmark")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                        }
                     }
                     .padding(.horizontal)
-                    
-                    // Goal Milestone Notification
-                    VStack(spacing: 12) {
-                        HStack {
-                            Image(systemName: "person.badge.shield.checkmark")
-                                .font(.title2)
-                                .foregroundColor(.yellow)
-                                .frame(width: 32, height: 32)
-                                .background(Color.yellow.opacity(0.2))
-                                .clipShape(Circle())
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Goal Milestone Reached!")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                
-                                Text("You've reached 80% of your 'Dining Out' goal for June!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {}) {
-                                Image(systemName: "xmark")
-                                    .font(.caption)
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
+                    .padding(.top)
                     
                     // Time Period Selection
                     HStack(spacing: 0) {
@@ -233,21 +185,6 @@ struct InsightsView: View {
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
         }
     }
-    
-    private func categoryColor(for category: String) -> Color {
-        switch category.lowercased() {
-        case "groceries":
-            return .yellow
-        case "dining out":
-            return .teal
-        case "transport":
-            return .blue
-        case "entertainment":
-            return .purple
-        default:
-            return .gray
-        }
-    }
 }
 
 struct CategorySpending: Identifiable {
@@ -323,18 +260,7 @@ struct CategoryRow: View {
     let category: CategorySpending
     
     private var categoryIcon: String {
-        switch category.category.lowercased() {
-        case "groceries":
-            return "cart"
-        case "dining out":
-            return "fork.knife"
-        case "transport":
-            return "tram"
-        case "entertainment":
-            return "ticket"
-        default:
-            return "tag"
-        }
+        MerchantUtils.icon(for: category.category)
     }
     
     var body: some View {
