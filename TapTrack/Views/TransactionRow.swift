@@ -10,6 +10,12 @@ import SwiftUI
 struct TransactionRow: View {
     let transaction: Transaction
     
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "d MMM yyyy" // e.g., 20 Oct 2025
+        return df
+    }()
+    
     private var merchantIcon: String {
         MerchantUtils.icon(for: transaction.category)
     }
@@ -51,7 +57,7 @@ struct TransactionRow: View {
                 }
                 
                 HStack(spacing: 8) {
-                    Text(transaction.date, style: .date)
+                    Text(Self.dateFormatter.string(from: transaction.date))
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
                     
