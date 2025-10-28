@@ -68,15 +68,33 @@ struct InsightsView: View {
     
     private func step(_ delta: Int) {
         let cal = Calendar.current
+        let availableDates = Set(transactions.map { cal.startOfDay(for: $0.date) })
+        
+        var candidate: Date
         switch selectedGranularity {
         case .day:
-            selectedDate = cal.date(byAdding: .day, value: delta, to: selectedDate) ?? selectedDate
+            candidate = cal.date(byAdding: .day, value: delta, to: selectedDate) ?? selectedDate
         case .week:
-            selectedDate = cal.date(byAdding: .weekOfYear, value: delta, to: selectedDate) ?? selectedDate
+            candidate = cal.date(byAdding: .weekOfYear, value: delta, to: selectedDate) ?? selectedDate
         case .month:
-            selectedDate = cal.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
+            candidate = cal.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
         case .year:
-            selectedDate = cal.date(byAdding: .year, value: delta, to: selectedDate) ?? selectedDate
+            candidate = cal.date(byAdding: .year, value: delta, to: selectedDate) ?? selectedDate
+        }
+        
+        // Find the next available date with data
+        let searchDirection = delta > 0 ? 1 : -1
+        var current = candidate
+        let maxAttempts = 100 // Prevent infinite loops
+        var attempts = 0
+        
+        while !availableDates.contains(cal.startOfDay(for: current)) && attempts < maxAttempts {
+            current = cal.date(byAdding: .day, value: searchDirection, to: current) ?? current
+            attempts += 1
+        }
+        
+        if availableDates.contains(cal.startOfDay(for: current)) {
+            selectedDate = current
         }
     }
     
@@ -152,6 +170,43 @@ struct InsightsView: View {
         }
         return result
     }
+
+    // For UI: adjust series/x-axis for current granularity
+    private var stackedSeriesForCurrentGranularity: [StackedItem] {
+        if selectedGranularity == .day {
+            // Collapse to a single bucket (the selected date) with stacked categories
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            let label = df.string(from: Calendar.current.startOfDay(for: selectedDate))
+            let byCategory = Dictionary(grouping: filteredTransactions) { MerchantUtils.normalizedCategory(for: $0.category) }
+            return MerchantUtils.defaultCategories.compactMap { cat in
+                let total = byCategory[cat]?.reduce(Decimal(0)) { $0 + $1.amount } ?? 0
+                let amount = Double(truncating: total as NSDecimalNumber)
+                return amount > 0 ? StackedItem(bucketLabel: label, category: cat, amount: amount) : nil
+            }
+        }
+        return stackedSeries
+    }
+
+    private var stackedXAxisValuesForCurrentGranularity: [String] {
+        if selectedGranularity == .day {
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            let label = df.string(from: Calendar.current.startOfDay(for: selectedDate))
+            return [label]
+        }
+        return stackedXAxisValues
+    }
+
+    // Limit selectable dates to those with data
+    private func availableDateRange() -> ClosedRange<Date> {
+        let dates = transactions.map { Calendar.current.startOfDay(for: $0.date) }
+        guard let min = dates.min(), let max = dates.max() else {
+            let today = Calendar.current.startOfDay(for: Date())
+            return today...today
+        }
+        return min...max
+    }
     
     private var monthlyTrends: [MonthlyTrend] {
         let calendar = Calendar.current
@@ -217,7 +272,7 @@ struct InsightsView: View {
                                     .foregroundColor(.white)
                             }
                             
-                            DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                            DatePicker("", selection: $selectedDate, in: availableDateRange(), displayedComponents: .date)
                                 .labelsHidden()
                                 .colorScheme(.dark)
                             
@@ -277,14 +332,14 @@ struct InsightsView: View {
                             .padding(.horizontal)
                         
                         VStack(spacing: 16) {
-                            Chart(stackedSeries) { item in
+                            Chart(stackedSeriesForCurrentGranularity) { item in
                                 BarMark(
                                     x: .value(xAxisTitle, item.bucketLabel),
                                     y: .value("Amount", item.amount)
                                 )
-                                .foregroundStyle(by: .value("Category", item.category))
+                                .foregroundStyle(MerchantUtils.color(for: item.category))
                             }
-                            .chartForegroundStyleScale(domain: MerchantUtils.defaultCategories, range: MerchantUtils.defaultCategories.map { MerchantUtils.color(for: $0) })
+                            .chartLegend(.hidden)
                             .frame(height: 180)
                             .chartYAxis {
                                 AxisMarks(position: .leading) { value in
@@ -294,7 +349,7 @@ struct InsightsView: View {
                                 }
                             }
                             .chartXAxis {
-                                AxisMarks(values: stackedXAxisValues) { val in
+                                AxisMarks(values: stackedXAxisValuesForCurrentGranularity) { val in
                                     AxisValueLabel()
                                         .foregroundStyle(.white.opacity(0.7))
                                         .font(.caption)
@@ -310,6 +365,12 @@ struct InsightsView: View {
                 .padding(.bottom, 100)
             }
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .onAppear {
+                let cal = Calendar.current
+                if let latest = transactions.map({ cal.startOfDay(for: $0.date) }).max() {
+                    selectedDate = latest
+                }
+            }
         }
     }
 }
@@ -396,3 +457,4 @@ struct CategoryRow: View {
     InsightsView()
         .modelContainer(ModelContainer.createMockContainer())
 }
+
