@@ -23,14 +23,14 @@ struct EditTransactionView: View {
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
     
-    private let categories = ["Groceries", "Dining Out", "Transport", "Entertainment", "Shopping", "Other"]
+    private let categories = MerchantUtils.defaultCategories
     
     init(transaction: Transaction) {
         self.transaction = transaction
         self._merchant = State(initialValue: transaction.merchant)
         self._amount = State(initialValue: String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber)))
         self._selectedCard = State(initialValue: transaction.card)
-        self._category = State(initialValue: transaction.category ?? "")
+        self._category = State(initialValue: MerchantUtils.normalizedCategory(for: transaction.category))
         self._note = State(initialValue: transaction.note ?? "")
         self._transactionDate = State(initialValue: transaction.date)
     }

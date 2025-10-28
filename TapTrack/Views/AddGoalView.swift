@@ -13,7 +13,7 @@ struct AddGoalView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var cardName = ""
-    @State private var bank = ""
+    @State private var bank = "Chase"
     @State private var last4 = ""
     @State private var totalGoal = ""
     @State private var goalDeadline = Date()

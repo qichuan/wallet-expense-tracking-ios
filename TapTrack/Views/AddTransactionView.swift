@@ -19,11 +19,11 @@ struct AddTransactionView: View {
     @State private var merchant = ""
     @State private var amount = ""
     @State private var selectedCard: Card?
-    @State private var category = ""
+    @State private var category = MerchantUtils.defaultCategories.first ?? "Other"
     @State private var note = ""
     @State private var transactionDate = Date()
     
-    private let categories = ["Groceries", "Dining Out", "Transport", "Entertainment", "Shopping", "Other"]
+    private let categories = MerchantUtils.defaultCategories
     
     init(selectedCard: Card? = nil) {
         self.initialSelectedCard = selectedCard
