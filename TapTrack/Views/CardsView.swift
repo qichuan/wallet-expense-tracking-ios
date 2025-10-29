@@ -18,24 +18,6 @@ struct CardsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Spacer()
-                    
-                    Button(action: { showingAddGoal = true }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(Color.teal)
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top)
-                
-                // All goals
                 // Content
                 ScrollView {
                     LazyVStack(spacing: 16) {
@@ -62,8 +44,29 @@ struct CardsView: View {
                     .padding(.horizontal)
                     .padding(.top, 20)
                 }
+                .padding(.bottom, 100)
             }
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .overlay(
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: { showingAddGoal = true }) {
+                            Image(systemName: "plus")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(Color.teal)
+                                .clipShape(Circle())
+                                .shadow(radius: 8)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 20)
+                    }
+                }
+            )
         }
         .sheet(isPresented: $showingAddGoal) {
             AddCardView()
