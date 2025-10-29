@@ -8,7 +8,7 @@ A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users
 - Total spending overview with month-over-month comparison
 - Credit card goal progress tracking
 - Weekly spending trends chart
-- Upcoming payment reminders
+- Latest transactions with quick edit and View All
 
 ### 💳 Card Management
 - Detailed card views with transaction history
@@ -23,16 +23,23 @@ A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users
 - Goal creation and editing
 
 ### 📊 Analytics & Insights
-- Spending breakdown by category
-- Interactive donut charts
-- Monthly spending trends
-- Category-based spending analysis
+- Day/Week/Month/Year filters with arrow navigation
+- Date constraints: only dates with data are selectable; arrows skip empty dates
+- Month picker (only months with data). Year picker (only years with data)
+- Spending breakdown by category (donut) for the selected range
+- Stacked bar chart of spending over time (x-axis depends on filter)
+- Recent transactions (for Day/Week ranges)
 
 ### ⚙️ Settings
 - Auto-sync Wallet toggle
-- Data management (CSV import/export)
+- CSV import/export (Merchant,Amount,Account,Date,Note)
 - Privacy and security settings
 - App configuration
+
+### 📦 CSV Import/Export
+- Export: choose a date range, preview items, then save via native file picker
+- Import: select a CSV (UTF-8) with header `Merchant,Amount,Category,Card,Date,Note`
+- CSV escaping supported (quotes/commas)
 
 ## Technical Architecture
 
@@ -56,6 +63,8 @@ A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users
 - `InsightsView` - Analytics and charts
 - `SettingsView` - App configuration
 - `TransactionManager` - Data operations service
+- `MerchantUtils` - Centralized category, icon, and color logic
+- `TransactionRow` - Standardized transaction list row used across the app
 
 ## App Intent Integration
 
@@ -80,8 +89,8 @@ struct WalletTransactionIntent: AppIntent {
 
 1. Open the project in Xcode
 2. Build and run on iOS 17.0+ device or simulator
-3. The app includes mock data for preview purposes
-4. Configure Wallet tap automation in Shortcuts app
+3. Configure Wallet tap automation in Shortcuts app (optional)
+4. Import your CSV data via Settings → Import/Export to get started
 
 ## Design System
 
@@ -116,3 +125,15 @@ struct WalletTransactionIntent: AppIntent {
 - iOS 17.0+
 - Xcode 15.0+
 - Swift 5.9+
+
+## Project Structure
+
+```
+TapTrack/
+  Models/                // Card, Transaction, MockData (for previews)
+  Views/                 // Dashboard, CardDetail, Goals, Insights, Settings, TransactionRow, etc.
+  Utils/                 // MerchantUtils, helpers
+  Services/              // TransactionManager (SwiftData operations)
+  Intents/               // WalletTransactionIntent (App Intents)
+  Assets.xcassets        // App assets
+```
