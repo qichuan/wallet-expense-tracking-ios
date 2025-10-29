@@ -34,18 +34,18 @@ struct EditCardView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Card Information") {
+                Section {
                     TextField("Card Name", text: $cardName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                
-                Section("Goal Details") {
-                    TextField("Total Goal Amount", text: $totalGoal)
+                    
+                    TextField("Minimum Spending", text: $totalGoal)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.decimalPad)
                     
-                    Stepper(value: $statementDay, in: 1...31) {
-                        Text("Statement Day (1-31): \(statementDay)")
+                    Picker("Statement Day", selection: $statementDay) {
+                        ForEach(1...31, id: \.self) { day in
+                            Text("\(day)").tag(day)
+                        }
                     }
                     Text("Your monthly spending resets each statement day. Aim to meet the minimum spend by this date for rewards.")
                         .font(.caption)
