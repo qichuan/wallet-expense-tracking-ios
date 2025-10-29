@@ -16,17 +16,6 @@ struct SettingsView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
-                    HStack {
-                        Text("Settings")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
                     
                     // Auto-sync Wallet Section
                     VStack(spacing: 0) {
