@@ -15,9 +15,9 @@ struct AllTransactionsView: View {
     
     @State private var selectedTransaction: Transaction?
     @State private var searchText = ""
-    @State private var selectedFilter = "All"
+    @State private var selectedFilter = "Today"
     
-    private let filterOptions = ["All", "This Month", "Last 3 Months", "This Year"]
+    private let filterOptions = ["Today", "This Month", "Last 3 Months", "All"]
     
     private var filteredTransactions: [Transaction] {
         let calendar = Calendar.current
@@ -31,16 +31,17 @@ struct AllTransactionsView: View {
         }
         
         switch selectedFilter {
+        case "Today":
+            let startOfDay = calendar.startOfDay(for: now)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? now
+            return filtered.filter { $0.date >= startOfDay && $0.date < endOfDay }
         case "This Month":
             let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
             return filtered.filter { $0.date >= startOfMonth }
         case "Last 3 Months":
             let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: now) ?? now
             return filtered.filter { $0.date >= threeMonthsAgo }
-        case "This Year":
-            let startOfYear = calendar.dateInterval(of: .year, for: now)?.start ?? now
-            return filtered.filter { $0.date >= startOfYear }
-        default:
+        default: // "All"
             return filtered
         }
     }

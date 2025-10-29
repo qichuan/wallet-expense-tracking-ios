@@ -132,8 +132,11 @@ struct AnalysisView: View {
             }
         case .month:
             if let month = cal.dateInterval(of: .month, for: start) {
-                let days = cal.range(of: .day, in: .month, for: start)?.count ?? 30
-                for d in 0..<days { bucketDates.append(cal.date(byAdding: .day, value: d, to: month.start)!) }
+                // For month, always show exactly 4 weeks (wk1, wk2, wk3, wk4)
+                for w in 0..<4 {
+                    let weekStart = cal.date(byAdding: .weekOfYear, value: w, to: month.start) ?? month.start
+                    bucketDates.append(weekStart)
+                }
             }
         case .year:
             if let year = cal.dateInterval(of: .year, for: start) {
@@ -145,27 +148,37 @@ struct AnalysisView: View {
         switch selectedGranularity {
         case .day: formatter.dateFormat = "HH" // 00-23
         case .week: formatter.dateFormat = "EEE" // Mon-Sun
-        case .month: formatter.dateFormat = "d" // 1-31
+        case .month: formatter.dateFormat = "EEE" // Will be overridden below
         case .year: formatter.dateFormat = "MMM" // Jan-Dec
         }
         
         // Aggregate amounts per bucket per category
         var result: [StackedItem] = []
-        for bucketStart in bucketDates {
+        for (index, bucketStart) in bucketDates.enumerated() {
             let bucketEnd: Date
             switch selectedGranularity {
             case .day: bucketEnd = cal.date(byAdding: .hour, value: 1, to: bucketStart) ?? bucketStart
             case .week: bucketEnd = cal.date(byAdding: .day, value: 1, to: bucketStart) ?? bucketStart
-            case .month: bucketEnd = cal.date(byAdding: .day, value: 1, to: bucketStart) ?? bucketStart
+            case .month: bucketEnd = cal.date(byAdding: .weekOfYear, value: 1, to: bucketStart) ?? bucketStart
             case .year: bucketEnd = cal.date(byAdding: .month, value: 1, to: bucketStart) ?? bucketStart
             }
-            let label = formatter.string(from: bucketStart)
+            
+            // Generate label based on granularity
+            let label: String
+            switch selectedGranularity {
+            case .month:
+                label = "wk\(index + 1)" // wk1, wk2, wk3, wk4
+            default:
+                label = formatter.string(from: bucketStart)
+            }
+            
             let bucketTx = filteredTransactions.filter { $0.date >= bucketStart && $0.date < bucketEnd }
             let byCategory = Dictionary(grouping: bucketTx) { MerchantUtils.normalizedCategory(for: $0.category) }
+            
+            // Always include all categories, even with 0 amount
             for cat in MerchantUtils.defaultCategories {
                 let total = byCategory[cat]?.reduce(Decimal(0)) { $0 + $1.amount } ?? 0
                 let amount = Double(truncating: total as NSDecimalNumber)
-                guard amount > 0 else { continue }
                 result.append(StackedItem(bucketLabel: label, category: cat, amount: amount))
             }
         }
@@ -468,6 +481,7 @@ struct AnalysisView: View {
                                     y: .value("Amount", item.amount)
                                 )
                                 .foregroundStyle(MerchantUtils.color(for: item.category))
+                                .opacity(item.amount > 0 ? 1.0 : 0.0) // Hide bars with 0 amount
                             }
                             .chartLegend(.hidden)
                             .frame(height: 180)

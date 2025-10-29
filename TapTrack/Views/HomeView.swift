@@ -20,7 +20,7 @@ struct HomeView: View {
     private var recentTransactions: [Transaction] {
         transactions
             .sorted { $0.date > $1.date }
-            .prefix(5)
+            .prefix(10)
             .map { $0 }
     }
     
@@ -37,12 +37,6 @@ struct HomeView: View {
                                 .foregroundColor(.white)
                             
                             Spacer()
-                            
-                            Button(action: { showingAllTransactions = true }) {
-                                Text("View All")
-                                    .font(.subheadline)
-                                    .foregroundColor(.teal)
-                            }
                         }
                         
                         if transactions.isEmpty {
@@ -56,6 +50,21 @@ struct HomeView: View {
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
+                                
+                                // View All button at the end of the list
+                                Button(action: { showingAllTransactions = true }) {
+                                    HStack {
+                                        Spacer()
+                                        Text("View All")
+                                            .font(.subheadline)
+                                            .foregroundColor(.teal)
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 12)
+                                    .background(Color.teal.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
