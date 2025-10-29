@@ -39,9 +39,7 @@ struct CardDetailView: View {
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Text(".... \(card.last4)")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.7))
+                        // Removed last4 display
                     }
                     
                     Spacer()
@@ -209,8 +207,6 @@ struct CardDetailView: View {
 #Preview {
     let card = Card(
         name: "Gold Card",
-        bank: "Chase",
-        last4: "1234",
         totalGoal: 3000,
         goalDeadline: Calendar.current.date(byAdding: .day, value: 15, to: Date()) ?? Date(),
         rewardType: "miles",

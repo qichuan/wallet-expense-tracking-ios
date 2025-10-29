@@ -13,13 +13,10 @@ struct AddGoalView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var cardName = ""
-    @State private var bank = "Chase"
-    @State private var last4 = ""
     @State private var totalGoal = ""
     @State private var goalDeadline = Date()
     @State private var rewardType = "miles"
     
-    private let banks = ["Chase", "American Express", "Citi", "Bank of America", "Capital One", "Discover", "Other"]
     private let rewardTypes = ["miles", "cashback", "points"]
     
     var body: some View {
@@ -28,22 +25,6 @@ struct AddGoalView: View {
                 Section("Card Information") {
                     TextField("Card Name", text: $cardName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    Picker("Bank", selection: $bank) {
-                        ForEach(banks, id: \.self) { bank in
-                            Text(bank).tag(bank)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    
-                    TextField("Last 4 Digits", text: $last4)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                        .onChange(of: last4) { _, newValue in
-                            if newValue.count > 4 {
-                                last4 = String(newValue.prefix(4))
-                            }
-                        }
                 }
                 
                 Section("Goal Details") {
@@ -74,7 +55,7 @@ struct AddGoalView: View {
                     Button("Save") {
                         saveGoal()
                     }
-                    .disabled(cardName.isEmpty || bank.isEmpty || last4.count != 4 || totalGoal.isEmpty)
+                    .disabled(cardName.isEmpty || totalGoal.isEmpty)
                 }
             }
         }
@@ -85,8 +66,6 @@ struct AddGoalView: View {
         
         let card = Card(
             name: cardName,
-            bank: bank,
-            last4: last4,
             totalGoal: goalAmount,
             goalDeadline: goalDeadline,
             rewardType: rewardType

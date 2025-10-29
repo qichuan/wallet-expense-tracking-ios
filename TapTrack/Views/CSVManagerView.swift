@@ -33,6 +33,97 @@ struct CSVDocument: FileDocument {
     }
 }
 
+// MARK: - Import Preview Models & Views
+struct ImportPreviewRow: Identifiable {
+    let id = UUID()
+    let merchant: String
+    let amount: String
+    let category: String
+    let card: String
+    let date: String
+    let note: String
+}
+
+struct ImportPreviewView: View {
+    let rows: [ImportPreviewRow]
+    let missingCards: [String]
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 16) {
+                if !missingCards.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Cards to be created")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        ForEach(missingCards, id: \.self) { name in
+                            Text(name)
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(12)
+                }
+                
+                Text("Transactions to import: \(rows.count)")
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                List {
+                    ForEach(rows) { row in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(row.merchant)
+                                    .font(.headline)
+                                Spacer()
+                                Text("$\(row.amount)")
+                            }
+                            .foregroundColor(.white)
+                            Text("\(row.category) • \(row.card)")
+                                .foregroundColor(.white.opacity(0.8))
+                                .font(.caption)
+                            Text(row.date)
+                                .foregroundColor(.white.opacity(0.7))
+                                .font(.caption)
+                            if !row.note.isEmpty {
+                                Text(row.note)
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .font(.caption)
+                            }
+                        }
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                
+                HStack {
+                    Button("Cancel") { onCancel(); dismiss() }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.gray.opacity(0.3))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    Button("Import") { onConfirm(); dismiss() }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.teal)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+            }
+            .padding()
+            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .navigationTitle("Import Preview")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
 struct CSVManagerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -46,6 +137,10 @@ struct CSVManagerView: View {
     @State private var startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var endDate = Date()
     @State private var showingFilePicker = false
+    @State private var showingImportPreview = false
+    @State private var importCSVContent = ""
+    @State private var previewRows: [ImportPreviewRow] = []
+    @State private var missingCardNames: [String] = []
     
     private var transactionManager: TransactionManager {
         TransactionManager(modelContext: modelContext)
@@ -108,7 +203,7 @@ struct CSVManagerView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                     
-                    Text("Expected columns: Merchant, Amount, Account, Date, Note")
+                    Text("Expected columns: Merchant, Amount, Category, Card, Date, Note")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -136,10 +231,22 @@ struct CSVManagerView: View {
         }
         .fileImporter(
             isPresented: $showingImportPicker,
-            allowedContentTypes: [UTType.commaSeparatedText],
+            allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText],
             allowsMultipleSelection: false
         ) { result in
             handleImport(result: result)
+        }
+        .sheet(isPresented: $showingImportPreview) {
+            ImportPreviewView(
+                rows: previewRows,
+                missingCards: missingCardNames,
+                onConfirm: {
+                    transactionManager.importFromCSV(importCSVContent)
+                    importMessage = "CSV imported successfully!"
+                    showingImportAlert = true
+                },
+                onCancel: { }
+            )
         }
         .sheet(isPresented: $showingFilePicker) {
             DocumentPickerView(
@@ -214,17 +321,86 @@ struct CSVManagerView: View {
             
             do {
                 let csvContent = try String(contentsOf: url)
-                transactionManager.importFromCSV(csvContent)
-                importMessage = "CSV imported successfully!"
+                // Build preview with header-aware parsing
+                let rawLines = csvContent.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                guard !rawLines.isEmpty else { throw NSError(domain: "CSV", code: -1, userInfo: [NSLocalizedDescriptionKey: "Empty file"]) }
+
+                let headerFields = parseCSVLineLocal(rawLines[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                // Map header to indices, accept common variants
+                func idx(_ names: [String]) -> Int? {
+                    for name in names {
+                        if let i = headerFields.firstIndex(of: name) { return i }
+                    }
+                    return nil
+                }
+                let iMerchant = idx(["merchant", "merchant name"]) ?? 0
+                let iAmount   = idx(["amount"]) ?? 1
+                let iCategory = idx(["category"]) // may be nil in older files
+                let iCard     = idx(["card", "account"]) // support legacy "Account"
+                let iDate     = idx(["date"]) ?? 3
+                let iNote     = idx(["note"]) // optional
+
+                var rows: [ImportPreviewRow] = []
+                var cardNames: Set<String> = []
+                for line in rawLines.dropFirst() {
+                    let fields = parseCSVLineLocal(line)
+                    if fields.count <= max(iMerchant, iAmount, iDate) { continue }
+                    let merchant = fields.indices.contains(iMerchant) ? fields[iMerchant] : ""
+                    let amount = fields.indices.contains(iAmount) ? fields[iAmount] : ""
+                    let category = (iCategory != nil && fields.indices.contains(iCategory!)) ? fields[iCategory!] : ""
+                    let card = (iCard != nil && fields.indices.contains(iCard!)) ? fields[iCard!] : ""
+                    let date = fields.indices.contains(iDate) ? fields[iDate] : ""
+                    let note = (iNote != nil && fields.indices.contains(iNote!)) ? fields[iNote!] : ""
+                    rows.append(ImportPreviewRow(merchant: merchant, amount: amount, category: category, card: card, date: date, note: note))
+                    if !card.isEmpty { cardNames.insert(card) }
+                }
+
+                // Determine missing cards
+                let existingCards = try? modelContext.fetch(FetchDescriptor<Card>())
+                let existingNames = Set((existingCards ?? []).map { $0.name })
+                let missing = Array(cardNames.subtracting(existingNames)).sorted()
+                previewRows = rows
+                missingCardNames = missing
+                importCSVContent = csvContent
+                showingImportPreview = true
             } catch {
                 importMessage = "Error reading CSV file: \(error.localizedDescription)"
+                showingImportAlert = true
             }
             
         case .failure(let error):
             importMessage = "Error selecting file: \(error.localizedDescription)"
+            showingImportAlert = true
         }
-        
-        showingImportAlert = true
+    }
+    
+    private func parseCSVLineLocal(_ line: String) -> [String] {
+        var components: [String] = []
+        var current = ""
+        var inQuotes = false
+        var i = line.startIndex
+        while i < line.endIndex {
+            let ch = line[i]
+            if ch == "\"" {
+                let next = line.index(after: i)
+                if inQuotes && next < line.endIndex && line[next] == "\"" {
+                    current.append("\"")
+                    i = line.index(after: next)
+                } else {
+                    inQuotes.toggle()
+                    i = next
+                }
+            } else if ch == "," && !inQuotes {
+                components.append(current)
+                current = ""
+                i = line.index(after: i)
+            } else {
+                current.append(ch)
+                i = line.index(after: i)
+            }
+        }
+        components.append(current)
+        return components
     }
 }
 

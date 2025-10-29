@@ -212,7 +212,7 @@ struct CardGoalRow: View {
                 .fill(Color.white)
                 .frame(width: 40, height: 40)
                 .overlay(
-                    Text(card.bank.prefix(1))
+                    Text(card.name.prefix(1))
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(.blue)
@@ -223,9 +223,7 @@ struct CardGoalRow: View {
                     .font(.headline)
                     .foregroundColor(.white)
                 
-                Text(".... \(card.last4)")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
+                // Removed last4 display
                 
                 HStack {
                     ProgressView(value: card.progressPercentage)

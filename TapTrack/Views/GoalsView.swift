@@ -121,18 +121,7 @@ struct GoalsView: View {
 struct GoalCard: View {
     let card: Card
     
-    private var bankIcon: String {
-        switch card.bank.lowercased() {
-        case "chase":
-            return "building.2"
-        case "american express", "amex":
-            return "creditcard"
-        case "citi":
-            return "building"
-        default:
-            return "creditcard"
-        }
-    }
+    private var bankIcon: String { "creditcard" }
     
     private var rewardTypeColor: Color {
         switch card.rewardType.lowercased() {
