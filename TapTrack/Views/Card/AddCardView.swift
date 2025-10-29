@@ -8,17 +8,17 @@
 import SwiftUI
 import SwiftData
 
-struct AddGoalView: View {
+struct AddCardView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
     @State private var cardName = ""
     @State private var totalGoal = ""
-    @State private var goalDeadline = Date()
+    @State private var goalDeadline = Date() // kept internally but not user-editable; cycle uses statementDay
     @State private var rewardType = "miles"
     @State private var statementDay = 1
     
-    private let rewardTypes = ["miles", "cashback", "points"]
+    private let rewardTypes = ["miles", "cashback"]
     
     var body: some View {
         NavigationView {
@@ -33,8 +33,6 @@ struct AddGoalView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.decimalPad)
                     
-                    DatePicker("Goal Deadline", selection: $goalDeadline, in: Date()..., displayedComponents: .date)
-                    
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
                             Text(type.capitalized).tag(type)
@@ -43,11 +41,14 @@ struct AddGoalView: View {
                     .pickerStyle(SegmentedPickerStyle())
                     
                     Stepper(value: $statementDay, in: 1...31) {
-                        Text("Statement Day: \(statementDay)")
+                        Text("Statement Day (1-31): \(statementDay)")
                     }
+                    Text("Your monthly spending resets each statement day. Aim to meet the minimum spend by this date for rewards.")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
                 }
             }
-            .navigationTitle("Add Goal")
+            .navigationTitle("Add Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -89,6 +90,6 @@ struct AddGoalView: View {
 }
 
 #Preview {
-    AddGoalView()
+    AddCardView()
         .modelContainer(ModelContainer.createMockContainer())
 }

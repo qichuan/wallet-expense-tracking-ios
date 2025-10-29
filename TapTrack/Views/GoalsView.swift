@@ -71,10 +71,10 @@ struct GoalsView: View {
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
         }
         .sheet(isPresented: $showingAddGoal) {
-            AddGoalView()
+            AddCardView()
         }
         .sheet(item: $selectedCard) { card in
-            EditGoalView(card: card)
+            EditCardView(card: card)
         }
     }
 }

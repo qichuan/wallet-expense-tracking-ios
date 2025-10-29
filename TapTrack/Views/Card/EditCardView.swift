@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct EditGoalView: View {
+struct EditCardView: View {
     let card: Card
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -20,7 +20,7 @@ struct EditGoalView: View {
     @State private var statementDay: Int
     @State private var showingDeleteAlert = false
     
-    private let rewardTypes = ["miles", "cashback", "points"]
+    private let rewardTypes = ["miles", "cashback"]
     
     init(card: Card) {
         self.card = card
@@ -44,11 +44,12 @@ struct EditGoalView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.decimalPad)
                     
-                    DatePicker("Goal Deadline", selection: $goalDeadline, in: Date()..., displayedComponents: .date)
-                    
                     Stepper(value: $statementDay, in: 1...31) {
-                        Text("Statement Day: \(statementDay)")
+                        Text("Statement Day (1-31): \(statementDay)")
                     }
+                    Text("Your monthly spending resets each statement day. Aim to meet the minimum spend by this date for rewards.")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
                     
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
@@ -86,7 +87,7 @@ struct EditGoalView: View {
                     .foregroundColor(.red)
                 }
             }
-            .navigationTitle("Edit Goal")
+            .navigationTitle("Edit Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -151,6 +152,6 @@ struct EditGoalView: View {
         currentSpent: 1500
     )
     
-    return EditGoalView(card: card)
+    return EditCardView(card: card)
         .modelContainer(ModelContainer.createMockContainer())
 }
