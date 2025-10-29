@@ -117,7 +117,7 @@ struct InsightsView: View {
     
     private var stackedSeries: [StackedItem] {
         let cal = Calendar.current
-        let (start, end) = currentRange()
+        let (start, _) = currentRange()
         
         // Define buckets based on granularity
         var bucketDates: [Date] = []
