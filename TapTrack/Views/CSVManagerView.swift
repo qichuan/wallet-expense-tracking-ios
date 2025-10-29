@@ -231,7 +231,7 @@ struct CSVManagerView: View {
         }
         .fileImporter(
             isPresented: $showingImportPicker,
-            allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText],
+            allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText, UTType.data],
             allowsMultipleSelection: false
         ) { result in
             handleImport(result: result)
@@ -320,6 +320,18 @@ struct CSVManagerView: View {
             guard let url = urls.first else { return }
             
             do {
+                // Use security-scoped access for file reading
+                guard url.startAccessingSecurityScopedResource() else {
+                    print("Failed to access security-scoped resource")
+                    importMessage = "Unable to access the selected file. Please try again."
+                    showingImportAlert = true
+                    return
+                }
+                
+                defer {
+                    url.stopAccessingSecurityScopedResource()
+                }
+                
                 let csvContent = try String(contentsOf: url)
                 // Build preview with header-aware parsing
                 let rawLines = csvContent.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -336,7 +348,7 @@ struct CSVManagerView: View {
                 let iMerchant = idx(["merchant", "merchant name"]) ?? 0
                 let iAmount   = idx(["amount"]) ?? 1
                 let iCategory = idx(["category"]) // may be nil in older files
-                let iCard     = idx(["card", "account"]) // support legacy "Account"
+                let iCard     = idx(["card"])
                 let iDate     = idx(["date"]) ?? 3
                 let iNote     = idx(["note"]) // optional
 

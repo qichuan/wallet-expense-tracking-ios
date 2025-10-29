@@ -4,41 +4,42 @@ A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users
 
 ## Features
 
-### 🏠 Dashboard
-- Total spending overview with month-over-month comparison
-- Credit card goal progress tracking
-- Weekly spending trends chart
-- Latest transactions with quick edit and View All
+### 🏠 Home
+- Latest transactions list (shows up to 10)
+- Edit transaction inline (sheet)
+- "View All" button at the end of the list
 
 ### 💳 Card Management
-- Detailed card views with transaction history
-- Circular progress indicators for spending goals
-- Reward tracking (miles, cashback, points)
-- Goal deadline monitoring
+- Cards screen with floating "+" button (bottom-right)
+- Monthly cycle based on Statement Day (1–31)
+- Progress for current cycle: $spentThisCycle / $minimumSpending
+- Reward tracking (miles, cashback)
 
-### 🎯 Goals Management
-- Active and completed goal tracking
-- Progress visualization with progress bars
-- Reward type categorization
-- Goal creation and editing
+### 🎯 Cards (formerly Goals)
+- Simplified list of all cards (no Active/Completed tabs)
+- Add/Edit Card screens: card info + minimum spending + statement day
+- Custom Day-of-Month picker component for Statement Day
 
-### 📊 Analytics & Insights
+### 📊 Analysis
 - Day/Week/Month/Year filters with arrow navigation
-- Date constraints: only dates with data are selectable; arrows skip empty dates
-- Month picker (only months with data). Year picker (only years with data)
-- Spending breakdown by category (donut) for the selected range
-- Stacked bar chart of spending over time (x-axis depends on filter)
-- Recent transactions (for Day/Week ranges)
+- Date constraints and smart stepping that skips empty dates
+- Month picker (months with data) and Year picker (years with data)
+- Spending breakdown by category (donut)
+- Spending over time (stacked bar):
+  - Week: shows all 7 days, even with zero transactions
+  - Month: always shows wk1–wk4, even with zero transactions
+- Recent transactions section for Day/Week
 
 ### ⚙️ Settings
-- Auto-sync Wallet toggle
-- CSV import/export (Merchant,Amount,Account,Date,Note)
-- Privacy and security settings
-- App configuration
+- CSV import/export (Merchant,Amount,Category,Card,Date,Note)
+- Native document picker for export; date-range selection and preview
+- Robust CSV import with header-aware parsing and preview
+- Wallet/App configuration
 
 ### 📦 CSV Import/Export
-- Export: choose a date range, preview items, then save via native file picker
+- Export: choose date range → preview → save via native file picker
 - Import: select a CSV (UTF-8) with header `Merchant,Amount,Category,Card,Date,Note`
+- iOS file access is handled with security-scoped URLs for real devices
 - CSV escaping supported (quotes/commas)
 
 ## Technical Architecture
@@ -57,14 +58,14 @@ A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users
 
 ### Key Components
 - `MainTabView` - Main navigation container
-- `DashboardView` - Home screen with overview
-- `CardDetailView` - Individual card details
-- `GoalsView` - Goal management interface
-- `InsightsView` - Analytics and charts
+- `HomeView` - Latest transactions
+- `CardsView` - Card list and actions
+- `AnalysisView` - Analytics and charts
 - `SettingsView` - App configuration
 - `TransactionManager` - Data operations service
 - `MerchantUtils` - Centralized category, icon, and color logic
 - `TransactionRow` - Standardized transaction list row used across the app
+ - `DayOfMonthPicker` - Custom picker for statement day
 
 ## App Intent Integration
 
@@ -91,6 +92,7 @@ struct WalletTransactionIntent: AppIntent {
 2. Build and run on iOS 17.0+ device or simulator
 3. Configure Wallet tap automation in Shortcuts app (optional)
 4. Import your CSV data via Settings → Import/Export to get started
+   - On device: grant access in the file picker when prompted
 
 ## Design System
 
@@ -131,7 +133,7 @@ struct WalletTransactionIntent: AppIntent {
 ```
 TapTrack/
   Models/                // Card, Transaction, MockData (for previews)
-  Views/                 // Dashboard, CardDetail, Goals, Insights, Settings, TransactionRow, etc.
+  Views/                 // Home, Cards, Analysis, Settings, Transactions, Components
   Utils/                 // MerchantUtils, helpers
   Services/              // TransactionManager (SwiftData operations)
   Intents/               // WalletTransactionIntent (App Intents)
