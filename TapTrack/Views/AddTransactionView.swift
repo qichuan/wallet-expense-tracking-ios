@@ -39,13 +39,16 @@ struct AddTransactionView: View {
                     TextField("Amount", text: $amount)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.decimalPad)
+                        .onChange(of: amount) { _, newValue in
+                            amount = formatAmountInput(newValue)
+                        }
                     
                     DatePicker("Date", selection: $transactionDate, displayedComponents: .date)
                 }
                 
-                Section("Card") {
+                Section("Card (Optional)") {
                     Picker("Select Card", selection: $selectedCard) {
-                        Text("Select a card").tag(nil as Card?)
+                        Text("No card selected").tag(nil as Card?)
                         ForEach(cards) { card in
                             Text(card.name).tag(card as Card?)
                         }
@@ -81,7 +84,7 @@ struct AddTransactionView: View {
                     Button("Save") {
                         saveTransaction()
                     }
-                    .disabled(merchant.isEmpty || amount.isEmpty || selectedCard == nil)
+                    .disabled(merchant.isEmpty || amount.isEmpty)
                 }
             }
         }
@@ -92,9 +95,25 @@ struct AddTransactionView: View {
         }
     }
     
+    private func formatAmountInput(_ input: String) -> String {
+        // Remove any non-numeric characters except decimal point
+        let filtered = input.filter { $0.isNumber || $0 == "." }
+        
+        // Split by decimal point
+        let parts = filtered.components(separatedBy: ".")
+        
+        // If there's a decimal part, limit to 2 digits
+        if parts.count > 1 {
+            let integerPart = parts[0]
+            let decimalPart = String(parts[1].prefix(2))
+            return "\(integerPart).\(decimalPart)"
+        }
+        
+        return filtered
+    }
+    
     private func saveTransaction() {
-        guard let amountDecimal = Decimal(string: amount),
-              let card = selectedCard else { return }
+        guard let amountDecimal = Decimal(string: amount) else { return }
         
         let transaction = Transaction(
             merchant: merchant,
@@ -102,11 +121,15 @@ struct AddTransactionView: View {
             date: transactionDate,
             category: category.isEmpty ? nil : category,
             note: note.isEmpty ? nil : note,
-            card: card
+            card: selectedCard
         )
         
         modelContext.insert(transaction)
-        card.currentSpent += amountDecimal
+        
+        // Only update card spending if a card is selected
+        if let card = selectedCard {
+            card.currentSpent += amountDecimal
+        }
         
         do {
             try modelContext.save()
