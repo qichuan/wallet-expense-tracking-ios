@@ -17,37 +17,44 @@ struct CardsView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Content
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        if cards.isEmpty {
-                            VStack(spacing: 8) {
-                                Text("No cards yet")
-                                    .foregroundColor(.white)
-                                Text("Tap + to add your first card and goal")
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .font(.caption)
-                            }
-                            .padding()
-                        } else {
-                            ForEach(cards) { card in
-                                Button(action: { 
-                                    selectedCard = card
-                                }) {
-                                    CardRow(card: card)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
+            ZStack {
+                Color(red: 0.05, green: 0.1, blue: 0.2)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Content that stretches to bottom
+                    if cards.isEmpty {
+                        VStack(spacing: 8) {
+                            Spacer()
+                            Text("No cards yet")
+                                .foregroundColor(.white)
+                            Text("Tap + to add your first card and goal")
+                                .foregroundColor(.white.opacity(0.7))
+                                .font(.caption)
+                            Spacer()
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach(cards) { card in
+                                    Button(action: { 
+                                        selectedCard = card
+                                    }) {
+                                        CardRow(card: card)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 20)
+                            .padding(.bottom, 100) // Space for floating button
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 20)
                 }
-                .padding(.bottom, 100)
-            }
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
-            .overlay(
+                
+                // Floating + button
                 VStack {
                     Spacer()
                     HStack {
@@ -66,7 +73,7 @@ struct CardsView: View {
                         .padding(.bottom, 20)
                     }
                 }
-            )
+            }
         }
         .sheet(isPresented: $showingAddGoal) {
             AddCardView()
