@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  TapTrack
+//  CardPulse
 //
 //  Created by Zhang Qichuan on 27/10/25.
 //
@@ -104,7 +104,7 @@ struct SettingsView: View {
                             
                             SettingsRow(
                                 icon: "info.circle",
-                                title: "About TapTrack",
+                                title: "About CardPulse",
                                 action: {}
                             )
                         }

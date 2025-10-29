@@ -1,6 +1,6 @@
 //
-//  TapTrackApp.swift
-//  TapTrack
+//  CardPulseApp.swift
+//  CardPulse
 //
 //  Created by Zhang Qichuan on 27/10/25.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct TapTrackApp: App {
+struct CardPulseApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Card.self,
