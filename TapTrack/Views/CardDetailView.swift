@@ -92,21 +92,21 @@ struct CardDetailView: View {
                 }
                 .padding(.horizontal)
                 
-                // Rewards and Deadline Section
+                // Current Cycle and Statement Section
                 HStack(spacing: 16) {
-                    // Rewards Earned
+                    // This Cycle Spend
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Rewards Earned")
+                        Text("This Cycle")
                             .font(.headline)
                             .foregroundColor(.white)
                         
                         HStack(spacing: 4) {
-                            Text("1,250")
+                            Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f")")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.yellow)
                             
-                            Text("Miles")
+                            Text("of $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
                                 .font(.headline)
                                 .foregroundColor(.white)
                         }
@@ -116,9 +116,9 @@ struct CardDetailView: View {
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(12)
                     
-                    // Goal Deadline
+                    // Statement Date
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Goal Deadline")
+                        Text("Statement Date")
                             .font(.headline)
                             .foregroundColor(.white)
                         
