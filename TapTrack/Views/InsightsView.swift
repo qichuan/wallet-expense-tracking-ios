@@ -209,6 +209,30 @@ struct InsightsView: View {
         return min...max
     }
     
+    private var availableDatesSet: Set<Date> {
+        let cal = Calendar.current
+        return Set(transactions.map { cal.startOfDay(for: $0.date) })
+    }
+    
+    private func snapToNearestAvailableDate() {
+        let cal = Calendar.current
+        let day = cal.startOfDay(for: selectedDate)
+        if availableDatesSet.contains(day) { return }
+        // Search backward then forward up to 365 days to find the closest available date
+        let maxHops = 365
+        for offset in 1...maxHops {
+            if let prev = cal.date(byAdding: .day, value: -offset, to: day), availableDatesSet.contains(cal.startOfDay(for: prev)) {
+                selectedDate = prev
+                return
+            }
+            if let next = cal.date(byAdding: .day, value: offset, to: day), availableDatesSet.contains(cal.startOfDay(for: next)) {
+                selectedDate = next
+                return
+            }
+        }
+        // If nothing found, keep current date (will show empty state)
+    }
+    
     private func availableYears() -> [Int] {
         let cal = Calendar.current
         let years = transactions.map { cal.component(.year, from: $0.date) }
@@ -230,6 +254,22 @@ struct InsightsView: View {
         let df = DateFormatter()
         df.dateFormat = "MMM yyyy" // e.g., Oct 2025
         return df.string(from: date)
+    }
+
+    private func monthStart(for date: Date) -> Date {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.year, .month], from: date)
+        return cal.date(from: comps) ?? date
+    }
+
+    private func normalizeSelectedDateForMonth() {
+        let start = monthStart(for: selectedDate)
+        let months = availableMonths()
+        if months.contains(start) {
+            if selectedDate != start { selectedDate = start }
+        } else if let nearest = months.last {
+            selectedDate = nearest
+        }
     }
 
     // MARK: - Recent Transactions for current range
@@ -310,7 +350,11 @@ struct InsightsView: View {
                                 .pickerStyle(MenuPickerStyle())
                                 .labelsHidden()
                             } else if selectedGranularity == .month {
-                                Picker("", selection: $selectedDate) {
+                                let monthSelection = Binding<Date>(
+                                    get: { monthStart(for: selectedDate) },
+                                    set: { newValue in selectedDate = monthStart(for: newValue) }
+                                )
+                                Picker("", selection: monthSelection) {
                                     ForEach(availableMonths(), id: \.self) { monthStart in
                                         Text(monthLabel(for: monthStart)).tag(monthStart)
                                     }
@@ -334,11 +378,17 @@ struct InsightsView: View {
                                 selectedYear = Calendar.current.component(.year, from: selectedDate)
                             } else if newValue == .month {
                                 // Snap to the latest month that has data
-                                if let latestMonth = availableMonths().last {
-                                    selectedDate = latestMonth
-                                }
+                                normalizeSelectedDateForMonth()
+                            } else if newValue == .day || newValue == .week {
+                                // Ensure we land on a day that has data so breakdown/over-time are populated
+                                snapToNearestAvailableDate()
                             } else {
-                                // When leaving year mode, keep selectedDate as-is (already set to Jan 1 of selectedYear below)
+                                // When leaving year mode, keep selectedDate as-is
+                            }
+                        }
+                        .onChange(of: selectedDate) { _, _ in
+                            if selectedGranularity == .month {
+                                normalizeSelectedDateForMonth()
                             }
                         }
                         .onChange(of: selectedYear) { _, newYear in
