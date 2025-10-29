@@ -42,14 +42,7 @@ struct EditCardView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.decimalPad)
                     
-                    Picker("Statement Day", selection: $statementDay) {
-                        ForEach(1...31, id: \.self) { day in
-                            Text("\(day)").tag(day)
-                        }
-                    }
-                    Text("Your monthly spending resets each statement day. Aim to meet the minimum spend by this date for rewards.")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                    DayOfMonthPicker(selectedDay: $statementDay)
                     
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
