@@ -199,7 +199,7 @@ class TransactionManager: ObservableObject {
             let transactions = try modelContext.fetch(request)
             print("Found \(transactions.count) transactions")
             
-            var csvString = "Merchant,Amount,Account,Date,Note\n"
+            var csvString = "Merchant,Amount,Category,Card,Date,Note\n"
             
             for transaction in transactions {
                 let dateFormatter = DateFormatter()
@@ -207,11 +207,12 @@ class TransactionManager: ObservableObject {
                 
                 let merchant = escapeCSVField(transaction.merchant)
                 let amount = String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber))
-                let account = escapeCSVField(transaction.card?.name ?? "Unknown")
+                let category = escapeCSVField(transaction.category ?? "")
+                let cardName = escapeCSVField(transaction.card?.name ?? "")
                 let dateString = dateFormatter.string(from: transaction.date)
                 let note = escapeCSVField(transaction.note ?? "")
                 
-                csvString += "\(merchant),\(amount),\(account),\(dateString),\(note)\n"
+                csvString += "\(merchant),\(amount),\(category),\(cardName),\(dateString),\(note)\n"
             }
             
             print("Generated CSV content length: \(csvString.count)")
@@ -240,13 +241,14 @@ class TransactionManager: ObservableObject {
             if index == 0 || line.isEmpty { continue } // Skip header and empty lines
             
             let components = parseCSVLine(line)
-            guard components.count >= 4 else { continue }
+            guard components.count >= 5 else { continue }
             
             let merchant = components[0]
             let amountString = components[1]
-            let accountName = components[2]
-            let dateString = components[3]
-            let note = components.count > 4 ? components[4] : nil
+            let category = components[2].isEmpty ? nil : components[2]
+            let cardName = components[3]
+            let dateString = components[4]
+            let note = components.count > 5 ? components[5] : nil
             
             guard let amount = Decimal(string: amountString) else { continue }
             
@@ -255,17 +257,17 @@ class TransactionManager: ObservableObject {
             let date = dateFormatter.date(from: dateString) ?? Date()
             
             var matchedCard: Card? = nil
-            if !accountName.isEmpty && accountName != "Unknown" {
+            if !cardName.isEmpty {
                 // Find matching card by exact name
                 let cardRequest = FetchDescriptor<Card>(
                     predicate: #Predicate { card in
-                        card.name == accountName
+                        card.name == cardName
                     }
                 )
                 do {
                     matchedCard = try modelContext.fetch(cardRequest).first
                 } catch {
-                    print("Error fetching card for name \(accountName): \(error)")
+                    print("Error fetching card for name \(cardName): \(error)")
                 }
             }
             
@@ -273,7 +275,7 @@ class TransactionManager: ObservableObject {
                 merchant: merchant,
                 amount: amount,
                 date: date,
-                category: nil, // Category not in new format
+                category: category,
                 note: note?.isEmpty == true ? nil : note,
                 card: matchedCard
             )
