@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct GoalsView: View {
+struct CardsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var cards: [Card]
     
@@ -76,6 +76,6 @@ struct GoalsView: View {
 
 
 #Preview {
-    GoalsView()
+    CardsView()
         .modelContainer(ModelContainer.createMockContainer())
 }

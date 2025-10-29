@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 import Charts
 
-struct DashboardView: View {
+struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var cards: [Card]
     @Query private var transactions: [Transaction]
@@ -332,6 +332,6 @@ struct WeeklyData: Identifiable {
 }
 
 #Preview {
-    DashboardView()
+    HomeView()
         .modelContainer(ModelContainer.createMockContainer())
 }
