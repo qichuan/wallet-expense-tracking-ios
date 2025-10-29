@@ -17,39 +17,6 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     
-                    // Auto-sync Wallet Section
-                    VStack(spacing: 0) {
-                        HStack(spacing: 12) {
-                            Circle()
-                                .fill(Color.teal)
-                                .frame(width: 40, height: 40)
-                                .overlay(
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                )
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Auto-sync Wallet...")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                Text("Automatically track Apple Wallet spending.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            
-                            Spacer()
-                            
-                            Toggle("", isOn: $autoSyncWallet)
-                                .toggleStyle(SwitchToggleStyle(tint: .teal))
-                        }
-                        .padding()
-                    }
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    
                     // DATA MANAGEMENT Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("DATA MANAGEMENT")
