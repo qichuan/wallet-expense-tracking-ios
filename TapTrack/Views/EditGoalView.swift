@@ -38,14 +38,6 @@ struct EditGoalView: View {
                         Text(card.name)
                             .foregroundColor(.secondary)
                     }
-                    
-                    HStack {
-                        Text("Bank")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(card.bank)
-                            .foregroundColor(.secondary)
-                    }
                 }
                 
                 Section("Goal Details") {
@@ -148,8 +140,6 @@ struct EditGoalView: View {
 #Preview {
     let card = Card(
         name: "Chase Sapphire Preferred",
-        bank: "Chase",
-        last4: "1234",
         totalGoal: 4000,
         goalDeadline: Calendar.current.date(byAdding: .day, value: 25, to: Date()) ?? Date(),
         rewardType: "miles",

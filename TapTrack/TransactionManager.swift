@@ -47,14 +47,12 @@ class TransactionManager: ObservableObject {
         isLoading = false
     }
     
-    func addCard(name: String, bank: String, last4: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String) {
+    func addCard(name: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String) {
         isLoading = true
         errorMessage = nil
         
         let card = Card(
             name: name,
-            bank: bank,
-            last4: last4,
             totalGoal: totalGoal,
             goalDeadline: goalDeadline,
             rewardType: rewardType
@@ -268,6 +266,17 @@ class TransactionManager: ObservableObject {
                     matchedCard = try modelContext.fetch(cardRequest).first
                 } catch {
                     print("Error fetching card for name \(cardName): \(error)")
+                }
+                // Create card if missing (override duplicates by reusing existing)
+                if matchedCard == nil {
+                    let newCard = Card(
+                        name: cardName,
+                        totalGoal: 0,
+                        goalDeadline: Date(),
+                        rewardType: "miles"
+                    )
+                    modelContext.insert(newCard)
+                    matchedCard = newCard
                 }
             }
             

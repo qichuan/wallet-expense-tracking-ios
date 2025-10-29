@@ -41,8 +41,6 @@ extension ModelContainer {
         return [
             Card(
                 name: "Apple Card",
-                bank: "Apple",
-                last4: "1234",
                 totalGoal: 1000,
                 goalDeadline: calendar.date(byAdding: .day, value: 30, to: Date()) ?? Date(),
                 rewardType: "cashback",
@@ -50,8 +48,6 @@ extension ModelContainer {
             ),
             Card(
                 name: "Chase Sapphire Preferred",
-                bank: "Chase",
-                last4: "5678",
                 totalGoal: 1500,
                 goalDeadline: calendar.date(byAdding: .day, value: 45, to: Date()) ?? Date(),
                 rewardType: "miles",
@@ -59,8 +55,6 @@ extension ModelContainer {
             ),
             Card(
                 name: "Amex Gold Card",
-                bank: "American Express",
-                last4: "9012",
                 totalGoal: 2000,
                 goalDeadline: calendar.date(byAdding: .day, value: 15, to: Date()) ?? Date(),
                 rewardType: "points",
@@ -68,8 +62,6 @@ extension ModelContainer {
             ),
             Card(
                 name: "Citi Double Cash",
-                bank: "Citi",
-                last4: "3456",
                 totalGoal: 2000,
                 goalDeadline: calendar.date(byAdding: .day, value: 5, to: Date()) ?? Date(),
                 rewardType: "miles",

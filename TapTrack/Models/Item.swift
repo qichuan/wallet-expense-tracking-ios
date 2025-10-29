@@ -12,8 +12,6 @@ import SwiftData
 final class Card {
     var id: UUID
     var name: String
-    var bank: String
-    var last4: String
     var totalGoal: Decimal
     var goalDeadline: Date
     var rewardType: String
@@ -23,11 +21,9 @@ final class Card {
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, bank: String, last4: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String, currentSpent: Decimal = 0) {
+    init(name: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String, currentSpent: Decimal = 0) {
         self.id = UUID()
         self.name = name
-        self.bank = bank
-        self.last4 = last4
         self.totalGoal = totalGoal
         self.goalDeadline = goalDeadline
         self.rewardType = rewardType

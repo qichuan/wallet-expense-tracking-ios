@@ -44,7 +44,7 @@ struct TransactionRow: View {
                 
                 HStack(spacing: 8) {
                     if let card = transaction.card {
-                        Text("\(card.name) •••\(card.last4)")
+                        Text(card.name)
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }

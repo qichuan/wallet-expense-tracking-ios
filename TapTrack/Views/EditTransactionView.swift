@@ -53,7 +53,7 @@ struct EditTransactionView: View {
                     Picker("Select Card", selection: $selectedCard) {
                         Text("Select a card").tag(nil as Card?)
                         ForEach(cards) { card in
-                            Text("\(card.name) (....\(card.last4))").tag(card as Card?)
+                            Text(card.name).tag(card as Card?)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())

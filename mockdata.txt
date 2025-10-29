@@ -1,301 +1,601 @@
-Merchant,Amount,Account,Date,Note
-Apple,12.30,Citibank Card,2025-01-01 08:00:00,Grocery
-NTUC,25.99,UOB Card,2025-01-02 09:07:13,Coffee
-Amazon,8.50,DBS Card,2025-01-03 10:14:26,Ride
-Starbucks,100.00,Amex Gold,2025-01-04 11:21:39,Subscription
-Uber,3.75,Citibank Card,2025-01-05 12:28:52,Fuel
-Netflix,56.40,UOB Card,2025-01-06 13:35:05,Lunch
-Grab,42.00,DBS Card,2025-01-07 14:42:18,Dinner
-Shell,15.20,Amex Gold,2025-01-08 15:49:31,Electronics
-McDonald's,9.99,Citibank Card,2025-01-09 16:56:44,Clothes
-IKEA,1200.00,UOB Card,2025-01-10 17:03:57,Travel
-Shopee,7.60,DBS Card,2025-01-11 18:10:10,Hotel
-Lazada,18.45,Amex Gold,2025-01-12 19:17:23,Flight
-Spotify,33.33,Citibank Card,2025-01-13 08:24:36,Movies
-Google,64.90,UOB Card,2025-01-14 09:31:49,Books
-AirAsia,82.10,DBS Card,2025-01-15 10:38:02,Pharmacy
-Expedia,5.40,Amex Gold,2025-01-16 11:45:15,Utilities
-Qantas,240.00,Citibank Card,2025-01-17 12:52:28,Gift
-Cathay,4.50,UOB Card,2025-01-18 13:59:41,Household
-Cold Storage,11.80,DBS Card,2025-01-19 14:06:54,Grocery
-FairPrice,19.99,Amex Gold,2025-01-20 15:13:07,Coffee
-Deliveroo,12.30,Citibank Card,2025-01-21 16:20:20,Ride
-Foodpanda,25.99,UOB Card,2025-01-22 17:27:33,Subscription
-KFC,8.50,DBS Card,2025-01-23 18:34:46,Fuel
-Burger King,100.00,Amex Gold,2025-01-24 19:41:59,Lunch
-Subway,3.75,Citibank Card,2025-01-25 08:48:12,Dinner
-Sephora,56.40,UOB Card,2025-01-26 09:55:25,Electronics
-Uniqlo,42.00,DBS Card,2025-01-27 10:02:38,Clothes
-Zara,15.20,Amex Gold,2025-01-28 11:09:51,Travel
-H&M,9.99,Citibank Card,2025-01-29 12:16:04,Hotel
-Decathlon,1200.00,UOB Card,2025-01-30 13:23:17,Flight
-Apple,7.60,DBS Card,2025-01-31 14:30:30,Movies
-NTUC,18.45,Amex Gold,2025-02-01 15:37:43,Books
-Amazon,33.33,Citibank Card,2025-02-02 16:44:56,Pharmacy
-Starbucks,64.90,UOB Card,2025-02-03 17:51:09,Utilities
-Uber,82.10,DBS Card,2025-02-04 18:58:22,Gift
-Netflix,5.40,Amex Gold,2025-02-05 19:05:35,Household
-Grab,240.00,Citibank Card,2025-02-06 08:12:48,Grocery
-Shell,4.50,UOB Card,2025-02-07 09:19:01,Coffee
-McDonald's,11.80,DBS Card,2025-02-08 10:26:14,Ride
-IKEA,19.99,Amex Gold,2025-02-09 11:33:27,Subscription
-Shopee,12.30,Citibank Card,2025-02-10 12:40:40,Fuel
-Lazada,25.99,UOB Card,2025-02-11 13:47:53,Lunch
-Spotify,8.50,DBS Card,2025-02-12 14:54:06,Dinner
-Google,100.00,Amex Gold,2025-02-13 15:01:19,Electronics
-AirAsia,3.75,Citibank Card,2025-02-14 16:08:32,Clothes
-Expedia,56.40,UOB Card,2025-02-15 17:15:45,Travel
-Qantas,42.00,DBS Card,2025-02-16 18:22:58,Hotel
-Cathay,15.20,Amex Gold,2025-02-17 19:29:11,Flight
-Cold Storage,9.99,Citibank Card,2025-02-18 08:36:24,Movies
-FairPrice,1200.00,UOB Card,2025-02-19 09:43:37,Books
-Deliveroo,7.60,DBS Card,2025-02-20 10:50:50,Pharmacy
-Foodpanda,18.45,Amex Gold,2025-02-21 11:57:03,Utilities
-KFC,33.33,Citibank Card,2025-02-22 12:04:16,Gift
-Burger King,64.90,UOB Card,2025-02-23 13:11:29,Household
-Subway,82.10,DBS Card,2025-02-24 14:18:42,Grocery
-Sephora,5.40,Amex Gold,2025-02-25 15:25:55,Coffee
-Uniqlo,240.00,Citibank Card,2025-02-26 16:32:08,Ride
-Zara,4.50,UOB Card,2025-02-27 17:39:21,Subscription
-H&M,11.80,DBS Card,2025-02-28 18:46:34,Fuel
-Decathlon,19.99,Amex Gold,2025-03-01 19:53:47,Lunch
-Apple,12.30,Citibank Card,2025-03-02 08:00:00,Dinner
-NTUC,25.99,UOB Card,2025-03-03 09:07:13,Electronics
-Amazon,8.50,DBS Card,2025-03-04 10:14:26,Clothes
-Starbucks,100.00,Amex Gold,2025-03-05 11:21:39,Travel
-Uber,3.75,Citibank Card,2025-03-06 12:28:52,Hotel
-Netflix,56.40,UOB Card,2025-03-07 13:35:05,Flight
-Grab,42.00,DBS Card,2025-03-08 14:42:18,Movies
-Shell,15.20,Amex Gold,2025-03-09 15:49:31,Books
-McDonald's,9.99,Citibank Card,2025-03-10 16:56:44,Pharmacy
-IKEA,1200.00,UOB Card,2025-03-11 17:03:57,Utilities
-Shopee,7.60,DBS Card,2025-03-12 18:10:10,Gift
-Lazada,18.45,Amex Gold,2025-03-13 19:17:23,Household
-Spotify,33.33,Citibank Card,2025-03-14 08:24:36,Grocery
-Google,64.90,UOB Card,2025-03-15 09:31:49,Coffee
-AirAsia,82.10,DBS Card,2025-03-16 10:38:02,Ride
-Expedia,5.40,Amex Gold,2025-03-17 11:45:15,Subscription
-Qantas,240.00,Citibank Card,2025-03-18 12:52:28,Fuel
-Cathay,4.50,UOB Card,2025-03-19 13:59:41,Lunch
-Cold Storage,11.80,DBS Card,2025-03-20 14:06:54,Dinner
-FairPrice,19.99,Amex Gold,2025-03-21 15:13:07,Electronics
-Deliveroo,12.30,Citibank Card,2025-03-22 16:20:20,Clothes
-Foodpanda,25.99,UOB Card,2025-03-23 17:27:33,Travel
-KFC,8.50,DBS Card,2025-03-24 18:34:46,Hotel
-Burger King,100.00,Amex Gold,2025-03-25 19:41:59,Flight
-Subway,3.75,Citibank Card,2025-03-26 08:48:12,Movies
-Sephora,56.40,UOB Card,2025-03-27 09:55:25,Books
-Uniqlo,42.00,DBS Card,2025-03-28 10:02:38,Pharmacy
-Zara,15.20,Amex Gold,2025-03-29 11:09:51,Utilities
-H&M,9.99,Citibank Card,2025-03-30 12:16:04,Gift
-Decathlon,1200.00,UOB Card,2025-03-31 13:23:17,Household
-Apple,7.60,DBS Card,2025-04-01 14:30:30,Grocery
-NTUC,18.45,Amex Gold,2025-04-02 15:37:43,Coffee
-Amazon,33.33,Citibank Card,2025-04-03 16:44:56,Ride
-Starbucks,64.90,UOB Card,2025-04-04 17:51:09,Subscription
-Uber,82.10,DBS Card,2025-04-05 18:58:22,Fuel
-Netflix,5.40,Amex Gold,2025-04-06 19:05:35,Lunch
-Grab,240.00,Citibank Card,2025-04-07 08:12:48,Dinner
-Shell,4.50,UOB Card,2025-04-08 09:19:01,Electronics
-McDonald's,11.80,DBS Card,2025-04-09 10:26:14,Clothes
-IKEA,19.99,Amex Gold,2025-04-10 11:33:27,Travel
-Shopee,12.30,Citibank Card,2025-04-11 12:40:40,Hotel
-Lazada,25.99,UOB Card,2025-04-12 13:47:53,Flight
-Spotify,8.50,DBS Card,2025-04-13 14:54:06,Movies
-Google,100.00,Amex Gold,2025-04-14 15:01:19,Books
-AirAsia,3.75,Citibank Card,2025-04-15 16:08:32,Pharmacy
-Expedia,56.40,UOB Card,2025-04-16 17:15:45,Utilities
-Qantas,42.00,DBS Card,2025-04-17 18:22:58,Gift
-Cathay,15.20,Amex Gold,2025-04-18 19:29:11,Household
-Cold Storage,9.99,Citibank Card,2025-04-19 08:36:24,Grocery
-FairPrice,1200.00,UOB Card,2025-04-20 09:43:37,Coffee
-Deliveroo,7.60,DBS Card,2025-04-21 10:50:50,Ride
-Foodpanda,18.45,Amex Gold,2025-04-22 11:57:03,Subscription
-KFC,33.33,Citibank Card,2025-04-23 12:04:16,Fuel
-Burger King,64.90,UOB Card,2025-04-24 13:11:29,Lunch
-Subway,82.10,DBS Card,2025-04-25 14:18:42,Dinner
-Sephora,5.40,Amex Gold,2025-04-26 15:25:55,Electronics
-Uniqlo,240.00,Citibank Card,2025-04-27 16:32:08,Clothes
-Zara,4.50,UOB Card,2025-04-28 17:39:21,Travel
-H&M,11.80,DBS Card,2025-04-29 18:46:34,Hotel
-Decathlon,19.99,Amex Gold,2025-04-30 19:53:47,Flight
-Apple,12.30,Citibank Card,2025-05-01 08:00:00,Movies
-NTUC,25.99,UOB Card,2025-05-02 09:07:13,Books
-Amazon,8.50,DBS Card,2025-05-03 10:14:26,Pharmacy
-Starbucks,100.00,Amex Gold,2025-05-04 11:21:39,Utilities
-Uber,3.75,Citibank Card,2025-05-05 12:28:52,Gift
-Netflix,56.40,UOB Card,2025-05-06 13:35:05,Household
-Grab,42.00,DBS Card,2025-05-07 14:42:18,Grocery
-Shell,15.20,Amex Gold,2025-05-08 15:49:31,Coffee
-McDonald's,9.99,Citibank Card,2025-05-09 16:56:44,Ride
-IKEA,1200.00,UOB Card,2025-05-10 17:03:57,Subscription
-Shopee,7.60,DBS Card,2025-05-11 18:10:10,Fuel
-Lazada,18.45,Amex Gold,2025-05-12 19:17:23,Lunch
-Spotify,33.33,Citibank Card,2025-05-13 08:24:36,Dinner
-Google,64.90,UOB Card,2025-05-14 09:31:49,Electronics
-AirAsia,82.10,DBS Card,2025-05-15 10:38:02,Clothes
-Expedia,5.40,Amex Gold,2025-05-16 11:45:15,Travel
-Qantas,240.00,Citibank Card,2025-05-17 12:52:28,Hotel
-Cathay,4.50,UOB Card,2025-05-18 13:59:41,Flight
-Cold Storage,11.80,DBS Card,2025-05-19 14:06:54,Movies
-FairPrice,19.99,Amex Gold,2025-05-20 15:13:07,Books
-Deliveroo,12.30,Citibank Card,2025-05-21 16:20:20,Pharmacy
-Foodpanda,25.99,UOB Card,2025-05-22 17:27:33,Utilities
-KFC,8.50,DBS Card,2025-05-23 18:34:46,Gift
-Burger King,100.00,Amex Gold,2025-05-24 19:41:59,Household
-Subway,3.75,Citibank Card,2025-05-25 08:48:12,Grocery
-Sephora,56.40,UOB Card,2025-05-26 09:55:25,Coffee
-Uniqlo,42.00,DBS Card,2025-05-27 10:02:38,Ride
-Zara,15.20,Amex Gold,2025-05-28 11:09:51,Subscription
-H&M,9.99,Citibank Card,2025-05-29 12:16:04,Fuel
-Decathlon,1200.00,UOB Card,2025-05-30 13:23:17,Lunch
-Apple,7.60,DBS Card,2025-05-31 14:30:30,Dinner
-NTUC,18.45,Amex Gold,2025-06-01 15:37:43,Electronics
-Amazon,33.33,Citibank Card,2025-06-02 16:44:56,Clothes
-Starbucks,64.90,UOB Card,2025-06-03 17:51:09,Travel
-Uber,82.10,DBS Card,2025-06-04 18:58:22,Hotel
-Netflix,5.40,Amex Gold,2025-06-05 19:05:35,Flight
-Grab,240.00,Citibank Card,2025-06-06 08:12:48,Movies
-Shell,4.50,UOB Card,2025-06-07 09:19:01,Books
-McDonald's,11.80,DBS Card,2025-06-08 10:26:14,Pharmacy
-IKEA,19.99,Amex Gold,2025-06-09 11:33:27,Utilities
-Shopee,12.30,Citibank Card,2025-06-10 12:40:40,Gift
-Lazada,25.99,UOB Card,2025-06-11 13:47:53,Household
-Spotify,8.50,DBS Card,2025-06-12 14:54:06,Grocery
-Google,100.00,Amex Gold,2025-06-13 15:01:19,Coffee
-AirAsia,3.75,Citibank Card,2025-06-14 16:08:32,Ride
-Expedia,56.40,UOB Card,2025-06-15 17:15:45,Subscription
-Qantas,42.00,DBS Card,2025-06-16 18:22:58,Fuel
-Cathay,15.20,Amex Gold,2025-06-17 19:29:11,Lunch
-Cold Storage,9.99,Citibank Card,2025-06-18 08:36:24,Dinner
-FairPrice,1200.00,UOB Card,2025-06-19 09:43:37,Electronics
-Deliveroo,7.60,DBS Card,2025-06-20 10:50:50,Clothes
-Foodpanda,18.45,Amex Gold,2025-06-21 11:57:03,Travel
-KFC,33.33,Citibank Card,2025-06-22 12:04:16,Hotel
-Burger King,64.90,UOB Card,2025-06-23 13:11:29,Flight
-Subway,82.10,DBS Card,2025-06-24 14:18:42,Movies
-Sephora,5.40,Amex Gold,2025-06-25 15:25:55,Books
-Uniqlo,240.00,Citibank Card,2025-06-26 16:32:08,Pharmacy
-Zara,4.50,UOB Card,2025-06-27 17:39:21,Utilities
-H&M,11.80,DBS Card,2025-06-28 18:46:34,Gift
-Decathlon,19.99,Amex Gold,2025-06-29 19:53:47,Household
-Apple,12.30,Citibank Card,2025-06-30 08:00:00,Grocery
-NTUC,25.99,UOB Card,2025-07-01 09:07:13,Coffee
-Amazon,8.50,DBS Card,2025-07-02 10:14:26,Ride
-Starbucks,100.00,Amex Gold,2025-07-03 11:21:39,Subscription
-Uber,3.75,Citibank Card,2025-07-04 12:28:52,Fuel
-Netflix,56.40,UOB Card,2025-07-05 13:35:05,Lunch
-Grab,42.00,DBS Card,2025-07-06 14:42:18,Dinner
-Shell,15.20,Amex Gold,2025-07-07 15:49:31,Electronics
-McDonald's,9.99,Citibank Card,2025-07-08 16:56:44,Clothes
-IKEA,1200.00,UOB Card,2025-07-09 17:03:57,Travel
-Shopee,7.60,DBS Card,2025-07-10 18:10:10,Hotel
-Lazada,18.45,Amex Gold,2025-07-11 19:17:23,Flight
-Spotify,33.33,Citibank Card,2025-07-12 08:24:36,Movies
-Google,64.90,UOB Card,2025-07-13 09:31:49,Books
-AirAsia,82.10,DBS Card,2025-07-14 10:38:02,Pharmacy
-Expedia,5.40,Amex Gold,2025-07-15 11:45:15,Utilities
-Qantas,240.00,Citibank Card,2025-07-16 12:52:28,Gift
-Cathay,4.50,UOB Card,2025-07-17 13:59:41,Household
-Cold Storage,11.80,DBS Card,2025-07-18 14:06:54,Grocery
-FairPrice,19.99,Amex Gold,2025-07-19 15:13:07,Coffee
-Deliveroo,12.30,Citibank Card,2025-07-20 16:20:20,Ride
-Foodpanda,25.99,UOB Card,2025-07-21 17:27:33,Subscription
-KFC,8.50,DBS Card,2025-07-22 18:34:46,Fuel
-Burger King,100.00,Amex Gold,2025-07-23 19:41:59,Lunch
-Subway,3.75,Citibank Card,2025-07-24 08:48:12,Dinner
-Sephora,56.40,UOB Card,2025-07-25 09:55:25,Electronics
-Uniqlo,42.00,DBS Card,2025-07-26 10:02:38,Clothes
-Zara,15.20,Amex Gold,2025-07-27 11:09:51,Travel
-H&M,9.99,Citibank Card,2025-07-28 12:16:04,Hotel
-Decathlon,1200.00,UOB Card,2025-07-29 13:23:17,Flight
-Apple,7.60,DBS Card,2025-07-30 14:30:30,Movies
-NTUC,18.45,Amex Gold,2025-07-31 15:37:43,Books
-Amazon,33.33,Citibank Card,2025-08-01 16:44:56,Pharmacy
-Starbucks,64.90,UOB Card,2025-08-02 17:51:09,Utilities
-Uber,82.10,DBS Card,2025-08-03 18:58:22,Gift
-Netflix,5.40,Amex Gold,2025-08-04 19:05:35,Household
-Grab,240.00,Citibank Card,2025-08-05 08:12:48,Grocery
-Shell,4.50,UOB Card,2025-08-06 09:19:01,Coffee
-McDonald's,11.80,DBS Card,2025-08-07 10:26:14,Ride
-IKEA,19.99,Amex Gold,2025-08-08 11:33:27,Subscription
-Shopee,12.30,Citibank Card,2025-08-09 12:40:40,Fuel
-Lazada,25.99,UOB Card,2025-08-10 13:47:53,Lunch
-Spotify,8.50,DBS Card,2025-08-11 14:54:06,Dinner
-Google,100.00,Amex Gold,2025-08-12 15:01:19,Electronics
-AirAsia,3.75,Citibank Card,2025-08-13 16:08:32,Clothes
-Expedia,56.40,UOB Card,2025-08-14 17:15:45,Travel
-Qantas,42.00,DBS Card,2025-08-15 18:22:58,Hotel
-Cathay,15.20,Amex Gold,2025-08-16 19:29:11,Flight
-Cold Storage,9.99,Citibank Card,2025-08-17 08:36:24,Movies
-FairPrice,1200.00,UOB Card,2025-08-18 09:43:37,Books
-Deliveroo,7.60,DBS Card,2025-08-19 10:50:50,Pharmacy
-Foodpanda,18.45,Amex Gold,2025-08-20 11:57:03,Utilities
-KFC,33.33,Citibank Card,2025-08-21 12:04:16,Gift
-Burger King,64.90,UOB Card,2025-08-22 13:11:29,Household
-Subway,82.10,DBS Card,2025-08-23 14:18:42,Grocery
-Sephora,5.40,Amex Gold,2025-08-24 15:25:55,Coffee
-Uniqlo,240.00,Citibank Card,2025-08-25 16:32:08,Ride
-Zara,4.50,UOB Card,2025-08-26 17:39:21,Subscription
-H&M,11.80,DBS Card,2025-08-27 18:46:34,Fuel
-Decathlon,19.99,Amex Gold,2025-08-28 19:53:47,Lunch
-Apple,12.30,Citibank Card,2025-08-29 08:00:00,Dinner
-NTUC,25.99,UOB Card,2025-08-30 09:07:13,Electronics
-Amazon,8.50,DBS Card,2025-08-31 10:14:26,Clothes
-Starbucks,100.00,Amex Gold,2025-09-01 11:21:39,Travel
-Uber,3.75,Citibank Card,2025-09-02 12:28:52,Hotel
-Netflix,56.40,UOB Card,2025-09-03 13:35:05,Flight
-Grab,42.00,DBS Card,2025-09-04 14:42:18,Movies
-Shell,15.20,Amex Gold,2025-09-05 15:49:31,Books
-McDonald's,9.99,Citibank Card,2025-09-06 16:56:44,Pharmacy
-IKEA,1200.00,UOB Card,2025-09-07 17:03:57,Utilities
-Shopee,7.60,DBS Card,2025-09-08 18:10:10,Gift
-Lazada,18.45,Amex Gold,2025-09-09 19:17:23,Household
-Spotify,33.33,Citibank Card,2025-09-10 08:24:36,Grocery
-Google,64.90,UOB Card,2025-09-11 09:31:49,Coffee
-AirAsia,82.10,DBS Card,2025-09-12 10:38:02,Ride
-Expedia,5.40,Amex Gold,2025-09-13 11:45:15,Subscription
-Qantas,240.00,Citibank Card,2025-09-14 12:52:28,Fuel
-Cathay,4.50,UOB Card,2025-09-15 13:59:41,Lunch
-Cold Storage,11.80,DBS Card,2025-09-16 14:06:54,Dinner
-FairPrice,19.99,Amex Gold,2025-09-17 15:13:07,Electronics
-Deliveroo,12.30,Citibank Card,2025-09-18 16:20:20,Clothes
-Foodpanda,25.99,UOB Card,2025-09-19 17:27:33,Travel
-KFC,8.50,DBS Card,2025-09-20 18:34:46,Hotel
-Burger King,100.00,Amex Gold,2025-09-21 19:41:59,Flight
-Subway,3.75,Citibank Card,2025-09-22 08:48:12,Movies
-Sephora,56.40,UOB Card,2025-09-23 09:55:25,Books
-Uniqlo,42.00,DBS Card,2025-09-24 10:02:38,Pharmacy
-Zara,15.20,Amex Gold,2025-09-25 11:09:51,Utilities
-H&M,9.99,Citibank Card,2025-09-26 12:16:04,Gift
-Decathlon,1200.00,UOB Card,2025-09-27 13:23:17,Household
-Apple,7.60,DBS Card,2025-09-28 14:30:30,Grocery
-NTUC,18.45,Amex Gold,2025-09-29 15:37:43,Coffee
-Amazon,33.33,Citibank Card,2025-09-30 16:44:56,Ride
-Starbucks,64.90,UOB Card,2025-10-01 17:51:09,Subscription
-Uber,82.10,DBS Card,2025-10-02 18:58:22,Fuel
-Netflix,5.40,Amex Gold,2025-10-03 19:05:35,Lunch
-Grab,240.00,Citibank Card,2025-10-04 08:12:48,Dinner
-Shell,4.50,UOB Card,2025-10-05 09:19:01,Electronics
-McDonald's,11.80,DBS Card,2025-10-06 10:26:14,Clothes
-IKEA,19.99,Amex Gold,2025-10-07 11:33:27,Travel
-Shopee,12.30,Citibank Card,2025-10-08 12:40:40,Hotel
-Lazada,25.99,UOB Card,2025-10-09 13:47:53,Flight
-Spotify,8.50,DBS Card,2025-10-10 14:54:06,Movies
-Google,100.00,Amex Gold,2025-10-11 15:01:19,Books
-AirAsia,3.75,Citibank Card,2025-10-12 16:08:32,Pharmacy
-Expedia,56.40,UOB Card,2025-10-13 17:15:45,Utilities
-Qantas,42.00,DBS Card,2025-10-14 18:22:58,Gift
-Cathay,15.20,Amex Gold,2025-10-15 19:29:11,Household
-Cold Storage,9.99,Citibank Card,2025-10-16 08:36:24,Grocery
-FairPrice,1200.00,UOB Card,2025-10-17 09:43:37,Coffee
-Deliveroo,7.60,DBS Card,2025-10-18 10:50:50,Ride
-Foodpanda,18.45,Amex Gold,2025-10-19 11:57:03,Subscription
-KFC,33.33,Citibank Card,2025-10-20 12:04:16,Fuel
-Burger King,64.90,UOB Card,2025-10-21 13:11:29,Lunch
-Subway,82.10,DBS Card,2025-10-22 14:18:42,Dinner
-Sephora,5.40,Amex Gold,2025-10-23 15:25:55,Electronics
-Uniqlo,240.00,Citibank Card,2025-10-24 16:32:08,Clothes
-Zara,4.50,UOB Card,2025-10-25 17:39:21,Travel
-H&M,11.80,DBS Card,2025-10-26 18:46:34,Hotel
-Decathlon,19.99,Amex Gold,2025-10-27 19:53:47,Flight
+Merchant,Amount,Category,Card,Date,Note
+Google,283.67,Other,Amex Gold,2025-03-26 12:32:01,Household items
+Starbucks,106.24,Food & Drinks,Amex Gold,2024-12-01 08:25:40,
+Shopee,126.21,Shopping,Chase Sapphire Preferred,2025-03-05 22:56:04,Household items
+Pharmacy,225.59,Health,UOB One,2024-04-06 09:39:06,
+Shell,103.15,Travel,UOB One,2025-04-14 11:22:47,Dinner with friends
+Concerts,33.43,Entertainment,DBS Live Fresh,2025-02-26 07:03:42,Gift
+Zara,1223.33,Shopping,UOB One,2024-08-12 13:42:02,Gift
+IKEA,766.81,Shopping,Chase Sapphire Preferred,2025-10-20 12:02:22,Dinner with friends
+Netflix,2.08,Services,DBS Live Fresh,2024-12-12 07:55:16,Household items
+Google,104.81,Other,DBS Live Fresh,2024-12-30 17:32:15,Monthly subscription
+Apple TV+,107.67,Entertainment,DBS Live Fresh,2024-10-06 20:03:10,
+Expedia,814.15,Travel,Chase Sapphire Preferred,2025-08-01 07:50:29,Household items
+Apple,37.75,Other,Chase Sapphire Preferred,2024-12-03 16:17:51,
+Clinic,391.18,Health,Amex Gold,2025-07-31 16:39:30,Hotel deposit
+Apple TV+,57.21,Entertainment,DBS Live Fresh,2025-02-23 09:59:02,Hotel deposit
+Local Cafe,28.98,Food & Drinks,Chase Sapphire Preferred,2025-10-19 14:21:16,Airport ride
+Pharmacy,393.56,Health,Chase Sapphire Preferred,2025-09-05 19:38:28,
+Phone Carrier,46.76,Services,Chase Sapphire Preferred,2024-02-06 21:04:32,Airport ride
+McDonald's,108.59,Food & Drinks,UOB One,2024-04-08 16:18:42,Groceries
+Expedia,275.04,Travel,Amex Gold,2024-02-16 15:29:47,Hotel deposit
+Shopee,584.13,Shopping,UOB One,2025-09-21 20:04:25,
+Cinema,13.74,Entertainment,UOB One,2024-10-15 11:33:55,
+Decathlon,1079.99,Shopping,Chase Sapphire Preferred,2025-10-02 11:12:59,
+Phone Carrier,54.03,Services,Amex Gold,2024-03-15 17:16:12,
+Clinic,375.28,Health,Chase Sapphire Preferred,2024-12-03 08:46:26,
+Apple TV+,43.28,Entertainment,Amex Gold,2024-09-06 13:08:28,Hotel deposit
+AirAsia,351.29,Travel,Chase Sapphire Preferred,2024-10-14 12:53:04,Coffee
+Dental Care,185.18,Health,UOB One,2024-09-13 17:52:24,Hotel deposit
+Qantas,192.02,Travel,UOB One,2024-12-31 09:09:59,Gift
+Local Shop,113.02,Other,Chase Sapphire Preferred,2025-06-15 16:13:30,Pharmacy run
+Lazada,1271.74,Shopping,DBS Live Fresh,2024-08-14 08:45:33,Groceries
+Apple,157.37,Other,Amex Gold,2024-09-20 16:26:01,
+Dental Care,69.76,Health,Chase Sapphire Preferred,2024-10-18 12:05:57,Delivery fee
+Expedia,845.30,Travel,Amex Gold,2025-03-05 16:35:45,Fuel
+Misc Store,169.44,Other,UOB One,2024-03-13 19:36:41,
+Arcade,114.56,Entertainment,Amex Gold,2025-03-04 10:59:43,
+Shopee,1438.95,Shopping,Chase Sapphire Preferred,2024-02-15 21:14:16,
+Local Cafe,5.64,Food & Drinks,Citi Rewards,2025-09-06 18:29:08,Sale promo
+Burger King,27.98,Food & Drinks,UOB One,2025-01-10 14:22:18,Hotel deposit
+Uniqlo,108.93,Shopping,UOB One,2025-04-22 07:13:47,Pharmacy run
+Shell,1094.92,Travel,Amex Gold,2025-10-13 15:31:01,Pharmacy run
+AirAsia,1041.93,Travel,UOB One,2024-03-11 12:23:59,Pharmacy run
+Google,231.37,Other,Citi Rewards,2024-06-22 22:43:29,Gift
+Local Cafe,67.60,Food & Drinks,DBS Live Fresh,2024-11-24 08:05:44,Sale promo
+Zara,138.54,Shopping,Amex Gold,2024-10-02 11:00:11,Hotel deposit
+Grab,1259.89,Travel,Citi Rewards,2024-05-17 11:44:01,Fuel
+Arcade,56.78,Entertainment,DBS Live Fresh,2025-03-01 07:08:22,
+IKEA,24.63,Shopping,Chase Sapphire Preferred,2025-02-23 14:25:47,Sale promo
+Local Shop,222.68,Other,Citi Rewards,2024-02-16 19:28:18,Airport ride
+Uber,518.58,Travel,UOB One,2024-04-13 14:04:23,
+Amazon,589.42,Shopping,DBS Live Fresh,2024-10-17 07:43:03,
+Apple,85.22,Other,UOB One,2025-07-30 17:43:42,Monthly subscription
+Local Shop,121.41,Other,Citi Rewards,2025-10-17 09:32:06,Airport ride
+Utilities Co,12.89,Services,Chase Sapphire Preferred,2025-09-08 19:48:50,
+Cinema,36.96,Entertainment,Citi Rewards,2025-01-24 17:10:38,Hotel deposit
+Expedia,227.59,Travel,DBS Live Fresh,2025-10-01 19:32:10,Household items
+Uber,1470.47,Travel,Citi Rewards,2025-07-05 11:31:18,Sale promo
+Concerts,49.03,Entertainment,Chase Sapphire Preferred,2024-06-22 15:46:48,Airport ride
+Phone Carrier,32.20,Services,Amex Gold,2024-09-18 08:15:19,
+Local Shop,57.71,Other,UOB One,2024-09-16 11:11:35,
+Spotify,45.58,Services,Citi Rewards,2024-02-29 22:23:32,Fuel
+Clinic,155.15,Health,DBS Live Fresh,2025-02-23 19:58:24,Membership renewal
+Misc Store,70.79,Other,UOB One,2025-04-12 15:04:32,
+Amazon,460.02,Shopping,Citi Rewards,2024-12-04 14:56:15,Gift
+Misc Store,87.75,Other,UOB One,2025-09-01 14:22:49,Gift
+Grab,1309.39,Travel,Amex Gold,2024-09-13 08:50:10,
+Pharmacy,395.02,Health,Chase Sapphire Preferred,2024-03-12 09:05:30,Sale promo
+Arcade,89.38,Entertainment,Chase Sapphire Preferred,2025-01-06 15:55:33,
+Clinic,254.58,Health,Citi Rewards,2025-02-21 22:00:22,
+Clinic,71.90,Health,Chase Sapphire Preferred,2024-12-02 10:42:13,
+Cinema,10.13,Entertainment,Citi Rewards,2024-02-18 08:16:04,
+Apple,151.46,Other,DBS Live Fresh,2025-09-16 15:53:09,Household items
+Local Shop,37.20,Other,DBS Live Fresh,2025-01-04 18:35:52,
+Utilities Co,40.41,Services,Amex Gold,2024-03-02 09:34:09,Lunch
+Google,197.31,Other,DBS Live Fresh,2025-04-15 14:53:25,Top-up
+Grab,851.20,Travel,UOB One,2025-02-23 09:31:41,
+Amazon,1271.57,Shopping,DBS Live Fresh,2024-02-17 14:31:44,
+Subway,75.97,Food & Drinks,Chase Sapphire Preferred,2024-12-02 15:12:23,Monthly subscription
+Burger King,85.52,Food & Drinks,Citi Rewards,2025-10-20 07:04:22,Top-up
+Qantas,929.45,Travel,Chase Sapphire Preferred,2024-11-20 21:11:41,Groceries
+Lazada,730.79,Shopping,Chase Sapphire Preferred,2025-10-11 14:42:48,Hotel deposit
+Utilities Co,53.78,Services,Amex Gold,2024-02-28 21:26:01,Lunch
+AirAsia,1421.36,Travel,DBS Live Fresh,2024-06-23 14:47:35,Monthly subscription
+Grab,1435.99,Travel,Amex Gold,2024-12-01 18:11:40,Monthly subscription
+Burger King,53.65,Food & Drinks,Chase Sapphire Preferred,2024-11-20 16:44:57,Delivery fee
+Utilities Co,51.60,Services,Citi Rewards,2025-02-23 18:33:19,
+Arcade,83.22,Entertainment,UOB One,2024-09-20 13:22:32,Sale promo
+Clinic,40.41,Health,Chase Sapphire Preferred,2024-02-16 08:13:35,Hotel deposit
+Pharmacy,139.60,Health,Chase Sapphire Preferred,2024-11-29 07:27:25,Delivery fee
+Apple TV+,43.94,Entertainment,UOB One,2024-09-20 12:01:48,Lunch
+Zara,275.16,Shopping,DBS Live Fresh,2025-08-08 07:26:58,
+Burger King,110.90,Food & Drinks,DBS Live Fresh,2024-02-14 12:33:40,Sale promo
+Clinic,102.19,Health,UOB One,2024-02-18 19:59:10,
+Shopee,109.75,Shopping,Amex Gold,2024-10-03 07:38:42,Delivery fee
+Uber,925.07,Travel,UOB One,2024-09-19 10:30:19,Fuel
+Clinic,229.74,Health,Chase Sapphire Preferred,2024-12-31 09:31:56,
+Dental Care,129.31,Health,Amex Gold,2024-05-21 08:45:17,
+Netflix,55.38,Services,Chase Sapphire Preferred,2024-09-17 18:22:07,Fuel
+Google,67.78,Other,DBS Live Fresh,2025-02-08 09:48:52,Gift
+Amazon,346.75,Shopping,Citi Rewards,2024-09-16 15:38:50,Fuel
+Uber,1230.92,Travel,DBS Live Fresh,2024-03-13 18:53:25,Lunch
+Grab,548.66,Travel,Citi Rewards,2025-10-01 10:15:34,Sale promo
+Pharmacy,44.70,Health,Amex Gold,2024-10-10 21:16:54,Top-up
+Local Shop,224.23,Other,DBS Live Fresh,2025-04-16 11:35:28,
+IKEA,1332.82,Shopping,Chase Sapphire Preferred,2024-02-27 07:46:38,Coffee
+iCloud,16.90,Services,DBS Live Fresh,2024-11-19 19:17:51,Dinner with friends
+Subway,86.09,Food & Drinks,DBS Live Fresh,2025-03-24 12:10:44,
+KFC,24.38,Food & Drinks,Citi Rewards,2025-10-21 21:57:08,
+Arcade,116.45,Entertainment,UOB One,2024-04-08 12:15:49,
+Utilities Co,53.22,Services,Amex Gold,2024-02-27 22:52:51,Monthly subscription
+Arcade,112.20,Entertainment,Citi Rewards,2024-08-26 14:42:26,Top-up
+Concerts,36.02,Entertainment,Citi Rewards,2025-10-05 19:45:36,Household items
+Spotify,52.33,Services,UOB One,2025-03-24 22:12:48,Sale promo
+Expedia,539.57,Travel,Citi Rewards,2024-12-01 11:35:43,
+Uber,1160.64,Travel,DBS Live Fresh,2025-03-04 21:08:46,
+Clinic,287.42,Health,DBS Live Fresh,2025-04-17 12:40:21,Dinner with friends
+Apple,41.29,Other,UOB One,2024-05-23 08:06:53,Top-up
+Utilities Co,41.40,Services,Chase Sapphire Preferred,2024-08-12 22:32:52,
+Pharmacy,83.98,Health,Chase Sapphire Preferred,2025-01-06 07:42:57,
+Apple,61.84,Other,Citi Rewards,2024-10-05 20:18:23,Household items
+Dental Care,110.47,Health,Chase Sapphire Preferred,2025-09-24 18:38:02,Fuel
+KFC,48.82,Food & Drinks,Citi Rewards,2024-08-12 10:24:04,
+Pharmacy,113.24,Health,Chase Sapphire Preferred,2024-10-06 18:33:35,Monthly subscription
+Arcade,12.86,Entertainment,UOB One,2025-10-20 16:33:19,Household items
+Clinic,339.97,Health,Chase Sapphire Preferred,2025-01-01 11:39:51,
+Zara,378.42,Shopping,Citi Rewards,2024-09-08 08:46:49,Gift
+Concerts,26.06,Entertainment,Chase Sapphire Preferred,2025-08-08 10:02:09,Coffee
+Uber,975.68,Travel,Chase Sapphire Preferred,2025-04-16 09:50:47,
+Dental Care,387.68,Health,Citi Rewards,2024-06-02 15:26:45,
+Apple,12.66,Other,Amex Gold,2024-01-29 09:26:06,Dinner with friends
+Local Cafe,10.12,Food & Drinks,UOB One,2024-10-17 07:54:40,Dinner with friends
+Apple,87.28,Other,UOB One,2024-10-15 21:13:03,Top-up
+Local Cafe,77.46,Food & Drinks,DBS Live Fresh,2025-03-01 20:10:48,
+AirAsia,175.54,Travel,DBS Live Fresh,2024-09-14 22:06:15,
+Grab,30.99,Travel,UOB One,2025-07-06 21:30:22,Delivery fee
+Local Shop,253.35,Other,DBS Live Fresh,2024-09-15 11:20:25,
+Apple,137.37,Other,Amex Gold,2024-04-07 21:57:49,
+Decathlon,691.43,Shopping,DBS Live Fresh,2024-04-10 07:34:10,
+Concerts,53.40,Entertainment,Citi Rewards,2024-05-14 19:11:09,Top-up
+Phone Carrier,45.52,Services,UOB One,2025-07-30 13:12:59,Pharmacy run
+Spotify,9.76,Services,UOB One,2025-07-07 08:23:16,
+Shopee,182.40,Shopping,UOB One,2025-03-05 13:43:33,
+Local Shop,130.76,Other,UOB One,2025-09-08 13:07:49,Fuel
+Concerts,82.28,Entertainment,Citi Rewards,2025-04-13 09:56:39,Lunch
+Grab,1313.13,Travel,UOB One,2025-05-20 13:24:48,
+Apple TV+,14.70,Entertainment,UOB One,2025-06-15 10:22:04,Top-up
+Google,275.98,Other,DBS Live Fresh,2025-10-18 14:44:30,Membership renewal
+Local Cafe,30.78,Food & Drinks,Chase Sapphire Preferred,2024-02-29 15:10:37,Lunch
+Qantas,380.51,Travel,UOB One,2024-12-30 14:10:23,
+Shell,1383.18,Travel,UOB One,2024-02-14 10:26:45,Monthly subscription
+Lazada,155.86,Shopping,Chase Sapphire Preferred,2024-10-14 20:55:31,Airport ride
+Local Shop,125.18,Other,Amex Gold,2024-03-11 18:07:36,
+Local Cafe,68.90,Food & Drinks,UOB One,2024-04-25 16:40:07,Groceries
+Concerts,112.84,Entertainment,Amex Gold,2024-09-08 17:40:38,
+Netflix,45.76,Services,Chase Sapphire Preferred,2025-03-02 08:49:23,Sale promo
+Apple TV+,42.19,Entertainment,DBS Live Fresh,2024-11-30 09:41:02,Monthly subscription
+Netflix,25.83,Services,Chase Sapphire Preferred,2025-01-06 17:28:06,
+Uber,261.21,Travel,Amex Gold,2025-10-19 08:17:26,
+Utilities Co,29.59,Services,UOB One,2024-09-10 07:15:42,Dinner with friends
+Local Shop,104.82,Other,Chase Sapphire Preferred,2024-10-20 16:41:02,Lunch
+Local Cafe,47.85,Food & Drinks,Amex Gold,2025-09-09 20:40:06,Hotel deposit
+AirAsia,1131.03,Travel,Chase Sapphire Preferred,2024-11-25 17:54:12,Hotel deposit
+Qantas,459.87,Travel,Amex Gold,2025-10-15 21:02:12,Gift
+Clinic,205.23,Health,DBS Live Fresh,2025-04-16 19:11:58,
+Uniqlo,727.40,Shopping,Chase Sapphire Preferred,2025-10-19 21:38:45,
+Concerts,40.73,Entertainment,UOB One,2025-07-07 12:29:52,Pharmacy run
+Concerts,44.51,Entertainment,Amex Gold,2024-10-26 13:39:12,Membership renewal
+Misc Store,217.91,Other,DBS Live Fresh,2024-12-11 11:03:39,
+Uber,1291.58,Travel,DBS Live Fresh,2025-04-15 09:08:13,
+Amazon,1415.39,Shopping,Chase Sapphire Preferred,2024-04-09 07:20:11,Sale promo
+Google,25.92,Other,UOB One,2024-10-26 12:35:27,Dinner with friends
+Clinic,203.59,Health,UOB One,2025-09-05 19:29:57,Monthly subscription
+Phone Carrier,59.96,Services,Citi Rewards,2025-04-22 17:40:35,
+KFC,45.90,Food & Drinks,Citi Rewards,2025-03-04 09:20:07,
+Subway,57.98,Food & Drinks,Amex Gold,2025-08-09 15:39:54,Groceries
+McDonald's,58.11,Food & Drinks,Amex Gold,2024-02-02 08:41:19,
+Local Shop,52.06,Other,Chase Sapphire Preferred,2025-09-01 18:02:43,Sale promo
+Google,111.31,Other,Amex Gold,2025-10-19 08:35:13,
+Local Cafe,103.72,Food & Drinks,UOB One,2025-07-07 18:43:53,
+iCloud,30.57,Services,Chase Sapphire Preferred,2024-02-19 15:25:52,Groceries
+Lazada,965.10,Shopping,Citi Rewards,2024-10-13 13:41:14,
+Pharmacy,38.40,Health,Citi Rewards,2024-11-29 16:15:01,Lunch
+Apple TV+,96.14,Entertainment,DBS Live Fresh,2025-04-17 14:39:00,
+KFC,77.89,Food & Drinks,DBS Live Fresh,2024-10-10 11:56:30,
+AirAsia,39.11,Travel,Citi Rewards,2025-08-09 07:41:28,
+Local Cafe,45.79,Food & Drinks,UOB One,2024-12-01 12:07:41,
+Decathlon,1490.34,Shopping,Citi Rewards,2025-05-18 08:04:08,
+Amazon,581.10,Shopping,Amex Gold,2025-03-02 12:14:54,Airport ride
+Clinic,267.05,Health,Citi Rewards,2024-02-02 22:18:57,Gift
+Apple,257.36,Other,Amex Gold,2024-12-02 10:03:34,
+AirAsia,531.14,Travel,Chase Sapphire Preferred,2025-10-15 07:14:27,Lunch
+Concerts,99.57,Entertainment,Chase Sapphire Preferred,2024-04-10 18:33:56,Dinner with friends
+Concerts,43.92,Entertainment,Chase Sapphire Preferred,2024-02-13 13:55:00,
+Apple TV+,54.11,Entertainment,Chase Sapphire Preferred,2025-03-02 22:24:14,
+Apple TV+,101.17,Entertainment,DBS Live Fresh,2024-02-18 22:01:02,
+iCloud,10.93,Services,Chase Sapphire Preferred,2025-07-30 11:15:55,Coffee
+Spotify,22.82,Services,DBS Live Fresh,2024-09-05 21:09:25,Sale promo
+Burger King,85.57,Food & Drinks,Amex Gold,2024-02-14 21:16:26,Household items
+Misc Store,190.56,Other,Amex Gold,2024-11-28 19:40:30,
+Google,90.01,Other,Citi Rewards,2024-09-07 15:43:46,Fuel
+Apple,40.74,Other,Amex Gold,2024-10-06 18:48:21,
+Uniqlo,1271.44,Shopping,Citi Rewards,2025-05-18 21:26:33,
+AirAsia,134.39,Travel,UOB One,2024-06-22 20:30:34,
+Arcade,103.94,Entertainment,Chase Sapphire Preferred,2024-05-30 22:06:56,Sale promo
+Arcade,98.98,Entertainment,DBS Live Fresh,2024-09-16 12:00:22,Fuel
+Clinic,216.27,Health,Citi Rewards,2025-08-08 07:27:45,
+Starbucks,34.42,Food & Drinks,Citi Rewards,2024-11-19 17:25:35,
+KFC,106.06,Food & Drinks,Chase Sapphire Preferred,2025-02-24 22:15:30,
+KFC,35.37,Food & Drinks,Citi Rewards,2024-02-13 07:02:57,Membership renewal
+Google,138.99,Other,UOB One,2024-01-25 08:56:39,Lunch
+iCloud,43.23,Services,Amex Gold,2025-07-03 20:30:25,
+Pharmacy,270.45,Health,Chase Sapphire Preferred,2024-02-28 22:40:59,Fuel
+AirAsia,944.09,Travel,Chase Sapphire Preferred,2024-04-26 20:19:36,
+Decathlon,643.14,Shopping,Amex Gold,2024-04-09 21:40:03,Membership renewal
+Local Cafe,24.00,Food & Drinks,Amex Gold,2024-02-24 07:17:16,Delivery fee
+Expedia,338.04,Travel,UOB One,2024-12-02 11:40:57,Top-up
+Apple,170.91,Other,Chase Sapphire Preferred,2025-10-13 09:49:14,Groceries
+Cinema,66.13,Entertainment,UOB One,2024-05-21 11:41:44,
+Concerts,53.13,Entertainment,Citi Rewards,2025-03-03 17:01:15,Dinner with friends
+Utilities Co,55.56,Services,Amex Gold,2025-07-30 16:47:45,
+AirAsia,1444.60,Travel,Amex Gold,2024-05-31 12:58:03,Dinner with friends
+Misc Store,246.58,Other,UOB One,2025-01-02 17:00:34,Airport ride
+Shell,667.00,Travel,Chase Sapphire Preferred,2025-03-07 13:45:52,
+Local Shop,245.08,Other,Chase Sapphire Preferred,2024-05-20 10:52:18,
+Apple TV+,90.66,Entertainment,Citi Rewards,2024-12-31 09:01:57,
+McDonald's,12.69,Food & Drinks,Amex Gold,2025-01-24 19:21:13,Coffee
+Shopee,406.81,Shopping,Chase Sapphire Preferred,2025-10-21 12:33:37,
+Uniqlo,808.74,Shopping,DBS Live Fresh,2024-03-03 14:27:07,
+Google,9.52,Other,Amex Gold,2025-02-23 09:59:45,Airport ride
+Uber,868.55,Travel,Amex Gold,2025-02-06 09:32:05,Sale promo
+Lazada,1172.00,Shopping,Citi Rewards,2024-10-06 13:54:27,
+Google,208.88,Other,DBS Live Fresh,2024-09-20 18:50:05,Pharmacy run
+Netflix,32.56,Services,Amex Gold,2024-09-13 19:02:06,Sale promo
+Netflix,22.49,Services,Citi Rewards,2025-02-23 21:50:28,
+Google,210.43,Other,Amex Gold,2025-10-02 08:35:24,Lunch
+Cinema,58.71,Entertainment,Citi Rewards,2025-02-07 20:20:42,Pharmacy run
+Spotify,30.71,Services,Amex Gold,2025-10-01 22:31:00,
+Netflix,53.11,Services,UOB One,2024-08-19 07:03:20,Fuel
+Arcade,42.41,Entertainment,Chase Sapphire Preferred,2024-02-16 17:50:39,
+Lazada,902.95,Shopping,Chase Sapphire Preferred,2025-04-17 12:16:08,Dinner with friends
+Local Shop,253.54,Other,DBS Live Fresh,2025-06-12 07:30:53,Sale promo
+Utilities Co,34.18,Services,DBS Live Fresh,2025-10-02 21:26:44,Delivery fee
+AirAsia,1266.10,Travel,Amex Gold,2025-10-19 13:23:24,
+Misc Store,87.22,Other,Citi Rewards,2025-09-23 17:29:00,
+Netflix,11.51,Services,Amex Gold,2025-04-13 21:56:38,Coffee
+Apple,89.02,Other,UOB One,2024-12-08 21:52:45,Hotel deposit
+iCloud,25.82,Services,UOB One,2024-04-08 08:43:39,Groceries
+IKEA,696.84,Shopping,UOB One,2024-08-14 16:27:14,
+Dental Care,211.37,Health,Chase Sapphire Preferred,2025-06-13 17:50:16,
+Uniqlo,991.80,Shopping,DBS Live Fresh,2024-10-02 22:48:24,Monthly subscription
+Apple TV+,44.76,Entertainment,Chase Sapphire Preferred,2024-10-14 17:01:23,Pharmacy run
+Apple,167.35,Other,Amex Gold,2024-04-15 10:27:22,Top-up
+KFC,35.91,Food & Drinks,Chase Sapphire Preferred,2024-02-17 12:41:25,Delivery fee
+Uber,781.97,Travel,Amex Gold,2024-10-16 20:42:39,Monthly subscription
+Local Cafe,59.28,Food & Drinks,Citi Rewards,2024-05-16 09:31:24,
+Starbucks,118.45,Food & Drinks,Amex Gold,2024-04-08 13:51:55,Monthly subscription
+McDonald's,40.70,Food & Drinks,Chase Sapphire Preferred,2025-02-09 19:21:34,
+Zara,257.64,Shopping,Chase Sapphire Preferred,2024-12-30 10:16:05,
+Google,42.13,Other,DBS Live Fresh,2025-08-07 15:58:34,
+Local Shop,276.94,Other,Amex Gold,2024-09-18 18:03:40,Coffee
+Clinic,364.99,Health,Amex Gold,2024-02-24 09:16:09,Household items
+Dental Care,331.42,Health,Citi Rewards,2024-10-24 09:52:54,
+Grab,1251.37,Travel,UOB One,2025-02-25 18:17:39,
+Starbucks,42.08,Food & Drinks,Citi Rewards,2025-02-08 18:37:20,Gift
+Qantas,1078.57,Travel,Amex Gold,2025-01-24 08:47:00,
+Apple TV+,62.70,Entertainment,DBS Live Fresh,2024-06-21 18:45:21,
+Shell,233.50,Travel,Amex Gold,2024-12-02 15:44:04,
+Zara,508.94,Shopping,UOB One,2025-06-14 20:42:38,Hotel deposit
+Netflix,39.81,Services,Amex Gold,2024-03-11 18:26:10,Coffee
+Subway,108.60,Food & Drinks,Citi Rewards,2024-12-09 22:45:19,
+Spotify,1.14,Services,Chase Sapphire Preferred,2025-03-06 10:26:40,Membership renewal
+Shell,270.40,Travel,Amex Gold,2024-10-03 19:00:38,
+Dental Care,197.83,Health,UOB One,2025-03-26 22:01:50,Coffee
+Dental Care,174.20,Health,DBS Live Fresh,2024-04-10 16:01:07,Sale promo
+Apple TV+,8.26,Entertainment,Citi Rewards,2025-04-21 14:12:32,
+Arcade,44.92,Entertainment,Amex Gold,2024-11-19 08:35:27,Fuel
+Dental Care,161.97,Health,DBS Live Fresh,2024-02-17 07:34:56,Dinner with friends
+Lazada,234.50,Shopping,UOB One,2025-03-02 11:54:09,
+KFC,5.30,Food & Drinks,UOB One,2024-02-13 20:08:49,Membership renewal
+AirAsia,1099.20,Travel,Chase Sapphire Preferred,2025-07-30 16:07:41,
+Utilities Co,47.51,Services,DBS Live Fresh,2025-07-06 15:25:40,Membership renewal
+Arcade,117.17,Entertainment,Citi Rewards,2025-01-08 08:18:45,
+Expedia,1257.94,Travel,Amex Gold,2025-05-20 13:48:17,Coffee
+Spotify,15.62,Services,DBS Live Fresh,2024-11-20 22:42:30,Top-up
+Clinic,43.24,Health,UOB One,2025-04-22 19:46:08,Monthly subscription
+Subway,115.00,Food & Drinks,UOB One,2025-06-15 14:01:14,
+Cinema,28.10,Entertainment,UOB One,2025-06-14 08:32:38,Delivery fee
+Starbucks,18.51,Food & Drinks,UOB One,2025-09-15 16:53:23,Dinner with friends
+Utilities Co,22.42,Services,DBS Live Fresh,2025-06-14 14:43:28,Gift
+Clinic,324.64,Health,Citi Rewards,2025-10-17 18:18:37,Membership renewal
+Pharmacy,213.80,Health,Chase Sapphire Preferred,2024-08-24 14:08:35,
+Local Shop,124.30,Other,Citi Rewards,2024-03-12 08:20:11,
+Phone Carrier,3.89,Services,DBS Live Fresh,2024-06-18 18:03:52,
+Clinic,215.10,Health,Amex Gold,2025-01-06 19:42:28,
+Subway,105.27,Food & Drinks,DBS Live Fresh,2024-11-28 12:46:22,Delivery fee
+Burger King,113.90,Food & Drinks,Amex Gold,2025-04-22 15:49:23,Lunch
+Arcade,114.44,Entertainment,UOB One,2025-10-21 18:03:26,Pharmacy run
+Apple,226.74,Other,Amex Gold,2025-04-15 11:45:53,Gift
+Utilities Co,30.51,Services,UOB One,2024-11-30 16:32:42,Dinner with friends
+Misc Store,137.57,Other,Citi Rewards,2025-09-19 17:50:34,
+Misc Store,52.54,Other,Chase Sapphire Preferred,2024-08-17 19:09:03,
+Qantas,518.22,Travel,Amex Gold,2025-03-04 20:39:35,
+Google,137.91,Other,DBS Live Fresh,2025-09-17 11:59:08,Airport ride
+Apple,199.20,Other,Chase Sapphire Preferred,2024-06-21 15:18:25,
+Zara,1169.36,Shopping,DBS Live Fresh,2024-05-15 11:40:14,Groceries
+Expedia,1027.51,Travel,Amex Gold,2024-12-03 22:59:00,
+Dental Care,373.15,Health,Citi Rewards,2025-01-07 10:25:16,Gift
+Apple,261.58,Other,Citi Rewards,2024-04-15 19:01:17,
+Google,255.60,Other,UOB One,2024-09-19 21:08:58,
+Utilities Co,50.17,Services,Chase Sapphire Preferred,2025-04-13 14:14:40,
+Uniqlo,1423.27,Shopping,Chase Sapphire Preferred,2024-10-17 07:05:25,
+Concerts,47.99,Entertainment,Chase Sapphire Preferred,2025-09-23 20:15:11,
+Pharmacy,285.84,Health,UOB One,2024-05-17 09:47:03,
+iCloud,47.96,Services,Amex Gold,2024-02-28 08:11:49,Sale promo
+Lazada,1047.82,Shopping,UOB One,2025-10-13 14:05:09,Fuel
+Burger King,81.17,Food & Drinks,Chase Sapphire Preferred,2024-10-06 21:38:37,Airport ride
+Subway,107.20,Food & Drinks,Chase Sapphire Preferred,2024-11-29 11:43:54,Fuel
+Apple TV+,44.74,Entertainment,Citi Rewards,2025-01-22 21:46:08,Dinner with friends
+Starbucks,4.80,Food & Drinks,DBS Live Fresh,2024-10-17 08:11:57,Groceries
+Lazada,222.76,Shopping,UOB One,2025-09-21 13:06:15,
+AirAsia,243.32,Travel,Citi Rewards,2025-10-21 10:54:31,Sale promo
+McDonald's,32.41,Food & Drinks,DBS Live Fresh,2024-09-06 21:07:30,Monthly subscription
+Starbucks,93.30,Food & Drinks,UOB One,2024-12-01 16:32:21,
+Uber,1130.22,Travel,Citi Rewards,2024-04-09 14:39:25,Hotel deposit
+Local Shop,271.41,Other,DBS Live Fresh,2025-03-01 15:59:39,Household items
+Qantas,1376.14,Travel,Chase Sapphire Preferred,2025-07-30 13:04:50,Airport ride
+Qantas,262.61,Travel,DBS Live Fresh,2024-08-16 18:49:16,
+Apple TV+,79.13,Entertainment,UOB One,2024-02-13 21:42:19,Hotel deposit
+Starbucks,114.60,Food & Drinks,DBS Live Fresh,2025-03-25 16:25:01,Airport ride
+Google,194.21,Other,Citi Rewards,2025-09-15 13:18:12,
+Pharmacy,138.13,Health,DBS Live Fresh,2024-11-20 10:41:21,Airport ride
+KFC,70.36,Food & Drinks,DBS Live Fresh,2024-11-24 19:39:16,
+Local Shop,123.11,Other,Chase Sapphire Preferred,2024-12-01 17:33:51,
+Local Cafe,27.39,Food & Drinks,Amex Gold,2025-10-11 13:24:20,Delivery fee
+Google,74.79,Other,Chase Sapphire Preferred,2024-06-20 15:21:03,Top-up
+Lazada,1144.67,Shopping,Chase Sapphire Preferred,2024-04-07 13:22:40,
+Grab,1242.34,Travel,Citi Rewards,2024-10-10 11:26:25,
+Utilities Co,57.02,Services,Amex Gold,2024-05-14 10:25:32,Lunch
+Netflix,57.98,Services,Chase Sapphire Preferred,2024-11-20 17:44:57,
+Shell,1115.16,Travel,Citi Rewards,2024-08-19 20:36:17,Top-up
+Local Cafe,83.67,Food & Drinks,UOB One,2025-10-03 17:08:54,
+Subway,58.78,Food & Drinks,Chase Sapphire Preferred,2025-03-04 10:00:32,
+Local Shop,259.37,Other,Citi Rewards,2025-05-10 16:21:18,Membership renewal
+Uniqlo,387.30,Shopping,Chase Sapphire Preferred,2024-05-20 21:42:17,Gift
+Local Shop,79.21,Other,UOB One,2025-09-08 17:16:31,Membership renewal
+Phone Carrier,25.80,Services,Chase Sapphire Preferred,2025-10-20 22:05:08,Dinner with friends
+Amazon,1446.59,Shopping,Citi Rewards,2024-12-30 13:10:40,
+Netflix,37.53,Services,UOB One,2024-10-14 10:14:50,Lunch
+Pharmacy,247.86,Health,UOB One,2024-06-18 15:47:21,
+Spotify,13.32,Services,UOB One,2025-02-26 12:16:24,Gift
+Misc Store,253.46,Other,Amex Gold,2024-06-01 07:25:41,Lunch
+Local Shop,276.85,Other,Citi Rewards,2024-04-08 12:18:41,Airport ride
+Apple,226.58,Other,Amex Gold,2024-06-18 14:13:32,
+Subway,94.64,Food & Drinks,UOB One,2025-01-22 18:42:03,Household items
+Qantas,736.76,Travel,DBS Live Fresh,2024-02-23 20:37:40,
+Cinema,69.05,Entertainment,UOB One,2024-04-08 18:27:59,Airport ride
+AirAsia,793.56,Travel,Amex Gold,2024-06-02 11:26:52,
+Expedia,234.84,Travel,DBS Live Fresh,2025-08-01 07:51:14,
+Apple,6.25,Other,Citi Rewards,2024-06-19 22:09:21,Fuel
+Burger King,23.92,Food & Drinks,Citi Rewards,2024-02-14 15:17:23,
+Phone Carrier,13.58,Services,Chase Sapphire Preferred,2024-10-19 13:30:51,
+Apple TV+,100.27,Entertainment,Chase Sapphire Preferred,2025-10-19 19:16:40,Airport ride
+IKEA,871.09,Shopping,Citi Rewards,2024-04-11 22:40:45,
+Shopee,1366.43,Shopping,DBS Live Fresh,2024-10-27 09:05:05,Monthly subscription
+Pharmacy,188.82,Health,UOB One,2025-04-21 20:17:25,
+Apple TV+,58.00,Entertainment,DBS Live Fresh,2025-08-11 09:50:45,Delivery fee
+Apple,202.51,Other,DBS Live Fresh,2024-09-09 13:47:14,Delivery fee
+AirAsia,501.02,Travel,Chase Sapphire Preferred,2024-12-01 10:29:29,Airport ride
+Decathlon,728.58,Shopping,Citi Rewards,2025-06-12 22:47:23,Monthly subscription
+Decathlon,311.99,Shopping,DBS Live Fresh,2024-11-18 10:33:40,Monthly subscription
+Arcade,100.02,Entertainment,DBS Live Fresh,2024-12-01 22:19:44,Gift
+Amazon,419.24,Shopping,Chase Sapphire Preferred,2025-02-24 12:05:30,Household items
+Dental Care,96.93,Health,DBS Live Fresh,2024-11-23 09:04:07,Household items
+Apple,167.37,Other,Chase Sapphire Preferred,2025-10-03 12:38:24,
+Clinic,376.79,Health,UOB One,2025-04-16 22:00:06,Monthly subscription
+Local Cafe,18.47,Food & Drinks,Citi Rewards,2024-10-27 16:27:15,Hotel deposit
+Arcade,42.77,Entertainment,Amex Gold,2025-02-25 11:06:34,
+Apple TV+,50.37,Entertainment,Chase Sapphire Preferred,2025-03-26 19:46:16,Fuel
+Qantas,957.24,Travel,UOB One,2025-02-25 16:26:17,Fuel
+Arcade,111.48,Entertainment,UOB One,2024-04-08 22:17:49,
+Local Shop,282.01,Other,Amex Gold,2024-10-16 09:11:43,
+Dental Care,223.28,Health,Citi Rewards,2025-01-24 12:07:23,Hotel deposit
+Amazon,1014.24,Shopping,Amex Gold,2024-02-05 16:04:43,
+Amazon,473.00,Shopping,UOB One,2025-03-05 15:13:26,Household items
+iCloud,12.21,Services,UOB One,2024-12-01 18:42:28,Household items
+Utilities Co,11.11,Services,Chase Sapphire Preferred,2024-09-06 12:18:48,Monthly subscription
+Apple,31.41,Other,Amex Gold,2024-08-12 21:31:56,
+Utilities Co,39.27,Services,DBS Live Fresh,2024-05-14 10:43:40,
+Expedia,1376.60,Travel,Chase Sapphire Preferred,2024-08-27 09:09:06,Hotel deposit
+Zara,801.00,Shopping,Amex Gold,2024-12-01 20:55:44,
+Utilities Co,50.91,Services,Amex Gold,2024-02-17 15:16:28,Lunch
+Uber,306.73,Travel,Citi Rewards,2024-12-05 17:29:13,
+Zara,354.57,Shopping,Citi Rewards,2024-03-02 16:03:54,Coffee
+Concerts,27.66,Entertainment,DBS Live Fresh,2025-08-10 16:07:55,Sale promo
+Apple TV+,53.56,Entertainment,Chase Sapphire Preferred,2025-04-23 22:34:22,
+Uniqlo,682.44,Shopping,UOB One,2025-01-02 15:51:35,
+Netflix,11.72,Services,Chase Sapphire Preferred,2025-07-02 20:22:34,
+Local Cafe,91.28,Food & Drinks,UOB One,2024-04-10 21:54:01,
+Clinic,315.08,Health,Citi Rewards,2024-09-13 20:34:27,
+Misc Store,60.76,Other,Chase Sapphire Preferred,2025-02-09 09:28:55,
+Apple TV+,23.56,Entertainment,Chase Sapphire Preferred,2024-08-23 21:13:00,
+KFC,97.07,Food & Drinks,Amex Gold,2025-07-04 09:56:57,
+Decathlon,1233.71,Shopping,DBS Live Fresh,2024-10-17 08:36:15,Groceries
+Clinic,192.55,Health,DBS Live Fresh,2024-10-16 20:52:19,
+Phone Carrier,57.05,Services,DBS Live Fresh,2024-04-10 15:41:52,
+KFC,111.87,Food & Drinks,DBS Live Fresh,2024-11-26 22:22:40,Fuel
+Concerts,3.79,Entertainment,DBS Live Fresh,2024-09-17 08:44:07,
+Local Cafe,51.14,Food & Drinks,Amex Gold,2025-02-07 19:41:26,Hotel deposit
+Concerts,90.21,Entertainment,Amex Gold,2024-11-30 19:27:28,Groceries
+McDonald's,97.52,Food & Drinks,Chase Sapphire Preferred,2025-07-08 07:07:17,Household items
+Phone Carrier,8.35,Services,DBS Live Fresh,2024-08-25 13:23:14,Gift
+Local Shop,164.91,Other,Citi Rewards,2024-11-30 09:31:42,Delivery fee
+Local Shop,84.19,Other,UOB One,2025-09-08 21:46:05,Top-up
+Expedia,1057.39,Travel,Chase Sapphire Preferred,2024-10-02 21:03:58,Fuel
+Arcade,114.11,Entertainment,Citi Rewards,2025-06-13 08:47:22,
+Dental Care,62.86,Health,DBS Live Fresh,2024-04-23 20:17:00,
+Apple TV+,73.90,Entertainment,Amex Gold,2024-04-09 14:06:39,Dinner with friends
+Misc Store,112.93,Other,Amex Gold,2024-03-01 07:56:17,Gift
+Phone Carrier,49.61,Services,UOB One,2025-01-24 15:04:39,
+Spotify,49.66,Services,Citi Rewards,2025-01-03 13:20:23,
+Uber,1408.42,Travel,Amex Gold,2024-11-18 12:29:53,
+Clinic,240.30,Health,DBS Live Fresh,2025-01-07 14:44:04,
+Shopee,651.18,Shopping,Chase Sapphire Preferred,2025-10-01 21:34:04,Coffee
+Concerts,71.95,Entertainment,UOB One,2025-10-20 21:39:06,
+Shell,153.45,Travel,Citi Rewards,2025-07-02 19:19:12,
+KFC,103.06,Food & Drinks,Chase Sapphire Preferred,2025-10-05 09:25:59,Membership renewal
+Lazada,720.21,Shopping,DBS Live Fresh,2025-10-20 17:39:11,Lunch
+Local Shop,70.54,Other,Chase Sapphire Preferred,2025-07-29 16:13:06,Coffee
+Lazada,1026.97,Shopping,UOB One,2024-02-17 14:29:00,
+Apple TV+,67.33,Entertainment,DBS Live Fresh,2024-05-20 21:30:03,
+Apple TV+,54.04,Entertainment,Citi Rewards,2025-09-17 21:20:59,Delivery fee
+Shell,1311.37,Travel,DBS Live Fresh,2024-09-09 14:10:18,
+Subway,60.69,Food & Drinks,Chase Sapphire Preferred,2025-09-03 07:41:09,Groceries
+Netflix,17.41,Services,UOB One,2024-06-20 22:57:16,Lunch
+Clinic,368.84,Health,DBS Live Fresh,2024-01-27 11:16:22,
+Apple,230.55,Other,Chase Sapphire Preferred,2024-02-15 19:48:36,
+AirAsia,1251.72,Travel,DBS Live Fresh,2024-06-04 11:46:37,
+Shell,1272.66,Travel,Amex Gold,2024-10-02 12:37:13,
+Uniqlo,159.41,Shopping,Chase Sapphire Preferred,2024-06-06 14:32:52,Hotel deposit
+Amazon,213.50,Shopping,Citi Rewards,2025-05-10 11:47:03,Hotel deposit
+Expedia,262.26,Travel,DBS Live Fresh,2025-10-17 10:49:31,
+Pharmacy,255.95,Health,DBS Live Fresh,2024-11-20 11:26:00,Monthly subscription
+Amazon,1264.86,Shopping,DBS Live Fresh,2025-09-22 10:52:59,Coffee
+Google,165.22,Other,Citi Rewards,2025-10-21 13:27:42,
+KFC,12.87,Food & Drinks,Chase Sapphire Preferred,2025-09-04 07:44:33,
+Concerts,118.88,Entertainment,Citi Rewards,2025-08-07 12:50:49,Pharmacy run
+Dental Care,92.50,Health,Citi Rewards,2025-10-20 11:46:39,Monthly subscription
+McDonald's,102.02,Food & Drinks,Citi Rewards,2024-04-22 09:15:58,Pharmacy run
+Apple TV+,53.49,Entertainment,UOB One,2025-04-19 17:45:09,Gift
+Local Cafe,28.82,Food & Drinks,Citi Rewards,2025-07-07 07:58:51,
+Local Cafe,6.59,Food & Drinks,DBS Live Fresh,2024-12-03 19:45:52,Lunch
+Expedia,235.20,Travel,Amex Gold,2025-09-05 08:51:57,Household items
+Shopee,678.53,Shopping,Amex Gold,2024-04-10 16:42:57,
+Cinema,54.19,Entertainment,Amex Gold,2025-08-01 08:05:27,Monthly subscription
+Amazon,1388.11,Shopping,Chase Sapphire Preferred,2024-10-09 09:51:44,Sale promo
+Starbucks,57.46,Food & Drinks,DBS Live Fresh,2024-10-04 15:40:17,Fuel
+Apple TV+,43.59,Entertainment,Citi Rewards,2024-09-20 11:14:20,
+McDonald's,98.22,Food & Drinks,Amex Gold,2024-08-27 19:47:16,
+Subway,61.82,Food & Drinks,DBS Live Fresh,2024-06-21 10:43:12,Lunch
+McDonald's,80.07,Food & Drinks,DBS Live Fresh,2024-06-20 12:52:19,Monthly subscription
+Lazada,1041.28,Shopping,Chase Sapphire Preferred,2024-11-29 15:12:56,Monthly subscription
+Cinema,40.73,Entertainment,DBS Live Fresh,2025-01-02 21:16:12,
+Expedia,993.98,Travel,Chase Sapphire Preferred,2024-02-17 17:04:38,Dinner with friends
+Spotify,1.82,Services,Chase Sapphire Preferred,2025-03-05 22:12:54,
+Decathlon,990.50,Shopping,DBS Live Fresh,2024-01-28 10:19:19,Gift
+Local Shop,199.89,Other,Chase Sapphire Preferred,2025-03-02 15:18:15,
+Expedia,965.29,Travel,UOB One,2024-10-17 22:32:22,Fuel
+Starbucks,36.90,Food & Drinks,Chase Sapphire Preferred,2025-08-10 21:49:53,Membership renewal
+Shopee,771.70,Shopping,Citi Rewards,2025-10-04 12:03:49,Monthly subscription
+Spotify,44.86,Services,Amex Gold,2024-06-05 15:56:31,Fuel
+Starbucks,39.85,Food & Drinks,DBS Live Fresh,2024-11-30 10:24:57,Lunch
+Netflix,8.30,Services,Amex Gold,2025-08-07 19:12:40,Top-up
+Grab,1014.77,Travel,Chase Sapphire Preferred,2025-10-18 13:44:27,Groceries
+Dental Care,264.11,Health,UOB One,2024-09-15 16:30:14,
+McDonald's,37.47,Food & Drinks,Amex Gold,2025-05-13 07:54:03,Gift
+Pharmacy,199.61,Health,UOB One,2024-09-16 22:58:18,Coffee
+Clinic,133.45,Health,Amex Gold,2024-09-18 09:26:35,
+Uniqlo,791.72,Shopping,UOB One,2025-10-21 21:24:49,
+KFC,36.34,Food & Drinks,DBS Live Fresh,2024-12-03 09:43:38,Membership renewal
+Qantas,494.33,Travel,DBS Live Fresh,2024-10-14 21:24:34,Gift
+Misc Store,138.36,Other,UOB One,2025-07-04 11:32:01,Lunch
+Local Shop,123.41,Other,UOB One,2024-06-21 07:52:08,
+Local Cafe,19.35,Food & Drinks,Chase Sapphire Preferred,2024-02-14 19:00:33,
+Apple TV+,40.46,Entertainment,DBS Live Fresh,2025-01-02 09:02:12,Dinner with friends
+Subway,25.82,Food & Drinks,UOB One,2025-07-29 18:12:58,Gift
+Utilities Co,1.50,Services,UOB One,2025-09-22 15:19:59,
+Local Shop,227.30,Other,Citi Rewards,2025-09-20 18:22:12,Dinner with friends
+Google,84.40,Other,UOB One,2024-08-13 15:48:56,
+Uber,517.34,Travel,Citi Rewards,2025-04-15 14:22:11,Gift
+KFC,48.71,Food & Drinks,Chase Sapphire Preferred,2024-05-14 19:47:06,Pharmacy run
+Burger King,104.32,Food & Drinks,Amex Gold,2025-07-30 07:14:31,Coffee
+Phone Carrier,13.52,Services,Citi Rewards,2025-09-07 13:57:56,
+Subway,59.33,Food & Drinks,UOB One,2024-02-19 07:01:50,Membership renewal
+Utilities Co,16.46,Services,Chase Sapphire Preferred,2024-06-05 21:59:35,Hotel deposit
+AirAsia,1187.40,Travel,DBS Live Fresh,2025-01-05 09:54:55,
+Shopee,1159.33,Shopping,Citi Rewards,2025-01-05 15:10:18,Gift
+Concerts,53.46,Entertainment,DBS Live Fresh,2025-06-12 16:58:51,Pharmacy run
+Spotify,4.18,Services,Amex Gold,2024-06-02 20:33:15,Dinner with friends
+Subway,105.05,Food & Drinks,UOB One,2025-03-25 22:21:52,Pharmacy run
+Cinema,23.28,Entertainment,Chase Sapphire Preferred,2024-12-01 07:07:26,Dinner with friends
+Decathlon,234.94,Shopping,Chase Sapphire Preferred,2024-10-06 19:12:33,Dinner with friends
+Dental Care,286.44,Health,Chase Sapphire Preferred,2025-01-09 08:29:44,
+Shopee,1286.67,Shopping,Amex Gold,2024-11-21 11:31:36,
+KFC,19.04,Food & Drinks,Amex Gold,2024-08-17 11:56:27,
+Qantas,224.97,Travel,UOB One,2025-09-23 20:15:18,Delivery fee
+Uber,237.20,Travel,UOB One,2024-08-27 07:23:59,Sale promo
+Arcade,93.27,Entertainment,UOB One,2024-04-26 07:40:51,
+Subway,22.95,Food & Drinks,DBS Live Fresh,2025-03-05 15:22:21,
+Apple TV+,29.02,Entertainment,Amex Gold,2024-03-02 13:57:00,Gift
+Cinema,63.19,Entertainment,Amex Gold,2024-04-08 15:11:38,Hotel deposit
+Arcade,26.72,Entertainment,Amex Gold,2024-11-24 09:17:24,
+IKEA,1039.30,Shopping,Citi Rewards,2025-01-03 21:20:35,
+Burger King,118.05,Food & Drinks,DBS Live Fresh,2025-02-22 12:46:45,Gift
+Apple TV+,59.62,Entertainment,UOB One,2025-09-30 11:38:14,
+Uniqlo,762.75,Shopping,Amex Gold,2024-12-12 09:22:15,Airport ride
+Utilities Co,58.50,Services,Amex Gold,2025-02-09 07:49:49,Hotel deposit
+Google,19.70,Other,Citi Rewards,2024-02-03 09:18:36,Sale promo
+Uniqlo,630.45,Shopping,UOB One,2024-02-15 08:13:06,Lunch
+Grab,734.23,Travel,UOB One,2024-02-27 15:11:03,
+Local Cafe,75.10,Food & Drinks,Citi Rewards,2024-09-16 22:08:53,Pharmacy run
+Expedia,916.66,Travel,Amex Gold,2024-05-15 10:42:42,
+Starbucks,62.59,Food & Drinks,UOB One,2024-06-04 10:05:28,Sale promo
+Apple TV+,111.25,Entertainment,UOB One,2024-12-03 22:10:22,Top-up
+Qantas,852.23,Travel,Chase Sapphire Preferred,2024-08-13 20:39:28,Sale promo
+Apple TV+,78.78,Entertainment,UOB One,2024-09-16 19:32:02,Delivery fee
+Burger King,18.69,Food & Drinks,UOB One,2024-03-10 10:44:58,Sale promo
+Expedia,78.65,Travel,Chase Sapphire Preferred,2025-02-20 11:25:46,
+Local Shop,168.04,Other,Amex Gold,2025-04-20 17:14:03,Lunch
+Burger King,3.10,Food & Drinks,Amex Gold,2025-03-28 10:27:55,Fuel
+Local Shop,169.21,Other,UOB One,2024-10-07 09:28:54,Top-up
+McDonald's,35.44,Food & Drinks,DBS Live Fresh,2024-11-24 15:37:43,Lunch
+Pharmacy,70.98,Health,Amex Gold,2025-01-06 21:10:24,
+Apple,40.46,Other,Citi Rewards,2024-06-19 12:25:00,
+Pharmacy,183.74,Health,Citi Rewards,2024-02-22 17:56:26,
+Apple,116.72,Other,Chase Sapphire Preferred,2025-01-01 16:48:47,
+Local Shop,280.63,Other,Amex Gold,2024-02-22 16:22:34,Monthly subscription
+Concerts,97.12,Entertainment,Citi Rewards,2024-04-07 13:20:36,
+Cinema,59.80,Entertainment,UOB One,2025-06-30 15:43:06,Delivery fee
+KFC,46.98,Food & Drinks,UOB One,2025-10-18 10:58:48,
+KFC,55.63,Food & Drinks,DBS Live Fresh,2025-10-04 19:29:40,Gift
+IKEA,726.74,Shopping,Amex Gold,2024-09-09 14:05:10,
+Apple TV+,102.37,Entertainment,DBS Live Fresh,2025-03-02 16:05:18,
+Misc Store,113.35,Other,Chase Sapphire Preferred,2025-05-19 13:58:12,Airport ride
+Amazon,1192.68,Shopping,Citi Rewards,2024-10-13 07:09:57,Pharmacy run
+Grab,590.59,Travel,Citi Rewards,2024-08-25 17:21:57,
+Misc Store,231.32,Other,UOB One,2024-02-04 22:36:07,
+Local Cafe,24.65,Food & Drinks,Citi Rewards,2024-02-14 18:23:37,
+Amazon,1340.13,Shopping,Amex Gold,2025-03-27 14:25:12,
+Misc Store,185.33,Other,Amex Gold,2025-05-09 20:40:34,Monthly subscription
+Utilities Co,59.81,Services,DBS Live Fresh,2025-07-30 10:38:28,
+iCloud,19.74,Services,UOB One,2024-11-23 14:52:31,
+Google,86.68,Other,Chase Sapphire Preferred,2025-04-14 09:38:53,
+Clinic,180.37,Health,Chase Sapphire Preferred,2024-12-01 17:55:27,Dinner with friends
+KFC,65.02,Food & Drinks,Citi Rewards,2025-01-06 13:04:24,
+Spotify,46.78,Services,Chase Sapphire Preferred,2025-06-16 10:55:28,Dinner with friends
+Amazon,1256.58,Shopping,UOB One,2024-09-10 09:23:20,Gift
+Utilities Co,17.60,Services,UOB One,2025-02-25 11:25:40,
+Arcade,38.25,Entertainment,UOB One,2024-06-03 07:46:58,Dinner with friends
+iCloud,27.42,Services,Amex Gold,2025-08-07 10:00:15,Coffee
+KFC,69.93,Food & Drinks,UOB One,2024-11-18 09:57:10,Pharmacy run
+Apple,155.06,Other,Chase Sapphire Preferred,2025-01-09 09:07:14,Groceries
+Qantas,180.94,Travel,Citi Rewards,2024-06-21 18:52:58,Fuel
+Concerts,43.23,Entertainment,UOB One,2024-02-15 12:45:13,Pharmacy run
+Starbucks,50.75,Food & Drinks,UOB One,2024-01-25 21:51:43,Top-up
+Arcade,114.88,Entertainment,Citi Rewards,2024-04-25 19:29:25,Hotel deposit
+Subway,11.63,Food & Drinks,UOB One,2025-06-13 09:32:33,Lunch
+Apple TV+,20.66,Entertainment,Citi Rewards,2024-11-20 22:54:36,Household items
+McDonald's,44.51,Food & Drinks,Citi Rewards,2025-02-08 11:33:53,
+Burger King,63.40,Food & Drinks,UOB One,2024-10-24 19:50:32,
+Lazada,864.87,Shopping,UOB One,2024-11-17 09:16:27,
+Uniqlo,1255.57,Shopping,Chase Sapphire Preferred,2025-08-07 15:33:13,Delivery fee
+KFC,70.99,Food & Drinks,Chase Sapphire Preferred,2024-06-19 12:09:34,
+Dental Care,184.77,Health,UOB One,2025-07-01 07:50:50,Top-up
+Subway,70.32,Food & Drinks,UOB One,2024-11-22 13:20:52,Airport ride
+Spotify,24.04,Services,DBS Live Fresh,2025-08-07 22:48:21,
+Grab,573.31,Travel,Citi Rewards,2025-02-05 09:48:33,Coffee
+iCloud,18.44,Services,Amex Gold,2024-02-24 07:32:21,Airport ride
+Subway,22.70,Food & Drinks,UOB One,2024-12-03 22:56:47,
+Local Shop,281.13,Other,UOB One,2025-02-22 09:57:48,
+KFC,34.57,Food & Drinks,Amex Gold,2025-10-13 14:12:20,Groceries
+Apple TV+,73.04,Entertainment,Amex Gold,2025-09-02 16:05:14,
+Utilities Co,55.60,Services,Citi Rewards,2025-05-12 20:11:07,
+Netflix,8.73,Services,Amex Gold,2024-10-13 16:43:17,Pharmacy run
+Google,182.06,Other,DBS Live Fresh,2024-10-20 09:33:54,
+Starbucks,16.17,Food & Drinks,UOB One,2025-04-15 11:26:19,Groceries
+Netflix,35.47,Services,DBS Live Fresh,2024-12-03 18:30:44,Fuel
+Arcade,93.84,Entertainment,Amex Gold,2024-06-21 12:18:42,Membership renewal
+Local Cafe,41.02,Food & Drinks,Chase Sapphire Preferred,2025-03-04 17:49:07,
+Dental Care,269.09,Health,UOB One,2025-05-21 13:50:21,Household items
+Utilities Co,46.79,Services,UOB One,2024-01-26 20:38:18,Dinner with friends
+Lazada,512.58,Shopping,UOB One,2025-03-01 12:20:07,
+Shopee,321.13,Shopping,Chase Sapphire Preferred,2025-10-15 20:52:10,
+Shell,738.61,Travel,Citi Rewards,2024-06-06 16:49:07,
+iCloud,52.10,Services,UOB One,2024-10-18 22:25:13,
+Amazon,516.72,Shopping,Amex Gold,2024-09-19 16:21:24,
+Dental Care,149.26,Health,DBS Live Fresh,2024-10-20 15:43:23,
+IKEA,34.04,Shopping,Citi Rewards,2024-09-20 08:26:08,
+iCloud,21.46,Services,Citi Rewards,2024-09-10 11:50:14,Dinner with friends
+Local Shop,260.80,Other,DBS Live Fresh,2025-06-14 18:48:20,
+Zara,1319.48,Shopping,Amex Gold,2025-02-21 09:32:46,
