@@ -1,6 +1,6 @@
 //
 //  WalletTransactionIntent.swift
-//  TapTrack
+//  CardPulse
 //
 //  Created by Zhang Qichuan on 27/10/25.
 //
@@ -12,7 +12,7 @@ import SwiftData
 @available(iOS 16.0, *)
 struct WalletTransactionIntent: AppIntent {
     static var title: LocalizedStringResource = "Log Wallet Transaction"
-    static var description = IntentDescription("Automatically log a transaction from Apple Wallet")
+    static var description = IntentDescription("Automatically log a transaction from Wallet")
     
     @Parameter(title: "Merchant Name")
     var merchantName: String
@@ -45,7 +45,7 @@ struct WalletTransactionIntent: AppIntent {
 @available(iOS 16.0, *)
 struct LogWalletTransactionIntent: AppIntent {
     static var title: LocalizedStringResource = "Log Wallet Transaction"
-    static var description = IntentDescription("Log a transaction from Apple Wallet tap")
+    static var description = IntentDescription("Log a transaction from Wallet tap")
     
     @Parameter(title: "Merchant", description: "Name of the merchant")
     var merchant: String

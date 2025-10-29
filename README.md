@@ -1,4 +1,4 @@
-# TapTrack - iOS Wallet Transaction Tracker
+# CardPulse - iOS Wallet Transaction Tracker
 
 A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users automatically track Apple Wallet transactions and monitor credit card spending goals.
 
@@ -131,7 +131,7 @@ struct WalletTransactionIntent: AppIntent {
 ## Project Structure
 
 ```
-TapTrack/
+CardPulse/
   Models/                // Card, Transaction, MockData (for previews)
   Views/                 // Home, Cards, Analysis, Settings, Transactions, Components
   Utils/                 // MerchantUtils, helpers

@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		2EBD3BFA2EAF392700295A20 /* TapTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TapTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2EBD3BFA2EAF392700295A20 /* CardPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CardPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		2EBD3BFC2EAF392700295A20 /* TapTrack */ = {
+		2EBD3BFC2EAF392700295A20 /* CardPulse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TapTrack;
+			path = CardPulse;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		2EBD3BF12EAF392700295A20 = {
 			isa = PBXGroup;
 			children = (
-				2EBD3BFC2EAF392700295A20 /* TapTrack */,
+				2EBD3BFC2EAF392700295A20 /* CardPulse */,
 				2EBD3BFB2EAF392700295A20 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		2EBD3BFB2EAF392700295A20 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2EBD3BFA2EAF392700295A20 /* TapTrack.app */,
+				2EBD3BFA2EAF392700295A20 /* CardPulse.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2EBD3BF92EAF392700295A20 /* TapTrack */ = {
+		2EBD3BF92EAF392700295A20 /* CardPulse */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2EBD3C072EAF392800295A20 /* Build configuration list for PBXNativeTarget "TapTrack" */;
+			buildConfigurationList = 2EBD3C072EAF392800295A20 /* Build configuration list for PBXNativeTarget "CardPulse" */;
 			buildPhases = (
 				2EBD3BF62EAF392700295A20 /* Sources */,
 				2EBD3BF72EAF392700295A20 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				2EBD3BFC2EAF392700295A20 /* TapTrack */,
+				2EBD3BFC2EAF392700295A20 /* CardPulse */,
 			);
-			name = TapTrack;
+			name = CardPulse;
 			packageProductDependencies = (
 			);
 			productName = TapTrack;
-			productReference = 2EBD3BFA2EAF392700295A20 /* TapTrack.app */;
+			productReference = 2EBD3BFA2EAF392700295A20 /* CardPulse.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 2EBD3BF52EAF392700295A20 /* Build configuration list for PBXProject "TapTrack" */;
+			buildConfigurationList = 2EBD3BF52EAF392700295A20 /* Build configuration list for PBXProject "CardPulse" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2EBD3BF92EAF392700295A20 /* TapTrack */,
+				2EBD3BF92EAF392700295A20 /* CardPulse */,
 			);
 		};
 /* End PBXProject section */
@@ -325,7 +325,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2EBD3BF52EAF392700295A20 /* Build configuration list for PBXProject "TapTrack" */ = {
+		2EBD3BF52EAF392700295A20 /* Build configuration list for PBXProject "CardPulse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2EBD3C052EAF392800295A20 /* Debug */,
@@ -334,7 +334,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2EBD3C072EAF392800295A20 /* Build configuration list for PBXNativeTarget "TapTrack" */ = {
+		2EBD3C072EAF392800295A20 /* Build configuration list for PBXNativeTarget "CardPulse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2EBD3C082EAF392800295A20 /* Debug */,
