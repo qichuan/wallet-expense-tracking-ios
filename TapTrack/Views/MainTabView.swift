@@ -13,21 +13,21 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView()
+            HomeView()
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("Home")
                 }
                 .tag(0)
             
-            InsightsView()
+            AnalysisView()
                 .tabItem {
                     Image(systemName: "chart.bar.fill")
                     Text("Analysis")
                 }
                 .tag(1)
             
-            GoalsView()
+            CardsView()
                 .tabItem {
                     Image(systemName: "creditcard.fill")
                     Text("Cards")

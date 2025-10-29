@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 import Charts
 
-struct InsightsView: View {
+struct AnalysisView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var transactions: [Transaction]
     @Query private var cards: [Card]
@@ -609,7 +609,7 @@ struct CategoryRow: View {
 }
 
 #Preview {
-    InsightsView()
+    AnalysisView()
         .modelContainer(ModelContainer.createMockContainer())
 }
 
