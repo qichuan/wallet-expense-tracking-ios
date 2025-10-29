@@ -303,17 +303,6 @@ struct InsightsView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
-                    HStack {
-                        
-                        Text("Spending Analysis")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
                     
                     // Period Tabs + Navigation
                     VStack(spacing: 12) {
