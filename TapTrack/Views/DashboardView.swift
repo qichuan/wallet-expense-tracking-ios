@@ -123,16 +123,23 @@ struct DashboardView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Credit Card Goals Section
+                    // Cards Section
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Credit Card Goals")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        
-                        LazyVStack(spacing: 12) {
-                            ForEach(cards) { card in
-                                CardGoalRow(card: card)
+                        HStack {
+                            Text("Cards")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            Spacer()
+                        }                        
+                        if cards.isEmpty {
+                            Text("No cards yet.")
+                                .foregroundColor(.white.opacity(0.7))
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(cards) { card in
+                                    CardGoalRow(card: card)
+                                }
                             }
                         }
                     }
@@ -155,12 +162,17 @@ struct DashboardView: View {
                             }
                         }
                         
-                        LazyVStack(spacing: 8) {
-                            ForEach(recentTransactions) { transaction in
-                                Button(action: { selectedTransaction = transaction }) {
-                                    TransactionRow(transaction: transaction)
+                        if transactions.isEmpty {
+                            Text("No transactions yet.")
+                                .foregroundColor(.white.opacity(0.7))
+                        } else {
+                            LazyVStack(spacing: 8) {
+                                ForEach(recentTransactions) { transaction in
+                                    Button(action: { selectedTransaction = transaction }) {
+                                        TransactionRow(transaction: transaction)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
@@ -230,17 +242,16 @@ struct CardGoalRow: View {
                         .progressViewStyle(LinearProgressViewStyle(tint: card.rewardType == "miles" ? .teal : .yellow))
                         .frame(height: 4)
                     
-                    Text("$\(Double(truncating: card.currentSpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
+                    Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
                         .font(.caption)
                         .foregroundColor(.white)
                 }
                 
                 HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Image(systemName: "calendar")
                         .font(.caption)
-                        .foregroundColor(card.progressPercentage > 0.9 ? .yellow : .teal)
-                    
-                    Text(card.progressPercentage > 0.9 ? "▲ Nearing Limit" : "On Track")
+                        .foregroundColor(.teal)
+                    Text("\(card.daysRemaining) days to statement")
                         .font(.caption)
                         .foregroundColor(.white)
                 }

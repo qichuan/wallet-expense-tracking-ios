@@ -29,8 +29,8 @@ struct MainTabView: View {
             
             GoalsView()
                 .tabItem {
-                    Image(systemName: "checkmark.circle.fill")
-                    Text("Goals")
+                    Image(systemName: "creditcard.fill")
+                    Text("Cards")
                 }
                 .tag(2)
             

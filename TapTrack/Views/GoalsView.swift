@@ -12,24 +12,15 @@ struct GoalsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var cards: [Card]
     
-    @State private var selectedTab = 0
     @State private var showingAddGoal = false
     @State private var selectedCard: Card?
-    
-    private var activeCards: [Card] {
-        cards.filter { $0.goalDeadline > Date() }
-    }
-    
-    private var completedCards: [Card] {
-        cards.filter { $0.goalDeadline <= Date() || $0.progressPercentage >= 1.0 }
-    }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("My Goals")
+                    Text("My Cards")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -49,51 +40,21 @@ struct GoalsView: View {
                 .padding(.horizontal)
                 .padding(.top)
                 
-                // Tab Bar
-                HStack(spacing: 0) {
-                    Button(action: { selectedTab = 0 }) {
-                        Text("Active")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(selectedTab == 0 ? .white : .white.opacity(0.6))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedTab == 0 ? Color.teal : Color.clear)
-                            )
-                    }
-                    
-                    Button(action: { selectedTab = 1 }) {
-                        Text("Completed")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(selectedTab == 1 ? .white : .white.opacity(0.6))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedTab == 1 ? Color.teal : Color.clear)
-                            )
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 16)
-                
+                // All goals
                 // Content
                 ScrollView {
                     LazyVStack(spacing: 16) {
-                        if selectedTab == 0 {
-                            ForEach(activeCards) { card in
-                                Button(action: { 
-                                    selectedCard = card
-                                }) {
-                                    GoalCard(card: card)
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                        if cards.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("No cards yet")
+                                    .foregroundColor(.white)
+                                Text("Tap + to add your first card and goal")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(.caption)
                             }
+                            .padding()
                         } else {
-                            ForEach(completedCards) { card in
+                            ForEach(cards) { card in
                                 Button(action: { 
                                     selectedCard = card
                                 }) {
@@ -181,13 +142,13 @@ struct GoalCard: View {
                         .frame(height: 6)
                     
                     HStack {
-                        Text("$\(Double(truncating: card.currentSpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
+                        Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
                             .font(.caption)
                             .foregroundColor(.white)
                         
                         Spacer()
                         
-                        Text("\(card.daysRemaining) days left")
+                        Text("\(card.daysRemaining) days to statement")
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }

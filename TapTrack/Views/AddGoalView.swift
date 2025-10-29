@@ -16,6 +16,7 @@ struct AddGoalView: View {
     @State private var totalGoal = ""
     @State private var goalDeadline = Date()
     @State private var rewardType = "miles"
+    @State private var statementDay = 1
     
     private let rewardTypes = ["miles", "cashback", "points"]
     
@@ -40,6 +41,10 @@ struct AddGoalView: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                    
+                    Stepper(value: $statementDay, in: 1...31) {
+                        Text("Statement Day: \(statementDay)")
+                    }
                 }
             }
             .navigationTitle("Add Goal")
@@ -68,7 +73,8 @@ struct AddGoalView: View {
             name: cardName,
             totalGoal: goalAmount,
             goalDeadline: goalDeadline,
-            rewardType: rewardType
+            rewardType: rewardType,
+            statementDay: statementDay
         )
         
         modelContext.insert(card)

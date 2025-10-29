@@ -16,6 +16,8 @@ struct EditGoalView: View {
     @State private var totalGoal: String
     @State private var goalDeadline: Date
     @State private var rewardType: String
+    @State private var cardName: String
+    @State private var statementDay: Int
     @State private var showingDeleteAlert = false
     
     private let rewardTypes = ["miles", "cashback", "points"]
@@ -25,19 +27,16 @@ struct EditGoalView: View {
         self._totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.totalGoal as NSDecimalNumber)))
         self._goalDeadline = State(initialValue: card.goalDeadline)
         self._rewardType = State(initialValue: card.rewardType)
+        self._cardName = State(initialValue: card.name)
+        self._statementDay = State(initialValue: card.statementDay)
     }
     
     var body: some View {
         NavigationView {
             Form {
                 Section("Card Information") {
-                    HStack {
-                        Text("Card Name")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(card.name)
-                            .foregroundColor(.secondary)
-                    }
+                    TextField("Card Name", text: $cardName)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 
                 Section("Goal Details") {
@@ -46,6 +45,10 @@ struct EditGoalView: View {
                         .keyboardType(.decimalPad)
                     
                     DatePicker("Goal Deadline", selection: $goalDeadline, in: Date()..., displayedComponents: .date)
+                    
+                    Stepper(value: $statementDay, in: 1...31) {
+                        Text("Statement Day: \(statementDay)")
+                    }
                     
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
@@ -113,9 +116,11 @@ struct EditGoalView: View {
     private func saveGoal() {
         guard let goalAmount = Decimal(string: totalGoal) else { return }
         
+        card.name = cardName
         card.totalGoal = goalAmount
         card.goalDeadline = goalDeadline
         card.rewardType = rewardType
+        card.statementDay = statementDay
         
         do {
             try modelContext.save()

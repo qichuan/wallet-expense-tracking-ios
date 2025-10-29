@@ -358,7 +358,20 @@ struct InsightsView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal)
                         
-                        VStack(spacing: 16) {
+                        if filteredTransactions.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("No transactions in this range")
+                                    .foregroundColor(.white)
+                                Text("Try selecting a different period")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .padding()
+                            .cornerRadius(16)
+                            .padding(.horizontal)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            VStack(spacing: 16) {
                             // Donut Chart
                             ZStack {
                                 DonutChart(data: spendingByCategory)
@@ -382,12 +395,14 @@ struct InsightsView: View {
                                     CategoryRow(category: category)
                                 }
                             }
+                            }
+                            .padding()
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(16)
+                            .padding(.horizontal)
                         }
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(16)
-                        .padding(.horizontal)
                     }
+                    .frame(maxWidth: .infinity)
                     
                     // Stacked Bar Chart for Selected Period
                     VStack(alignment: .leading, spacing: 16) {
@@ -397,7 +412,17 @@ struct InsightsView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal)
                         
-                        VStack(spacing: 16) {
+                        if filteredTransactions.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("No transactions in this range")
+                                    .foregroundColor(.white)
+                            }
+                            .padding()
+                            .cornerRadius(16)
+                            .padding(.horizontal)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            VStack(spacing: 16) {
                             Chart(stackedSeriesForCurrentGranularity) { item in
                                 BarMark(
                                     x: .value(xAxisTitle, item.bucketLabel),
@@ -421,12 +446,14 @@ struct InsightsView: View {
                                         .font(.caption)
                                 }
                             }
+                            }
+                            .padding()
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(16)
+                            .padding(.horizontal)
                         }
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(16)
-                        .padding(.horizontal)
                     }
+                    .frame(maxWidth: .infinity)
 
                     // Recent transactions (only for Day/Week)
                     if (selectedGranularity == .day || selectedGranularity == .week) && !recentTransactionsInRange.isEmpty {
