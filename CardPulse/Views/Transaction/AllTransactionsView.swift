@@ -15,35 +15,15 @@ struct AllTransactionsView: View {
     
     @State private var selectedTransaction: Transaction?
     @State private var searchText = ""
-    @State private var selectedFilter = "Today"
-    
-    private let filterOptions = ["Today", "This Month", "Last 3 Months", "All"]
     
     private var filteredTransactions: [Transaction] {
-        let calendar = Calendar.current
-        let now = Date()
-        
         let filtered = transactions.filter { transaction in
             if !searchText.isEmpty {
                 return transaction.merchant.localizedCaseInsensitiveContains(searchText)
             }
             return true
         }
-        
-        switch selectedFilter {
-        case "Today":
-            let startOfDay = calendar.startOfDay(for: now)
-            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? now
-            return filtered.filter { $0.date >= startOfDay && $0.date < endOfDay }
-        case "This Month":
-            let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
-            return filtered.filter { $0.date >= startOfMonth }
-        case "Last 3 Months":
-            let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: now) ?? now
-            return filtered.filter { $0.date >= threeMonthsAgo }
-        default: // "All"
-            return filtered
-        }
+        return filtered
     }
     
     var body: some View {
@@ -62,26 +42,7 @@ struct AllTransactionsView: View {
                     .padding(.vertical, 8)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(filterOptions, id: \.self) { option in
-                                Button(action: { selectedFilter = option }) {
-                                    Text(option)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(selectedFilter == option ? .white : .gray)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .fill(selectedFilter == option ? Color.teal : Color.gray.opacity(0.2))
-                                        )
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
+                
                 }
                 .padding()
                 .background(Color(red: 0.05, green: 0.1, blue: 0.2))
