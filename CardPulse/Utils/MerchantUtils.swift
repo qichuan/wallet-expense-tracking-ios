@@ -49,9 +49,9 @@ class MerchantUtils {
         case "Health":
             return "cross"
         case "Other":
-            return "dollarsign.circle"
+            return "dollarsign"
         default:
-            return "dollarsign.circle"
+            return "dollarsign"
         }
     }
     
@@ -65,7 +65,7 @@ class MerchantUtils {
         case "Services":
             return .yellow
         case "Travel":
-            return .cyan
+            return .blue
         case "Entertainment":
             return .purple
         case "Health":
@@ -73,7 +73,7 @@ class MerchantUtils {
         case "Other":
             return .teal
         default:
-            return .gray
+            return .teal
         }
     }
 }

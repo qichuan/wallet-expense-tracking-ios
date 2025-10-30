@@ -91,15 +91,41 @@ struct TransactionRow: View {
         currentSpent: 1500,
         statementDay: 15
     )
-    let transaction = Transaction(
-        merchant: "Apple Store",
-        amount: 999.00,
-        date: Date(),
-        category: "Shopping",
-        card: card
-    )
     
-    return TransactionRow(transaction: transaction)
-        .padding()
-        .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+    VStack {
+        TransactionRow(transaction: Transaction(
+            merchant: "Apple Store",
+            amount: 999.00,
+            date: Date(),
+            category: "Shopping",
+            card: card
+        ))
+            
+        TransactionRow(transaction: Transaction(
+            merchant: "Mr. DIY",
+            amount: 9.00,
+            date: Date(),
+            category: "Other",
+            card: card
+        ))
+        
+        TransactionRow(transaction: Transaction(
+            merchant: "Netflix",
+            amount: 9.00,
+            date: Date(),
+            category: "Entertainment",
+            card: card
+        ))
+        
+        TransactionRow(transaction: Transaction(
+            merchant: "Singapore Airlines",
+            amount: 999.00,
+            date: Date(),
+            category: "Travel",
+            card: card
+        ))
+        
+    }.background(Color(red: 0.05, green: 0.1, blue: 0.2)).padding()
+    
+    
 }
