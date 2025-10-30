@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ImportPreviewRow: Identifiable {
     let id = UUID()
@@ -40,37 +41,28 @@ struct ImportPreviewView: View {
                     .cornerRadius(12)
                 }
                 
-                Text("Transactions to import: \(rows.count)")
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                List {
-                    ForEach(rows) { row in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(row.merchant)
-                                    .font(.headline)
-                                Spacer()
-                                Text("$\(row.amount)")
+                VStack(spacing: 0) {
+                    Text("Transactions to import: \(rows.count)")
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 8)
+
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(rows.prefix(10)) { row in
+                                TransactionRow(transaction: makePreviewTransaction(from: row))
                             }
-                            .foregroundColor(.white)
-                            Text("\(row.category) • \(row.card)")
-                                .foregroundColor(.white.opacity(0.8))
-                                .font(.caption)
-                            Text(row.date)
-                                .foregroundColor(.white.opacity(0.7))
-                                .font(.caption)
-                            if !row.note.isEmpty {
-                                Text(row.note)
-                                    .foregroundColor(.white.opacity(0.9))
+                            if rows.count > 10 {
+                                Text("... and \(rows.count - 10) more transactions")
                                     .font(.caption)
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding(.top, 8)
                             }
                         }
-                        .listRowBackground(Color.clear)
                     }
+                    .frame(maxHeight: .infinity)
+                    
                 }
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
                 
                 HStack {
                     Button("Cancel") { onCancel(); dismiss() }
@@ -92,6 +84,36 @@ struct ImportPreviewView: View {
             .navigationTitle("Import Preview")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+}
+
+// MARK: - Preview model factories
+private extension ImportPreviewView {
+    func makeTempCard(name: String) -> Card {
+        Card(
+            name: name,
+            totalGoal: 0,
+            goalDeadline: Date(),
+            rewardType: "miles",
+            currentSpent: 0,
+            statementDay: 1
+        )
+    }
+    
+    func makePreviewTransaction(from row: ImportPreviewRow) -> Transaction {
+        let amount = Decimal(string: row.amount) ?? 0
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let date = df.date(from: row.date) ?? Date()
+        let card: Card? = row.card.isEmpty ? nil : makeTempCard(name: row.card)
+        return Transaction(
+            merchant: row.merchant,
+            amount: amount,
+            date: date,
+            category: row.category.isEmpty ? nil : row.category,
+            note: row.note.isEmpty ? nil : row.note,
+            card: card
+        )
     }
 }
 
