@@ -28,7 +28,7 @@ struct CardsView: View {
                             Spacer()
                             Text("No cards yet")
                                 .foregroundColor(.white)
-                            Text("Tap + to add your first card and goal")
+                            Text("Tap + to add your first card")
                                 .foregroundColor(.white.opacity(0.7))
                                 .font(.caption)
                             Spacer()

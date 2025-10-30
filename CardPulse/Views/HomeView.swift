@@ -26,51 +26,65 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Latest Transactions Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Latest Transactions")
-                                .font(.title2)
-                                .fontWeight(.bold)
+            Group {
+                if transactions.isEmpty {
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 8) {
+                            Text("No transactions yet")
                                 .foregroundColor(.white)
-                            
-                            Spacer()
-                        }
-                        
-                        if transactions.isEmpty {
-                            Text("No transactions yet.")
+                            Text("Tap + to add your first transaction")
                                 .foregroundColor(.white.opacity(0.7))
-                        } else {
-                            LazyVStack(spacing: 8) {
-                                ForEach(recentTransactions) { transaction in
-                                    Button(action: { selectedTransaction = transaction }) {
-                                        TransactionRow(transaction: transaction)
+                                .font(.caption)
+                        }
+                        .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Latest Transactions Section
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Text("Latest Transactions")
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                }
+                                
+                                LazyVStack(spacing: 8) {
+                                    ForEach(recentTransactions) { transaction in
+                                        Button(action: { selectedTransaction = transaction }) {
+                                            TransactionRow(transaction: transaction)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                    
+                                    // View All button at the end of the list
+                                    Button(action: { showingAllTransactions = true }) {
+                                        HStack {
+                                            Spacer()
+                                            Text("View All")
+                                                .font(.subheadline)
+                                                .foregroundColor(.teal)
+                                            Spacer()
+                                        }
+                                        .padding(.vertical, 12)
+                                        .background(Color.teal.opacity(0.1))
+                                        .cornerRadius(8)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
-                                
-                                // View All button at the end of the list
-                                Button(action: { showingAllTransactions = true }) {
-                                    HStack {
-                                        Spacer()
-                                        Text("View All")
-                                            .font(.subheadline)
-                                            .foregroundColor(.teal)
-                                        Spacer()
-                                    }
-                                    .padding(.vertical, 12)
-                                    .background(Color.teal.opacity(0.1))
-                                    .cornerRadius(8)
-                                }
-                                .buttonStyle(PlainButtonStyle())
                             }
+                            .padding(.horizontal)
                         }
+                        .padding(.bottom, 100)
                     }
-                    .padding(.horizontal)
                 }
-                .padding(.bottom, 100)
             }
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             .overlay(
