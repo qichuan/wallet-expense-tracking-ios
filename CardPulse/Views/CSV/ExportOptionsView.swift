@@ -99,9 +99,8 @@ struct ExportOptionsView: View {
                         ScrollView {
                             LazyVStack(spacing: 8) {
                                 ForEach(transactions.prefix(10)) { transaction in
-                                    TransactionPreviewRow(transaction: transaction)
+                                    TransactionRow(transaction: transaction)
                                 }
-                                
                                 if transactions.count > 10 {
                                     Text("... and \(transactions.count - 10) more transactions")
                                         .font(.caption)
@@ -110,11 +109,9 @@ struct ExportOptionsView: View {
                                 }
                             }
                         }
-                        .frame(maxHeight: 200)
+                        .frame(maxHeight: .infinity)
                     }
                 }
-                
-                Spacer()
             }
             .padding()
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
@@ -150,52 +147,6 @@ struct ExportOptionsView: View {
             isLoading = false
         }
     }
-}
-
-struct TransactionPreviewRow: View {
-    let transaction: Transaction
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(merchantColor)
-                .frame(width: 32, height: 32)
-                .overlay(
-                    Image(systemName: merchantIcon)
-                        .font(.caption)
-                        .foregroundColor(.white)
-                )
-            VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.merchant)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                HStack(spacing: 8) {
-                    if let card = transaction.card {
-                        Text(card.name)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    Text(transaction.date, style: .date)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-            }
-            Spacer()
-            Text("-$\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
-    }
-    
-    private var merchantIcon: String { MerchantUtils.icon(for: transaction.category) }
-    private var merchantColor: Color { MerchantUtils.color(for: transaction.category) }
 }
 
 

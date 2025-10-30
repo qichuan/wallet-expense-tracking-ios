@@ -74,7 +74,7 @@ struct EditCardView: View {
                 }
                 
                 Section {
-                    Button("Delete Goal") {
+                    Button("Delete Card") {
                         showingDeleteAlert = true
                     }
                     .foregroundColor(.red)
