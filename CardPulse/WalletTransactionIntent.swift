@@ -9,6 +9,7 @@ import Foundation
 import AppIntents
 import SwiftData
 import UserNotifications
+import NaturalLanguage
 
 @available(iOS 16.0, *)
 struct WalletTransactionIntent: AppIntent {
@@ -56,11 +57,12 @@ struct WalletTransactionIntent: AppIntent {
         }
 
         let decimalAmount = Decimal(Double(amount))
+        let guessedCategory = guessCategory(from: merchantName)
         let txn = Transaction(
             merchant: merchantName,
             amount: decimalAmount,
             date: Date(),
-            category: nil,
+            category: guessedCategory,
             note: nil,
             card: matchedCard
         )
@@ -82,6 +84,76 @@ struct WalletTransactionIntent: AppIntent {
         return .result()
     }
 
+    private func guessCategory(from merchant: String) -> String? {
+        let categories = MerchantUtils.defaultCategories
+        // Seed words representing each category's semantics
+        let seeds: [String: [String]] = [
+            "Shopping": ["store", "retail", "mall", "outlet", "amazon", "shop"],
+            "Food & Drinks": ["restaurant", "cafe", "bar", "food", "drink", "coffee", "diner"],
+            "Services": ["service", "repair", "plumber", "cleaning", "subscription", "salon"],
+            "Travel": ["airline", "hotel", "flight", "uber", "lyft", "train", "transport"],
+            "Entertainment": ["movie", "cinema", "music", "concert", "game", "theater"],
+            "Health": ["pharmacy", "clinic", "doctor", "dentist", "gym", "health"],
+            "Other": ["payment", "misc", "general"]
+        ]
+        let embedding = NLEmbedding.wordEmbedding(for: .english)
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = merchant
+        let range = merchant.startIndex..<merchant.endIndex
+        var tokens: [String] = []
+        tokenizer.enumerateTokens(in: range) { tokenRange, _ in
+            let word = String(merchant[tokenRange]).lowercased()
+            if !word.isEmpty { tokens.append(word) }
+            return true
+        }
+        // If we have no embedding or tokens, fallback to keyword heuristics
+        guard let embedding else {
+            return heuristicCategory(for: merchant)
+        }
+        var bestCategory: String = "Other"
+        var bestScore: Double = .greatestFiniteMagnitude // using distance: lower is better
+        for category in categories {
+            guard let seedWords = seeds[category] else { continue }
+            var categoryBest: Double = .greatestFiniteMagnitude
+            for token in tokens {
+                // Ensure both words exist in the embedding
+                guard embedding.contains(token) else { continue }
+                for seed in seedWords {
+                    guard embedding.contains(seed) else { continue }
+                    let distance = embedding.distance(between: token, and: seed)
+                    if distance < categoryBest { categoryBest = distance }
+                }
+            }
+            if categoryBest < bestScore {
+                bestScore = categoryBest
+                bestCategory = category
+            }
+        }
+        // Apply a loose threshold; if embedding can't relate, keep Other
+        if bestScore > 1.2 { // empirically reasonable for unrelated words
+            return "Other"
+        }
+        return bestCategory
+    }
+
+    private func heuristicCategory(for merchant: String) -> String {
+        let lower = merchant.lowercased()
+        let rules: [(String, String)] = [
+            ("uber", "Travel"), ("lyft", "Travel"), ("airbnb", "Travel"), ("airlines", "Travel"),
+            ("hotel", "Travel"), ("marriott", "Travel"), ("hilton", "Travel"), ("train", "Travel"),
+            ("mcdonald", "Food & Drinks"), ("kfc", "Food & Drinks"), ("starbucks", "Food & Drinks"), ("subway", "Food & Drinks"), ("restaurant", "Food & Drinks"),
+            ("pharmacy", "Health"), ("walgreens", "Health"), ("cvs", "Health"), ("clinic", "Health"),
+            ("netflix", "Entertainment"), ("spotify", "Entertainment"), ("movie", "Entertainment"), ("cinema", "Entertainment"), ("game", "Entertainment"),
+            ("amazon", "Shopping"), ("walmart", "Shopping"), ("target", "Shopping"), ("mall", "Shopping"), ("shop", "Shopping"),
+            ("repair", "Services"), ("salon", "Services"), ("plumb", "Services"), ("clean", "Services"), ("service", "Services")
+        ]
+        for (keyword, category) in rules {
+            if lower.contains(keyword) {
+                return category
+            }
+        }
+        return "Other"
+    }
     private func notifyUserAboutNewTransaction(merchant: String, amount: Decimal, cardName: String?) async {
         let center = UNUserNotificationCenter.current()
         // Request authorization if not already granted
