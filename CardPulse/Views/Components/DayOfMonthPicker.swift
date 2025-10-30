@@ -17,8 +17,6 @@ struct DayOfMonthPicker: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Statement Day")
-                    .font(.headline)
-                    .foregroundColor(.primary)
                 
                 Spacer()
                 
@@ -27,25 +25,15 @@ struct DayOfMonthPicker: View {
                 }) {
                     HStack(spacing: 8) {
                         Text("\(selectedDay)")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.teal)
+
                         
                         Image(systemName: "chevron.down")
                             .font(.caption)
-                            .foregroundColor(.teal)
                             .rotationEffect(.degrees(showingPicker ? 180 : 0))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.teal.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.teal.opacity(0.3), lineWidth: 1)
-                            )
-                    )
+                    
                 }
                 .buttonStyle(PlainButtonStyle())
             }

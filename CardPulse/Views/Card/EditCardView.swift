@@ -35,21 +35,31 @@ struct EditCardView: View {
         NavigationView {
             Form {
                 Section {
-                    TextField("Card Name", text: $cardName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Minimum Spending", text: $totalGoal)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.decimalPad)
+                    LabeledContent {
+                        TextField("", text: $cardName)
+                            .textFieldStyle(.roundedBorder)
+                    } label: {
+                        Text("Card Name") // This label is always visible
+                    }
                     
-                    DayOfMonthPicker(selectedDay: $statementDay)
+                    LabeledContent {
+                        TextField("", text: $totalGoal)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.decimalPad)
+                    } label: {
+                        Text("Minimum Spending")
+                    }
+                    
                     
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
                             Text(type.capitalized).tag(type)
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+                    
+                    DayOfMonthPicker(selectedDay: $statementDay)
+                    
                 }
                 
                 Section("Progress") {
