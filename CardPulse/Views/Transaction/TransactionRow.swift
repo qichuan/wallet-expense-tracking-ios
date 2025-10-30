@@ -42,18 +42,11 @@ struct TransactionRow: View {
                     .font(.headline)
                     .foregroundColor(.white)
                 
-                HStack(spacing: 8) {
-                    if let card = transaction.card {
-                        Text(card.name)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    
-                    if let category = transaction.category {
-                        Text("• \(category)")
-                            .font(.caption)
-                            .foregroundColor(.teal)
-                    }
+                
+                if let card = transaction.card {
+                    Label(card.name, systemImage: "creditcard")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
                 }
                 
                 HStack(spacing: 8) {
@@ -90,11 +83,20 @@ struct TransactionRow: View {
 }
 
 #Preview {
+    let card = Card(
+        name: "Chase Sapphire Preferred",
+        totalGoal: 4000,
+        goalDeadline: Calendar.current.date(byAdding: .day, value: 25, to: Date()) ?? Date(),
+        rewardType: "miles",
+        currentSpent: 1500,
+        statementDay: 15
+    )
     let transaction = Transaction(
         merchant: "Apple Store",
         amount: 999.00,
         date: Date(),
-        category: "Shopping"
+        category: "Shopping",
+        card: card
     )
     
     return TransactionRow(transaction: transaction)
