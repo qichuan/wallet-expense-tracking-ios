@@ -33,15 +33,23 @@ struct AddTransactionView: View {
         NavigationView {
             Form {
                 Section("Transaction Details") {
-                    TextField("Merchant", text: $merchant)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    LabeledContent {
+                        TextField("", text: $merchant)
+                            .textFieldStyle(.roundedBorder)
+                    } label: {
+                        Text("Merchant")
+                    }
                     
-                    TextField("Amount", text: $amount)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.decimalPad)
-                        .onChange(of: amount) { _, newValue in
-                            amount = formatAmountInput(newValue)
-                        }
+                    LabeledContent {
+                        TextField("", text: $amount)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.decimalPad)
+                            .onChange(of: amount) { _, newValue in
+                                amount = formatAmountInput(newValue)
+                            }
+                    } label: {
+                        Text("Amount")
+                    }
                     
                     DatePicker("Date", selection: $transactionDate, displayedComponents: .date)
                 }
@@ -69,6 +77,11 @@ struct AddTransactionView: View {
                     TextField("Add a note (optional)", text: $note, axis: .vertical)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .lineLimit(3...6)
+                        .onChange(of: note) { _, newValue in
+                            // Disallow commas in note input
+                            let cleaned = newValue.replacingOccurrences(of: ",", with: "")
+                            if cleaned != newValue { note = cleaned }
+                        }
                 }
             }
             .navigationTitle("Add Transaction")
