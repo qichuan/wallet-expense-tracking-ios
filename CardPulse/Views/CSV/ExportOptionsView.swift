@@ -47,17 +47,7 @@ struct ExportOptionsView: View {
                     .cornerRadius(12)
                 }
                 
-                // Export Button
-                Button(action: { onExport() }) {
-                    Text("Export CSV")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.teal)
-                        .cornerRadius(12)
-                }
-                .disabled(startDate > endDate)
+                // (Buttons moved to bottom)
                 
                 // Transactions Preview Section
                 VStack(alignment: .leading, spacing: 16) {
@@ -112,16 +102,34 @@ struct ExportOptionsView: View {
                         .frame(maxHeight: .infinity)
                     }
                 }
+                // Bottom action buttons
+                HStack(spacing: 12) {
+                    Button(action: { dismiss() }) {
+                        Text("Cancel")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.3))
+                            .cornerRadius(12)
+                    }
+                    Button(action: { onExport() }) {
+                        Text("Export")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.teal)
+                            .cornerRadius(12)
+                    }
+                    .disabled(startDate > endDate)
+                }
             }
             .padding()
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             .navigationTitle("Export Options")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .toolbar { }
         }
         .onAppear { loadTransactions() }
         .onChange(of: startDate) { _, _ in loadTransactions() }
