@@ -45,13 +45,13 @@ class MerchantUtils {
         case "Travel":
             return "airplane"
         case "Entertainment":
-            return "tv"
+            return "star"
         case "Health":
             return "cross"
         case "Other":
-            return "creditcard"
+            return "dollarsign.circle"
         default:
-            return "creditcard"
+            return "dollarsign.circle"
         }
     }
     
@@ -71,7 +71,7 @@ class MerchantUtils {
         case "Health":
             return .red
         case "Other":
-            return .gray
+            return .teal
         default:
             return .gray
         }
