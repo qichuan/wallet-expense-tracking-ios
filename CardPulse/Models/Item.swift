@@ -13,22 +13,18 @@ final class Card {
     var id: UUID
     var name: String
     var totalGoal: Decimal
-    var goalDeadline: Date
     var rewardType: String
-    var currentSpent: Decimal
     var createdAt: Date
     var statementDay: Int // 1...31
     
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String, currentSpent: Decimal = 0, statementDay: Int = 1) {
+    init(name: String, totalGoal: Decimal, rewardType: String, statementDay: Int = 1) {
         self.id = UUID()
         self.name = name
         self.totalGoal = totalGoal
-        self.goalDeadline = goalDeadline
         self.rewardType = rewardType
-        self.currentSpent = currentSpent
         self.createdAt = Date()
         self.statementDay = max(1, min(31, statementDay))
     }

@@ -104,9 +104,7 @@ struct CardRow: View {
     let card = Card(
         name: "Chase Sapphire Preferred",
         totalGoal: 4000,
-        goalDeadline: Calendar.current.date(byAdding: .day, value: 25, to: Date()) ?? Date(),
         rewardType: "miles",
-        currentSpent: 1500,
         statementDay: 15
     )
     

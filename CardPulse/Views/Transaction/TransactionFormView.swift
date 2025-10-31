@@ -134,10 +134,6 @@ struct TransactionFormView: View {
     private func saveTransaction() {
         guard let amountDecimal = Decimal(string: amount) else { return }
         if let editing = transactionToEdit {
-            // Remove old from prior card if present
-            if let oldCard = editing.card {
-                oldCard.currentSpent -= editing.amount
-            }
             // Update
             editing.merchant = merchant
             editing.amount = amountDecimal
@@ -145,9 +141,6 @@ struct TransactionFormView: View {
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
-            if let newCard = selectedCard {
-                newCard.currentSpent += amountDecimal
-            }
             do { try modelContext.save(); dismiss() } catch { print("Error saving transaction: \(error)") }
         } else {
             let transaction = Transaction(
@@ -159,14 +152,12 @@ struct TransactionFormView: View {
                 card: selectedCard
             )
             modelContext.insert(transaction)
-            if let card = selectedCard { card.currentSpent += amountDecimal }
             do { try modelContext.save(); dismiss() } catch { print("Error saving transaction: \(error)") }
         }
     }
     
     private func deleteTransaction() {
         guard let editing = transactionToEdit else { return }
-        if let card = editing.card { card.currentSpent -= editing.amount }
         modelContext.delete(editing)
         do { try modelContext.save(); dismiss() } catch { print("Error deleting transaction: \(error)") }
     }

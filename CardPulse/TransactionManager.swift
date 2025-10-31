@@ -34,9 +34,6 @@ class TransactionManager: ObservableObject {
         
         modelContext.insert(transaction)
         
-        // Update card's current spent amount
-        card.currentSpent += amount
-        
         do {
             try modelContext.save()
         } catch {
@@ -47,14 +44,13 @@ class TransactionManager: ObservableObject {
         isLoading = false
     }
     
-    func addCard(name: String, totalGoal: Decimal, goalDeadline: Date, rewardType: String) {
+    func addCard(name: String, totalGoal: Decimal, rewardType: String) {
         isLoading = true
         errorMessage = nil
         
         let card = Card(
             name: name,
             totalGoal: totalGoal,
-            goalDeadline: goalDeadline,
             rewardType: rewardType
         )
         
@@ -70,12 +66,11 @@ class TransactionManager: ObservableObject {
         isLoading = false
     }
     
-    func updateCardGoal(card: Card, newGoal: Decimal, newDeadline: Date) {
+    func updateCardGoal(card: Card, newGoal: Decimal) {
         isLoading = true
         errorMessage = nil
         
         card.totalGoal = newGoal
-        card.goalDeadline = newDeadline
         
         do {
             try modelContext.save()
@@ -90,10 +85,6 @@ class TransactionManager: ObservableObject {
     func deleteTransaction(_ transaction: Transaction) {
         isLoading = true
         errorMessage = nil
-        
-        if let card = transaction.card {
-            card.currentSpent -= transaction.amount
-        }
         
         modelContext.delete(transaction)
         
@@ -273,7 +264,6 @@ class TransactionManager: ObservableObject {
                     let newCard = Card(
                         name: cardName,
                         totalGoal: 0,
-                        goalDeadline: Date(),
                         rewardType: "miles"
                     )
                     modelContext.insert(newCard)
@@ -292,9 +282,7 @@ class TransactionManager: ObservableObject {
             
             modelContext.insert(transaction)
             
-            if let matchedCard {
-                matchedCard.currentSpent += amount
-            }
+            // current spent is derived from transactions; no direct mutation
         }
         
         do {
