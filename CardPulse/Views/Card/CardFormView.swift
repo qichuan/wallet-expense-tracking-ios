@@ -30,7 +30,7 @@ struct CardFormView: View {
             _cardName = State(initialValue: card.name)
             _rewardType = State(initialValue: card.rewardType)
             _enableGoalFields = State(initialValue: true)
-            _totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.totalGoal as NSDecimalNumber)))
+            _totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
             _statementDay = State(initialValue: card.statementDay)
         } else {
             _cardName = State(initialValue: "")
@@ -58,7 +58,7 @@ struct CardFormView: View {
                         }
                     }
                     
-                    Toggle("\(cardToEdit == nil ? "Set goal and statement day" : "Edit goal and statement day")", isOn: $enableGoalFields)
+                    Toggle("Minimum Spending", isOn: $enableGoalFields)
                     
                     if enableGoalFields {
                         LabeledContent {
@@ -66,7 +66,7 @@ struct CardFormView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .keyboardType(.decimalPad)
                         } label: {
-                            Text("Minimum Spending")
+                            Text("Need to spend")
                         }
                         
                         DayOfMonthPicker(selectedDay: $statementDay)
@@ -110,7 +110,7 @@ struct CardFormView: View {
             editing.name = cardName
             editing.rewardType = rewardType
             if enableGoalFields, let parsed = Decimal(string: totalGoal) {
-                editing.totalGoal = parsed
+                editing.minimumSpendingAmount = parsed
                 editing.statementDay = statementDay
             }
             do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
@@ -123,7 +123,7 @@ struct CardFormView: View {
             let stmtDay: Int = enableGoalFields ? statementDay : 1
             let card = Card(
                 name: cardName,
-                totalGoal: goalAmount,
+                minimumSpendingAmount: goalAmount,
                 rewardType: rewardType,
                 statementDay: stmtDay
             )

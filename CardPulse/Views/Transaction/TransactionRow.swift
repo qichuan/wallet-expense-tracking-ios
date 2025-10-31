@@ -85,7 +85,7 @@ struct TransactionRow: View {
 #Preview {
     let card = Card(
         name: "Chase Sapphire Preferred",
-        totalGoal: 4000,
+        minimumSpendingAmount: 4000,
         rewardType: "miles",
         statementDay: 15
     )

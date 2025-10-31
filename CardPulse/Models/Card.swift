@@ -12,7 +12,7 @@ import SwiftData
 final class Card {
     var id: UUID
     var name: String
-    var totalGoal: Decimal
+    var minimumSpendingAmount: Decimal
     var rewardType: String
     var createdAt: Date
     var statementDay: Int // 1...31
@@ -20,24 +20,24 @@ final class Card {
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, totalGoal: Decimal, rewardType: String, statementDay: Int = 1) {
+    init(name: String, minimumSpendingAmount: Decimal, rewardType: String, statementDay: Int = 1) {
         self.id = UUID()
         self.name = name
-        self.totalGoal = totalGoal
+        self.minimumSpendingAmount = minimumSpendingAmount
         self.rewardType = rewardType
         self.createdAt = Date()
         self.statementDay = max(1, min(31, statementDay))
     }
     
     var progressPercentage: Double {
-        guard totalGoal > 0 else { return 0 }
+        guard minimumSpendingAmount > 0 else { return 0 }
         let spentThisCycle = Double(truncating: monthlySpent as NSDecimalNumber)
-        let percentage = spentThisCycle / Double(truncating: totalGoal as NSDecimalNumber)
+        let percentage = spentThisCycle / Double(truncating: minimumSpendingAmount as NSDecimalNumber)
         return max(0, min(1, percentage))
     }
     
     var remainingAmount: Decimal {
-        return max(0, totalGoal - monthlySpent)
+        return max(0, minimumSpendingAmount - monthlySpent)
     }
     
     var daysRemaining: Int {
