@@ -82,7 +82,21 @@ struct CardFormView: View {
                                 Text("Need to spend")
                             }
                             
-                            DayOfMonthPicker(selectedDay: $minimumSpendingByDayOfMonth)
+                            LabeledContent {
+                                Picker("", selection: $minimumSpendingByDayOfMonth) {
+                                    ForEach(1...31, id: \.self) { day in
+                                        Text("Day \(day)").tag(day)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                            } label: {
+                                Text("By Day \(minimumSpendingByDayOfMonth) of each month")
+                            }
+                            
+                            Text("Your mininum spending resets on this day each month. Try to reach the minimum spending amount before then to earn your rewards")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.top, 4)
                         }
                         .padding(.leading, 20)
                     }
