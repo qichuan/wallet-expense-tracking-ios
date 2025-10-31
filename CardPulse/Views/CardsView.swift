@@ -76,10 +76,10 @@ struct CardsView: View {
             }
         }
         .sheet(isPresented: $showingAddGoal) {
-            AddCardView()
+            CardFormView()
         }
         .sheet(item: $selectedCard) { card in
-            EditCardView(card: card)
+            CardFormView(card: card)
         }
     }
 }
