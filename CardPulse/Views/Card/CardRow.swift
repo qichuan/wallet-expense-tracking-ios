@@ -56,7 +56,7 @@ struct CardRow: View {
                         .foregroundColor(.white)
                 
                 // Progress Bar (only if card has a goal)
-                if card.minimumSpendingAmount > 0 {
+                if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
                     VStack(spacing: 4) {
                         ProgressView(value: card.progressPercentage)
                             .progressViewStyle(LinearProgressViewStyle(tint: .teal))
@@ -104,6 +104,7 @@ struct CardRow: View {
     let card = Card(
         name: "Chase Sapphire Preferred",
         minimumSpendingAmount: 4000,
+        hasMinimumSpending: true,
         rewardType: "miles",
         minimumSpendingByDayOfMonth: 15
     )

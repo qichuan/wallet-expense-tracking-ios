@@ -17,8 +17,8 @@ struct CardFormView: View {
     // Form state
     @State private var cardName: String
     @State private var rewardType: String
-    @State private var enableMinimumSpendingToggle: Bool
-    @State private var totalGoal: String
+    @State private var hasMinimumSpending: Bool
+    @State private var minimumSpendingAmount: String
     @State private var statementDay: Int
     @State private var showingDeleteAlert = false
     
@@ -29,14 +29,14 @@ struct CardFormView: View {
         if let card {
             _cardName = State(initialValue: card.name)
             _rewardType = State(initialValue: card.rewardType)
-            _enableMinimumSpendingToggle = State(initialValue: card.minimumSpendingAmount > 0)
-            _totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
+            _hasMinimumSpending = State(initialValue: card.hasMinimumSpending)
+            _minimumSpendingAmount = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
             _statementDay = State(initialValue: card.minimumSpendingByDayOfMonth)
         } else {
             _cardName = State(initialValue: "")
             _rewardType = State(initialValue: "none")
-            _enableMinimumSpendingToggle = State(initialValue: false)
-            _totalGoal = State(initialValue: "")
+            _hasMinimumSpending = State(initialValue: false)
+            _minimumSpendingAmount = State(initialValue: "")
             _statementDay = State(initialValue: 1)
         }
     }
@@ -58,18 +58,21 @@ struct CardFormView: View {
                         }
                     }
                     
-                    Toggle("Minimum Spending", isOn: $enableMinimumSpendingToggle)
+                    Toggle("Minimum Spending", isOn: $hasMinimumSpending)
                     
-                    if enableMinimumSpendingToggle {
-                        LabeledContent {
-                            TextField("", text: $totalGoal)
-                                .textFieldStyle(.roundedBorder)
-                                .keyboardType(.decimalPad)
-                        } label: {
-                            Text("Need to spend")
+                    if hasMinimumSpending {
+                        VStack(alignment: .leading, spacing: 12) {
+                            LabeledContent {
+                                TextField("", text: $minimumSpendingAmount)
+                                    .textFieldStyle(.roundedBorder)
+                                    .keyboardType(.decimalPad)
+                            } label: {
+                                Text("Need to spend")
+                            }
+                            
+                            DayOfMonthPicker(selectedDay: $statementDay)
                         }
-                        
-                        DayOfMonthPicker(selectedDay: $statementDay)
+                        .padding(.leading, 20)
                     }
                 }
                 
@@ -90,7 +93,7 @@ struct CardFormView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") { saveCard() }
-                        .disabled(cardName.isEmpty || (enableMinimumSpendingToggle && totalGoal.isEmpty))
+                        .disabled(cardName.isEmpty || (hasMinimumSpending && minimumSpendingAmount.isEmpty))
                 }
             }
         }
@@ -109,21 +112,26 @@ struct CardFormView: View {
             // Update existing
             editing.name = cardName
             editing.rewardType = rewardType
-            if enableMinimumSpendingToggle, let parsed = Decimal(string: totalGoal) {
+            editing.hasMinimumSpending = hasMinimumSpending
+            if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) {
                 editing.minimumSpendingAmount = parsed
                 editing.minimumSpendingByDayOfMonth = statementDay
+            } else {
+                editing.minimumSpendingAmount = 0
+                editing.minimumSpendingByDayOfMonth = 1
             }
             do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
         } else {
             // Create new
             let goalAmount: Decimal = {
-                if enableMinimumSpendingToggle, let parsed = Decimal(string: totalGoal) { return parsed }
+                if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) { return parsed }
                 return 0
             }()
-            let stmtDay: Int = enableMinimumSpendingToggle ? statementDay : 1
+            let stmtDay: Int = hasMinimumSpending ? statementDay : 1
             let card = Card(
                 name: cardName,
                 minimumSpendingAmount: goalAmount,
+                hasMinimumSpending: hasMinimumSpending,
                 rewardType: rewardType,
                 minimumSpendingByDayOfMonth: stmtDay
             )
