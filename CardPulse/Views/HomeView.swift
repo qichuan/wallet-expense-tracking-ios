@@ -109,13 +109,13 @@ struct HomeView: View {
             )
         }
         .sheet(isPresented: $showingAddTransaction) {
-            AddTransactionView()
+            TransactionFormView()
         }
         .sheet(isPresented: $showingAllTransactions) {
             AllTransactionsView()
         }
         .sheet(item: $selectedTransaction) { transaction in
-            EditTransactionView(transaction: transaction)
+            TransactionFormView(transaction: transaction)
         }
     }
 }

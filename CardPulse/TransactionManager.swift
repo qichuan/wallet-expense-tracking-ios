@@ -224,9 +224,10 @@ class TransactionManager: ObservableObject {
     }
     
     private func escapeCSVField(_ field: String) -> String {
-        // Escape commas and quotes in CSV fields
+        // Escape quotes by doubling them per RFC 4180
         let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
-        if escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") {
+        // Wrap in quotes if field contains comma, quote, newline or carriage return
+        if escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") || escaped.contains("\r") {
             return "\"\(escaped)\""
         }
         return escaped
@@ -326,7 +327,9 @@ class TransactionManager: ObservableObject {
                 }
             } else if char == "," && !inQuotes {
                 // Field separator
-                components.append(currentField)
+                // Trim trailing carriage return if present
+                let cleaned = currentField.hasSuffix("\r") ? String(currentField.dropLast()) : currentField
+                components.append(cleaned)
                 currentField = ""
                 i = line.index(after: i)
             } else {
@@ -336,7 +339,8 @@ class TransactionManager: ObservableObject {
         }
         
         // Add the last field
-        components.append(currentField)
+        let cleaned = currentField.hasSuffix("\r") ? String(currentField.dropLast()) : currentField
+        components.append(cleaned)
         
         return components
     }
