@@ -36,36 +36,26 @@ extension ModelContainer {
     }
     
     private static func createMockCards() -> [Card] {
-        let calendar = Calendar.current
-        
         return [
             Card(
                 name: "Apple Card",
                 totalGoal: 1000,
-                goalDeadline: calendar.date(byAdding: .day, value: 30, to: Date()) ?? Date(),
-                rewardType: "cashback",
-                currentSpent: 750
+                rewardType: "cashback"
             ),
             Card(
                 name: "Chase Sapphire Preferred",
                 totalGoal: 1500,
-                goalDeadline: calendar.date(byAdding: .day, value: 45, to: Date()) ?? Date(),
-                rewardType: "miles",
-                currentSpent: 450
+                rewardType: "miles"
             ),
             Card(
                 name: "Amex Gold Card",
                 totalGoal: 2000,
-                goalDeadline: calendar.date(byAdding: .day, value: 15, to: Date()) ?? Date(),
-                rewardType: "points",
-                currentSpent: 1950
+                rewardType: "miles"
             ),
             Card(
                 name: "Citi Double Cash",
                 totalGoal: 2000,
-                goalDeadline: calendar.date(byAdding: .day, value: 5, to: Date()) ?? Date(),
-                rewardType: "miles",
-                currentSpent: 1300
+                rewardType: "miles"
             )
         ]
     }

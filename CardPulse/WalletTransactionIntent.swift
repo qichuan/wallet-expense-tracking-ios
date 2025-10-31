@@ -48,7 +48,6 @@ struct WalletTransactionIntent: AppIntent {
                 let newCard = Card(
                     name: cardName,
                     totalGoal: 0,
-                    goalDeadline: Date(),
                     rewardType: "miles"
                 )
                 context.insert(newCard)
@@ -67,9 +66,7 @@ struct WalletTransactionIntent: AppIntent {
             card: matchedCard
         )
         context.insert(txn)
-        if let matchedCard {
-            matchedCard.currentSpent += decimalAmount
-        }
+        // current spent is derived from transactions; no direct mutation
 
         do {
             try context.save()

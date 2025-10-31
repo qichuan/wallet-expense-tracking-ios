@@ -124,7 +124,6 @@ struct CardFormView: View {
             let card = Card(
                 name: cardName,
                 totalGoal: goalAmount,
-                goalDeadline: Date(),
                 rewardType: rewardType,
                 statementDay: stmtDay
             )

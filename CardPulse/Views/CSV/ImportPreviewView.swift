@@ -93,9 +93,7 @@ private extension ImportPreviewView {
         Card(
             name: name,
             totalGoal: 0,
-            goalDeadline: Date(),
             rewardType: "miles",
-            currentSpent: 0,
             statementDay: 1
         )
     }
