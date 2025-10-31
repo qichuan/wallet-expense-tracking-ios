@@ -19,7 +19,7 @@ struct CardFormView: View {
     @State private var rewardType: String
     @State private var hasMinimumSpending: Bool
     @State private var minimumSpendingAmount: String
-    @State private var statementDay: Int
+    @State private var minimumSpendingByDayOfMonth: Int
     @State private var showingDeleteAlert = false
     
     private let rewardTypes = ["none", "miles", "cashback"]
@@ -30,14 +30,14 @@ struct CardFormView: View {
             _cardName = State(initialValue: card.name)
             _rewardType = State(initialValue: card.rewardType)
             _hasMinimumSpending = State(initialValue: card.hasMinimumSpending)
-            _minimumSpendingAmount = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
-            _statementDay = State(initialValue: card.minimumSpendingByDayOfMonth)
+            _minimumSpendingAmount = State(initialValue: String(format: "%.2f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
+            _minimumSpendingByDayOfMonth = State(initialValue: card.minimumSpendingByDayOfMonth)
         } else {
             _cardName = State(initialValue: "")
             _rewardType = State(initialValue: "none")
             _hasMinimumSpending = State(initialValue: false)
             _minimumSpendingAmount = State(initialValue: "")
-            _statementDay = State(initialValue: 1)
+            _minimumSpendingByDayOfMonth = State(initialValue: 1)
         }
     }
     
@@ -66,11 +66,23 @@ struct CardFormView: View {
                                 TextField("", text: $minimumSpendingAmount)
                                     .textFieldStyle(.roundedBorder)
                                     .keyboardType(.decimalPad)
+                                    .onChange(of: minimumSpendingAmount) { _, newValue in
+                                        // Allow only digits and at most one decimal point; limit to 2 decimals
+                                        let filtered = newValue.filter { $0.isNumber || $0 == "." }
+                                        let parts = filtered.split(separator: ".", maxSplits: 2, omittingEmptySubsequences: false)
+                                        if parts.count > 1 {
+                                            let integerPart = String(parts[0])
+                                            let decimalPart = String(parts[1].prefix(2))
+                                            minimumSpendingAmount = decimalPart.isEmpty ? "\(integerPart)." : "\(integerPart).\(decimalPart)"
+                                        } else {
+                                            minimumSpendingAmount = String(filtered)
+                                        }
+                                    }
                             } label: {
                                 Text("Need to spend")
                             }
                             
-                            DayOfMonthPicker(selectedDay: $statementDay)
+                            DayOfMonthPicker(selectedDay: $minimumSpendingByDayOfMonth)
                         }
                         .padding(.leading, 20)
                     }
@@ -115,22 +127,19 @@ struct CardFormView: View {
             editing.hasMinimumSpending = hasMinimumSpending
             if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) {
                 editing.minimumSpendingAmount = parsed
-                editing.minimumSpendingByDayOfMonth = statementDay
-            } else {
-                editing.minimumSpendingAmount = 0
-                editing.minimumSpendingByDayOfMonth = 1
+                editing.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
             }
             do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
         } else {
             // Create new
-            let goalAmount: Decimal = {
+            let newMinimumSpendingAmount: Decimal = {
                 if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) { return parsed }
                 return 0
             }()
-            let stmtDay: Int = hasMinimumSpending ? statementDay : 1
+            let stmtDay: Int = hasMinimumSpending ? minimumSpendingByDayOfMonth : 1
             let card = Card(
                 name: cardName,
-                minimumSpendingAmount: goalAmount,
+                minimumSpendingAmount: newMinimumSpendingAmount,
                 hasMinimumSpending: hasMinimumSpending,
                 rewardType: rewardType,
                 minimumSpendingByDayOfMonth: stmtDay
