@@ -19,8 +19,7 @@ struct CardRow: View {
             return .teal
         case "cashback":
             return .yellow
-        case "points":
-            return .purple
+        
         default:
             return .teal
         }
@@ -32,10 +31,8 @@ struct CardRow: View {
             return "Miles"
         case "cashback":
             return "Cashback"
-        case "points":
-            return "Points"
         default:
-            return "Bonus"
+            return "None"
         }
     }
     
@@ -58,40 +55,45 @@ struct CardRow: View {
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                 
-                // Progress Bar
-                VStack(spacing: 4) {
-                    ProgressView(value: card.progressPercentage)
-                        .progressViewStyle(LinearProgressViewStyle(tint: .teal))
-                        .frame(height: 6)
-                    
-                    HStack {
-                        Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
-                            .font(.caption)
-                            .foregroundColor(.white)
+                // Progress Bar (only if card has a goal)
+                if card.totalGoal > 0 {
+                    VStack(spacing: 4) {
+                        ProgressView(value: card.progressPercentage)
+                            .progressViewStyle(LinearProgressViewStyle(tint: .teal))
+                            .frame(height: 6)
                         
-                        Spacer()
-                        
-                        Text("\(card.daysRemaining) days to statement")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
+                        HStack {
+                            Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Text("\(card.daysRemaining) days to statement")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
                     }
                 }
                 
-                // Reward Type Badge
-                HStack {
-                    Text(rewardTypeText)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(rewardTypeColor == .yellow ? .black : .white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(rewardTypeColor)
-                        .cornerRadius(6)
-                    
-                    Spacer()
+                // Reward Type Badge (hidden for none)
+                if card.rewardType.lowercased() != "none" {
+                    HStack {
+                        Text(rewardTypeText)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(rewardTypeColor == .yellow ? .black : .white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(rewardTypeColor)
+                            .cornerRadius(6)
+                        
+                        Spacer()
+                    }
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color.blue.opacity(0.1))
         .cornerRadius(16)
