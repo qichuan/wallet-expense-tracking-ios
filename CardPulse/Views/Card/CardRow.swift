@@ -56,14 +56,14 @@ struct CardRow: View {
                         .foregroundColor(.white)
                 
                 // Progress Bar (only if card has a goal)
-                if card.totalGoal > 0 {
+                if card.minimumSpendingAmount > 0 {
                     VStack(spacing: 4) {
                         ProgressView(value: card.progressPercentage)
                             .progressViewStyle(LinearProgressViewStyle(tint: .teal))
                             .frame(height: 6)
                         
                         HStack {
-                            Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.totalGoal as NSDecimalNumber), specifier: "%.0f")")
+                            Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.minimumSpendingAmount as NSDecimalNumber), specifier: "%.0f")")
                                 .font(.caption)
                                 .foregroundColor(.white)
                             
@@ -103,7 +103,7 @@ struct CardRow: View {
 #Preview {
     let card = Card(
         name: "Chase Sapphire Preferred",
-        totalGoal: 4000,
+        minimumSpendingAmount: 4000,
         rewardType: "miles",
         statementDay: 15
     )

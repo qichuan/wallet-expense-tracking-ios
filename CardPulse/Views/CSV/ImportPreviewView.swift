@@ -92,7 +92,7 @@ private extension ImportPreviewView {
     func makeTempCard(name: String) -> Card {
         Card(
             name: name,
-            totalGoal: 0,
+            minimumSpendingAmount: 0,
             rewardType: "miles",
             statementDay: 1
         )

@@ -39,22 +39,22 @@ extension ModelContainer {
         return [
             Card(
                 name: "Apple Card",
-                totalGoal: 1000,
+                minimumSpendingAmount: 1000,
                 rewardType: "cashback"
             ),
             Card(
                 name: "Chase Sapphire Preferred",
-                totalGoal: 1500,
+                minimumSpendingAmount: 1500,
                 rewardType: "miles"
             ),
             Card(
                 name: "Amex Gold Card",
-                totalGoal: 2000,
+                minimumSpendingAmount: 2000,
                 rewardType: "miles"
             ),
             Card(
                 name: "Citi Double Cash",
-                totalGoal: 2000,
+                minimumSpendingAmount: 2000,
                 rewardType: "miles"
             )
         ]
