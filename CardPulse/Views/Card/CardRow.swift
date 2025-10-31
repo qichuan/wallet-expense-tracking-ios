@@ -105,7 +105,7 @@ struct CardRow: View {
         name: "Chase Sapphire Preferred",
         minimumSpendingAmount: 4000,
         rewardType: "miles",
-        statementDay: 15
+        minimumSpendingByDayOfMonth: 15
     )
     
     CardRow(card: card)

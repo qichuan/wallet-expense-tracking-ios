@@ -15,18 +15,18 @@ final class Card {
     var minimumSpendingAmount: Decimal
     var rewardType: String
     var createdAt: Date
-    var statementDay: Int // 1...31
+    var minimumSpendingByDayOfMonth: Int // 1...31
     
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, minimumSpendingAmount: Decimal, rewardType: String, statementDay: Int = 1) {
+    init(name: String, minimumSpendingAmount: Decimal, rewardType: String, minimumSpendingByDayOfMonth: Int = 1) {
         self.id = UUID()
         self.name = name
         self.minimumSpendingAmount = minimumSpendingAmount
         self.rewardType = rewardType
         self.createdAt = Date()
-        self.statementDay = max(1, min(31, statementDay))
+        self.minimumSpendingByDayOfMonth = max(1, min(31, minimumSpendingByDayOfMonth))
     }
     
     var progressPercentage: Double {
@@ -51,7 +51,7 @@ final class Card {
         let calendar = Calendar.current
         let now = Date()
         var comps = calendar.dateComponents([.year, .month, .day], from: now)
-        let day = min(statementDay, calendar.range(of: .day, in: .month, for: now)?.count ?? statementDay)
+        let day = min(minimumSpendingByDayOfMonth, calendar.range(of: .day, in: .month, for: now)?.count ?? minimumSpendingByDayOfMonth)
         comps.day = day
         let thisMonthStatement = calendar.date(from: comps) ?? now
         if now >= thisMonthStatement {
@@ -59,7 +59,7 @@ final class Card {
         } else {
             let prevMonth = calendar.date(byAdding: .month, value: -1, to: now) ?? now
             var prevComps = calendar.dateComponents([.year, .month], from: prevMonth)
-            let prevDay = min(statementDay, calendar.range(of: .day, in: .month, for: prevMonth)?.count ?? statementDay)
+            let prevDay = min(minimumSpendingByDayOfMonth, calendar.range(of: .day, in: .month, for: prevMonth)?.count ?? minimumSpendingByDayOfMonth)
             prevComps.day = prevDay
             return calendar.date(from: prevComps) ?? now
         }

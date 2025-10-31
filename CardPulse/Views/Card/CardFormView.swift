@@ -31,7 +31,7 @@ struct CardFormView: View {
             _rewardType = State(initialValue: card.rewardType)
             _enableGoalFields = State(initialValue: true)
             _totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
-            _statementDay = State(initialValue: card.statementDay)
+            _statementDay = State(initialValue: card.minimumSpendingByDayOfMonth)
         } else {
             _cardName = State(initialValue: "")
             _rewardType = State(initialValue: "none")
@@ -111,7 +111,7 @@ struct CardFormView: View {
             editing.rewardType = rewardType
             if enableGoalFields, let parsed = Decimal(string: totalGoal) {
                 editing.minimumSpendingAmount = parsed
-                editing.statementDay = statementDay
+                editing.minimumSpendingByDayOfMonth = statementDay
             }
             do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
         } else {
@@ -125,7 +125,7 @@ struct CardFormView: View {
                 name: cardName,
                 minimumSpendingAmount: goalAmount,
                 rewardType: rewardType,
-                statementDay: stmtDay
+                minimumSpendingByDayOfMonth: stmtDay
             )
             modelContext.insert(card)
             do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
