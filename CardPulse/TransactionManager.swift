@@ -185,6 +185,7 @@ class TransactionManager: ObservableObject {
                     let newCard = Card(
                         name: cardName,
                         minimumSpendingAmount: 0,
+                        hasMinimumSpending: false,
                         rewardType: "miles"
                     )
                     modelContext.insert(newCard)

@@ -40,21 +40,25 @@ extension ModelContainer {
             Card(
                 name: "Apple Card",
                 minimumSpendingAmount: 1000,
+                hasMinimumSpending: true,
                 rewardType: "cashback"
             ),
             Card(
                 name: "Chase Sapphire Preferred",
                 minimumSpendingAmount: 1500,
+                hasMinimumSpending: true,
                 rewardType: "miles"
             ),
             Card(
                 name: "Amex Gold Card",
                 minimumSpendingAmount: 2000,
+                hasMinimumSpending: true,
                 rewardType: "miles"
             ),
             Card(
                 name: "Citi Double Cash",
                 minimumSpendingAmount: 2000,
+                hasMinimumSpending: true,
                 rewardType: "miles"
             )
         ]

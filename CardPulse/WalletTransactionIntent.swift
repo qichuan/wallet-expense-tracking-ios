@@ -48,7 +48,8 @@ struct WalletTransactionIntent: AppIntent {
                 let newCard = Card(
                     name: cardName,
                     minimumSpendingAmount: 0,
-                    rewardType: "miles"
+                    hasMinimumSpending: false,
+                    rewardType: "none"
                 )
                 context.insert(newCard)
                 matchedCard = newCard

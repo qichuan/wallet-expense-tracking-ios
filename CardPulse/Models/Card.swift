@@ -13,6 +13,7 @@ final class Card {
     var id: UUID
     var name: String
     var minimumSpendingAmount: Decimal
+    var hasMinimumSpending: Bool
     var rewardType: String
     var createdAt: Date
     var minimumSpendingByDayOfMonth: Int // 1...31
@@ -20,10 +21,11 @@ final class Card {
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, minimumSpendingAmount: Decimal, rewardType: String, minimumSpendingByDayOfMonth: Int = 1) {
+    init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false, rewardType: String, minimumSpendingByDayOfMonth: Int = 1) {
         self.id = UUID()
         self.name = name
         self.minimumSpendingAmount = minimumSpendingAmount
+        self.hasMinimumSpending = hasMinimumSpending
         self.rewardType = rewardType
         self.createdAt = Date()
         self.minimumSpendingByDayOfMonth = max(1, min(31, minimumSpendingByDayOfMonth))

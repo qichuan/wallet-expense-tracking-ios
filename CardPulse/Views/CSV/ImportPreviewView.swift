@@ -93,6 +93,7 @@ private extension ImportPreviewView {
         Card(
             name: name,
             minimumSpendingAmount: 0,
+            hasMinimumSpending: false,
             rewardType: "none",
             minimumSpendingByDayOfMonth: 1
         )
