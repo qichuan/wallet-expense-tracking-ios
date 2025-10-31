@@ -44,44 +44,6 @@ class TransactionManager: ObservableObject {
         isLoading = false
     }
     
-    func addCard(name: String, totalGoal: Decimal, rewardType: String) {
-        isLoading = true
-        errorMessage = nil
-        
-        let card = Card(
-            name: name,
-            totalGoal: totalGoal,
-            rewardType: rewardType
-        )
-        
-        modelContext.insert(card)
-        
-        do {
-            try modelContext.save()
-        } catch {
-            errorMessage = "Error saving card: \(error.localizedDescription)"
-            print("Error saving card: \(error)")
-        }
-        
-        isLoading = false
-    }
-    
-    func updateCardGoal(card: Card, newGoal: Decimal) {
-        isLoading = true
-        errorMessage = nil
-        
-        card.totalGoal = newGoal
-        
-        do {
-            try modelContext.save()
-        } catch {
-            errorMessage = "Error updating card goal: \(error.localizedDescription)"
-            print("Error updating card goal: \(error)")
-        }
-        
-        isLoading = false
-    }
-    
     func deleteTransaction(_ transaction: Transaction) {
         isLoading = true
         errorMessage = nil
@@ -114,48 +76,7 @@ class TransactionManager: ObservableObject {
         isLoading = false
     }
     
-    func getTransactionsForCard(_ card: Card) -> [Transaction] {
-        // Capture the UUID value to avoid optional key-path vs key-path comparison issues.
-        let cardID = card.id
-        let request = FetchDescriptor<Transaction>(
-            predicate: #Predicate { transaction in
-                transaction.card?.id == cardID
-            }
-        )
-        
-        do {
-            return try modelContext.fetch(request)
-        } catch {
-            print("Error fetching transactions: \(error)")
-            return []
-        }
-    }
     
-    func getTransactionsForPeriod(_ startDate: Date, _ endDate: Date) -> [Transaction] {
-        let request = FetchDescriptor<Transaction>(
-            predicate: #Predicate { transaction in
-                transaction.date >= startDate && transaction.date <= endDate
-            }
-        )
-        
-        do {
-            return try modelContext.fetch(request)
-        } catch {
-            print("Error fetching transactions for period: \(error)")
-            return []
-        }
-    }
-    
-    func getSpendingByCategory(for transactions: [Transaction]) -> [String: Decimal] {
-        var categorySpending: [String: Decimal] = [:]
-        
-        for transaction in transactions {
-            let category = transaction.category ?? "Other"
-            categorySpending[category, default: 0] += transaction.amount
-        }
-        
-        return categorySpending
-    }
     
     func exportToCSV(from startDate: Date? = nil, to endDate: Date? = nil) -> String {
         var request = FetchDescriptor<Transaction>()
