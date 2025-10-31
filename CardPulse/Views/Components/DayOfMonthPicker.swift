@@ -15,28 +15,23 @@ struct DayOfMonthPicker: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Statement Day")
-                
-                Spacer()
-                
-                Button(action: {
-                    showingPicker.toggle()
-                }) {
-                    HStack(spacing: 8) {
+            Button(action: {
+                showingPicker.toggle()
+            }) {
+                HStack(spacing: 8) {
+                    Text("By Day")
+                    HStack(spacing: 6) {
                         Text("\(selectedDay)")
-
-                        
+                            .fontWeight(.semibold)
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .rotationEffect(.degrees(showingPicker ? 180 : 0))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    
+                    Text("of the month")
                 }
-                .buttonStyle(PlainButtonStyle())
+                .padding(.vertical, 12)
             }
+            .buttonStyle(PlainButtonStyle())
             
             if showingPicker {
                 VStack(spacing: 0) {
@@ -69,20 +64,20 @@ struct DayOfMonthPicker: View {
                             .fill(Color(.systemBackground))
                             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                     )
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                        removal: .opacity.combined(with: .scale(scale: 0.95))
-                    ))
+                    // .transition(.asymmetric(
+                    //     insertion: .move(edge: .top).combined(with: .opacity),
+                    //     removal: .move(edge: .top).combined(with: .opacity)
+                    // ))
                 }
                 .padding(.top, 8)
             }
             
-            Text("Your monthly spending resets each statement day. Aim to meet the minimum spending before statement day for rewards.")
+            Text("Your monthly mininum spending resets on this date. Try to reach the minimum spending amount before then to earn your rewards")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.top, 4)
         }
-        .animation(.easeInOut(duration: 0.3), value: showingPicker)
+        //.animation(.easeInOut(duration: 0.3), value: showingPicker)
     }
 }
 
