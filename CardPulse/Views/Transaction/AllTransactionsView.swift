@@ -90,7 +90,7 @@ struct AllTransactionsView: View {
             }
         }
         .sheet(item: $selectedTransaction) { transaction in
-            EditTransactionView(transaction: transaction)
+            TransactionFormView(transaction: transaction)
         }
     }
 }
