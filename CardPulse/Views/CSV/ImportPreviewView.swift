@@ -94,7 +94,7 @@ private extension ImportPreviewView {
             name: name,
             minimumSpendingAmount: 0,
             rewardType: "miles",
-            statementDay: 1
+            minimumSpendingByDayOfMonth: 1
         )
     }
     
