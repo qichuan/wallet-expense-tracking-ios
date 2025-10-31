@@ -93,7 +93,7 @@ private extension ImportPreviewView {
         Card(
             name: name,
             minimumSpendingAmount: 0,
-            rewardType: "miles",
+            rewardType: "none",
             minimumSpendingByDayOfMonth: 1
         )
     }

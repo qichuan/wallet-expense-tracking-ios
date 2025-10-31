@@ -17,7 +17,7 @@ struct CardFormView: View {
     // Form state
     @State private var cardName: String
     @State private var rewardType: String
-    @State private var enableGoalFields: Bool
+    @State private var enableMinimumSpendingToggle: Bool
     @State private var totalGoal: String
     @State private var statementDay: Int
     @State private var showingDeleteAlert = false
@@ -29,13 +29,13 @@ struct CardFormView: View {
         if let card {
             _cardName = State(initialValue: card.name)
             _rewardType = State(initialValue: card.rewardType)
-            _enableGoalFields = State(initialValue: true)
+            _enableMinimumSpendingToggle = State(initialValue: card.minimumSpendingAmount > 0)
             _totalGoal = State(initialValue: String(format: "%.0f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)))
             _statementDay = State(initialValue: card.minimumSpendingByDayOfMonth)
         } else {
             _cardName = State(initialValue: "")
             _rewardType = State(initialValue: "none")
-            _enableGoalFields = State(initialValue: false)
+            _enableMinimumSpendingToggle = State(initialValue: false)
             _totalGoal = State(initialValue: "")
             _statementDay = State(initialValue: 1)
         }
@@ -58,9 +58,9 @@ struct CardFormView: View {
                         }
                     }
                     
-                    Toggle("Minimum Spending", isOn: $enableGoalFields)
+                    Toggle("Minimum Spending", isOn: $enableMinimumSpendingToggle)
                     
-                    if enableGoalFields {
+                    if enableMinimumSpendingToggle {
                         LabeledContent {
                             TextField("", text: $totalGoal)
                                 .textFieldStyle(.roundedBorder)
@@ -90,7 +90,7 @@ struct CardFormView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") { saveCard() }
-                        .disabled(cardName.isEmpty || (enableGoalFields && totalGoal.isEmpty))
+                        .disabled(cardName.isEmpty || (enableMinimumSpendingToggle && totalGoal.isEmpty))
                 }
             }
         }
@@ -109,7 +109,7 @@ struct CardFormView: View {
             // Update existing
             editing.name = cardName
             editing.rewardType = rewardType
-            if enableGoalFields, let parsed = Decimal(string: totalGoal) {
+            if enableMinimumSpendingToggle, let parsed = Decimal(string: totalGoal) {
                 editing.minimumSpendingAmount = parsed
                 editing.minimumSpendingByDayOfMonth = statementDay
             }
@@ -117,10 +117,10 @@ struct CardFormView: View {
         } else {
             // Create new
             let goalAmount: Decimal = {
-                if enableGoalFields, let parsed = Decimal(string: totalGoal) { return parsed }
+                if enableMinimumSpendingToggle, let parsed = Decimal(string: totalGoal) { return parsed }
                 return 0
             }()
-            let stmtDay: Int = enableGoalFields ? statementDay : 1
+            let stmtDay: Int = enableMinimumSpendingToggle ? statementDay : 1
             let card = Card(
                 name: cardName,
                 minimumSpendingAmount: goalAmount,
