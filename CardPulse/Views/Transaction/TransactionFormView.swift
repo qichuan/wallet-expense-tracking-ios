@@ -23,6 +23,11 @@ struct TransactionFormView: View {
     @State private var note: String
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
+    @FocusState private var focusedField: Field?
+    
+    private enum Field {
+        case merchant, amount, note
+    }
     
     private let categories = MerchantUtils.defaultCategories
     
@@ -52,6 +57,7 @@ struct TransactionFormView: View {
                     LabeledContent {
                         TextField("", text: $merchant)
                             .textFieldStyle(.roundedBorder)
+                            .focused($focusedField, equals: .merchant)
                     } label: {
                         Text("Merchant")
                     }
@@ -60,6 +66,7 @@ struct TransactionFormView: View {
                         TextField("", text: $amount)
                             .textFieldStyle(.roundedBorder)
                             .keyboardType(.decimalPad)
+                            .focused($focusedField, equals: .amount)
                             .onChange(of: amount) { _, newValue in
                                 amount = formatAmountInput(newValue)
                             }
@@ -68,6 +75,9 @@ struct TransactionFormView: View {
                     }
                     
                     DatePicker("Date", selection: $transactionDate, displayedComponents: [.date, .hourAndMinute])
+                        .onChange(of: transactionDate) { _, _ in
+                            focusedField = nil
+                        }
                     
                     Picker("Card", selection: $selectedCard) {
                         Text("No card selected").tag(nil as Card?)
@@ -76,6 +86,9 @@ struct TransactionFormView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
+                    .onChange(of: selectedCard) { _, _ in
+                        focusedField = nil
+                    }
                     
                     Picker("Category", selection: $category) {
                         ForEach(categories, id: \.self) { category in
@@ -83,12 +96,16 @@ struct TransactionFormView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
+                    .onChange(of: category) { _, _ in
+                        focusedField = nil
+                    }
                 }
                 
                 Section("Note") {
                     TextField("This transaction is about...", text: $note, axis: .vertical)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .lineLimit(3...6)
+                        .focused($focusedField, equals: .note)
                 }
                 
                 if transactionToEdit != nil {
@@ -100,6 +117,10 @@ struct TransactionFormView: View {
                     }
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = nil
+            }
             .navigationTitle(transactionToEdit == nil ? "Add Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -110,6 +131,9 @@ struct TransactionFormView: View {
                     Button("Save") { saveTransaction() }
                         .disabled(merchant.isEmpty || amount.isEmpty)
                 }
+            }
+            .onAppear{
+                focusedField = .merchant
             }
         }
         .alert("Delete Transaction", isPresented: $showingDeleteAlert) {
