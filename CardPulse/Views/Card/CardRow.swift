@@ -58,13 +58,17 @@ struct CardRow: View {
                             Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.minimumSpendingAmount as NSDecimalNumber), specifier: "%.0f")")
                                 .font(.caption)
                                 .foregroundColor(.white)
-                            
                             Spacer()
-                            
+                            Text(card.spendingPeriodDisplay)
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                            Spacer()
                             Text("\(card.daysRemaining) days left")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                         }
+                        
+                        
                     }
                 }
                 
