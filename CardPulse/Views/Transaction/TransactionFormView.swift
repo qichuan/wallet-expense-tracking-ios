@@ -110,17 +110,23 @@ struct TransactionFormView: View {
                 
                 if transactionToEdit != nil {
                     Section {
-                        Button("Delete Transaction") {
+                        Button(action: {
                             showingDeleteAlert = true
+                        }) {
+                            Text("Delete Transaction")
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
                         }
                         .foregroundColor(.red)
+                        .buttonStyle(.plain)
                     }
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedField = nil
-            }
+            .simultaneousGesture(
+                TapGesture().onEnded { _ in
+                    focusedField = nil
+                }
+            )
             .navigationTitle(transactionToEdit == nil ? "Add Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

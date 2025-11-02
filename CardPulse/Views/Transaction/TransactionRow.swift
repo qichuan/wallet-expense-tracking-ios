@@ -24,6 +24,22 @@ struct TransactionRow: View {
         MerchantUtils.color(for: transaction.category)
     }
     
+    private var dateDisplayString: String {
+        let calendar = Calendar.current
+        let now = Date()
+        let transactionStartOfDay = calendar.startOfDay(for: transaction.date)
+        let todayStartOfDay = calendar.startOfDay(for: now)
+        let yesterdayStartOfDay = calendar.date(byAdding: .day, value: -1, to: todayStartOfDay) ?? todayStartOfDay
+        
+        if transactionStartOfDay == todayStartOfDay {
+            return "Today"
+        } else if transactionStartOfDay == yesterdayStartOfDay {
+            return "Yesterday"
+        } else {
+            return Self.dateFormatter.string(from: transaction.date)
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 12) {
             // Merchant Icon
@@ -50,7 +66,7 @@ struct TransactionRow: View {
                 }
                 
                 HStack(spacing: 8) {
-                    Text(Self.dateFormatter.string(from: transaction.date))
+                    Text(dateDisplayString)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
                     
