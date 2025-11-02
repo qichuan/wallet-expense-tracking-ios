@@ -29,74 +29,108 @@ struct SettingsView: View {
     @State private var showingFilePicker = false
     @State private var csvToExport = ""
     @State private var exportFilename = "transactions_export.csv"
+    @State private var isExporting = false
+    @State private var showingExportCompleteAlert = false
+    @State private var exportCompleteMessage = ""
+    
+    // Import progress states
+    @State private var isImporting = false
+    @State private var importProgress: Double = 0.0
+    @State private var importProgressText = ""
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 24) {
-                    
-                    // DATA MANAGEMENT Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("DATA MANAGEMENT")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.horizontal)
+        ZStack {
+            NavigationView {
+                ScrollView {
+                    VStack(spacing: 24) {
                         
-                        VStack(spacing: 0) {
-                            SettingsRow(
-                                icon: "square.and.arrow.up",
-                                title: "Import from CSV",
-                                action: { showingImportPicker = true }
-                            )
+                        // DATA MANAGEMENT Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("DATA MANAGEMENT")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal)
                             
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                            
-                            SettingsRow(
-                                icon: "square.and.arrow.down",
-                                title: "Export to CSV",
-                                action: { showingExportOptions = true }
-                            )
-                        }
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
-                    }
-                    
-                    
-                    // SUPPORT & ABOUT Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("SUPPORT & ABOUT")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white.opacity(0.7))
+                            VStack(spacing: 0) {
+                                SettingsRow(
+                                    icon: "square.and.arrow.up",
+                                    title: "Import from CSV",
+                                    action: { showingImportPicker = true }
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                
+                                SettingsRow(
+                                    icon: "square.and.arrow.down",
+                                    title: "Export to CSV",
+                                    action: { showingExportOptions = true }
+                                )
+                            }
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(12)
                             .padding(.horizontal)
-                        
-                        VStack(spacing: 0) {
-                            SettingsRow(
-                                icon: "questionmark.circle",
-                                title: "Help & FAQ",
-                                action: {}
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                            
-                            SettingsRow(
-                                icon: "info.circle",
-                                title: "About CardPulse",
-                                action: {}
-                            )
                         }
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
+                        
+                        
+                        // SUPPORT & ABOUT Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("SUPPORT & ABOUT")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal)
+                            
+                            VStack(spacing: 0) {
+                                SettingsRow(
+                                    icon: "questionmark.circle",
+                                    title: "Help & FAQ",
+                                    action: {}
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                
+                                SettingsRow(
+                                    icon: "info.circle",
+                                    title: "About CardPulse",
+                                    action: {}
+                                )
+                            }
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
                     }
+                    .padding(.bottom, 100)
                 }
-                .padding(.bottom, 100)
+                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             }
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            
+            // Export progress overlay
+            if isExporting {
+                ProgressOverlay(
+                    title: "Exporting CSV",
+                    message: "Preparing export...",
+                    progress: nil
+                )
+                .transition(.opacity)
+                .zIndex(9999)
+                .allowsHitTesting(true)
+            }
+            
+            // Import progress overlay
+            if isImporting {
+                ProgressOverlay(
+                    title: "Importing CSV",
+                    message: importProgressText,
+                    progress: importProgress
+                )
+                .transition(.opacity)
+                .zIndex(9999)
+                .allowsHitTesting(true)
+            }
         }
         // Direct import (with preview)
         .fileImporter(
@@ -112,9 +146,9 @@ struct SettingsView: View {
                 rows: previewRows,
                 missingCards: missingCardNames,
                 onConfirm: {
-                    TransactionManager(modelContext: modelContext).importFromCSV(importCSVContent)
-                    importMessage = "CSV imported successfully."
-                    showingImportAlert = true
+                    Task {
+                        await performImport()
+                    }
                 },
                 onCancel: { }
             )
@@ -125,10 +159,9 @@ struct SettingsView: View {
                 startDate: $startDate,
                 endDate: $endDate,
                 onExport: {
-                    let mgr = TransactionManager(modelContext: modelContext)
-                    csvToExport = mgr.exportToCSV(from: startDate, to: endDate)
-                    exportFilename = "transactions_\(formatDate(startDate))_to_\(formatDate(endDate)).csv"
-                    showingFilePicker = true
+                    Task {
+                        await performExport()
+                    }
                 }
             )
         }
@@ -137,7 +170,18 @@ struct SettingsView: View {
             DocumentPickerView(
                 csvContent: csvToExport,
                 filename: exportFilename,
-                onComplete: { _ in }
+                onComplete: { result in
+                    switch result {
+                    case .success:
+                        exportCompleteMessage = "CSV file exported successfully!"
+                        showingExportCompleteAlert = true
+                    case .failure(let error):
+                        if (error as NSError).code != -2 { // -2 is user cancellation, don't show error
+                            exportCompleteMessage = "Export completed. File saved."
+                            showingExportCompleteAlert = true
+                        }
+                    }
+                }
             )
         }
         .alert("Import Complete", isPresented: $showingImportAlert) {
@@ -145,15 +189,153 @@ struct SettingsView: View {
         } message: {
             Text(importMessage)
         }
+        .alert("Export Complete", isPresented: $showingExportCompleteAlert) {
+            Button("OK") {}
+        } message: {
+            Text(exportCompleteMessage)
+        }
     }
 }
 
-// MARK: - Import Handling
+// MARK: - Import/Export Handling
 private extension SettingsView {
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
+    }
+    
+    @MainActor
+    func performImport() async {
+        isImporting = true
+        importProgress = 0.0
+        importProgressText = "Starting import..."
+        
+        // Close the preview sheet
+        showingImportPreview = false
+        
+        let lines = importCSVContent.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let totalLines = max(lines.count - 1, 1) // Exclude header
+        var processedCount = 0
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        
+        for (index, line) in lines.enumerated() {
+            if index == 0 || line.isEmpty { continue } // Skip header
+            
+            // Process line
+            let components = parseCSVLineLocal(line)
+            guard components.count >= 5 else { continue }
+            
+            let merchant = components[0]
+            let amountString = components[1]
+            let category = components[2].isEmpty ? nil : components[2]
+            let cardName = components[3]
+            let dateString = components[4]
+            let note = components.count > 5 ? components[5] : nil
+            
+            guard let amount = Decimal(string: amountString),
+                  let date = dateFormatter.date(from: dateString) else { continue }
+            
+            var matchedCard: Card? = nil
+            if !cardName.isEmpty {
+                let cardRequest = FetchDescriptor<Card>(
+                    predicate: #Predicate { card in
+                        card.name == cardName
+                    }
+                )
+                if let found = try? modelContext.fetch(cardRequest).first {
+                    matchedCard = found
+                } else {
+                    let newCard = Card(
+                        name: cardName,
+                        minimumSpendingAmount: 0,
+                        hasMinimumSpending: false,
+                        rewardType: .none
+                    )
+                    modelContext.insert(newCard)
+                    matchedCard = newCard
+                }
+            }
+            
+            let transaction = Transaction(
+                merchant: merchant,
+                amount: amount,
+                date: date,
+                category: category,
+                note: note,
+                card: matchedCard
+            )
+            modelContext.insert(transaction)
+            
+            processedCount += 1
+            importProgress = Double(processedCount) / Double(totalLines)
+            importProgressText = "Importing transaction \(processedCount) of \(totalLines)..."
+            
+            // Allow UI updates every 10 transactions or at the end
+            if processedCount % 10 == 0 || processedCount == totalLines {
+                try? await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
+            }
+        }
+        
+        do {
+            try modelContext.save()
+            importProgress = 1.0
+            importProgressText = "Import completed!"
+            importMessage = "Successfully imported \(processedCount) transactions."
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            isImporting = false
+            showingImportAlert = true
+        } catch {
+            importMessage = "Error saving: \(error.localizedDescription)"
+            isImporting = false
+            showingImportAlert = true
+        }
+    }
+    
+    @MainActor
+    func performExport() async {
+        // Close the export options sheet first
+        showingExportOptions = false
+        
+        // Wait for sheet to fully dismiss
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Now show progress overlay after sheet is dismissed
+        withAnimation {
+            isExporting = true
+        }
+        
+        // Small delay to ensure overlay is visible
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        // Generate CSV
+        let mgr = TransactionManager(modelContext: modelContext)
+        csvToExport = mgr.exportToCSV(from: startDate, to: endDate)
+        exportFilename = "transactions_\(formatDate(startDate))_to_\(formatDate(endDate)).csv"
+        
+        // Verify CSV was generated
+        guard !csvToExport.isEmpty else {
+            withAnimation {
+                isExporting = false
+            }
+            importMessage = "No transactions found to export."
+            showingImportAlert = true
+            return
+        }
+        
+        // Small delay to show progress before showing file picker
+        try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
+        
+        withAnimation {
+            isExporting = false
+        }
+        
+        // Wait a bit more before showing file picker to ensure overlay dismisses
+        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        showingFilePicker = true
     }
     
     func handleImport(result: Result<[URL], Error>) {
@@ -281,6 +463,49 @@ struct SettingsRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct ProgressOverlay: View {
+    let title: String
+    let message: String
+    let progress: Double?
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                if let progress = progress {
+                    ProgressView(value: progress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .teal))
+                        .frame(width: 200)
+                    
+                    Text("\(Int(progress * 100))%")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                } else {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .tint(.teal)
+                }
+                
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+            .padding(24)
+            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .cornerRadius(16)
+            .shadow(radius: 10)
+        }
     }
 }
 
