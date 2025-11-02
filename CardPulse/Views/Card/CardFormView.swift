@@ -21,6 +21,13 @@ struct CardFormView: View {
     @State private var minimumSpendingAmount: String
     @State private var minimumSpendingByDayOfMonth: Int
     @State private var showingDeleteAlert = false
+    @FocusState private var focusedField: Field?
+
+    // Focus fields for this form
+    private enum Field {
+        case name
+        case minSpendAmount
+    }
     
     private let rewardTypes = ["none", "miles", "cashback"]
     
@@ -48,6 +55,7 @@ struct CardFormView: View {
                     LabeledContent {
                         TextField("", text: $cardName)
                             .textFieldStyle(.roundedBorder)
+                            .focused($focusedField, equals: .name)
                     } label: {
                         Text("Card Name")
                     }
@@ -66,6 +74,7 @@ struct CardFormView: View {
                                 TextField("", text: $minimumSpendingAmount)
                                     .textFieldStyle(.roundedBorder)
                                     .keyboardType(.numberPad)
+                                    .focused($focusedField, equals: .minSpendAmount)
                                     .onChange(of: minimumSpendingAmount) { _, newValue in
                                         // Allow only digits (no decimals)
                                         minimumSpendingAmount = newValue.filter { $0.isNumber }
@@ -85,7 +94,7 @@ struct CardFormView: View {
                                 Text("By Day \(minimumSpendingByDayOfMonth) of each month")
                             }
                             
-                            Text("Your mininum spending resets on this day each month. Try to reach the minimum spending amount before then to earn your rewards")
+                            Text("Your mininum spending resets on this day each month. Try to reach the minimum spending amount before then to earn rewards from your card issuer")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .padding(.top, 4)
@@ -102,6 +111,13 @@ struct CardFormView: View {
                         .foregroundColor(.red)
                     }
                 }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = nil
+            }
+            .onAppear{
+                focusedField = .name
             }
             .navigationTitle(cardToEdit == nil ? "Add Card" : "Edit Card")
             .navigationBarTitleDisplayMode(.inline)
@@ -166,5 +182,3 @@ struct CardFormView: View {
     CardFormView()
         .modelContainer(ModelContainer.createMockContainer())
 }
-
-
