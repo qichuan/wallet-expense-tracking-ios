@@ -117,7 +117,9 @@ struct CardFormView: View {
                 focusedField = nil
             }
             .onAppear{
-                focusedField = .name
+                if (cardToEdit == nil) {
+                    focusedField = .name
+                }
             }
             .navigationTitle(cardToEdit == nil ? "Add Card" : "Edit Card")
             .navigationBarTitleDisplayMode(.inline)

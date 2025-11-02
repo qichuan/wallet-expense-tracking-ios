@@ -133,7 +133,9 @@ struct TransactionFormView: View {
                 }
             }
             .onAppear{
-                focusedField = .merchant
+                if (transactionToEdit == nil) {
+                    focusedField = .merchant
+                }
             }
         }
         .alert("Delete Transaction", isPresented: $showingDeleteAlert) {
