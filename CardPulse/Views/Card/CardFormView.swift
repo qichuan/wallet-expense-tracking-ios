@@ -16,7 +16,7 @@ struct CardFormView: View {
     
     // Form state
     @State private var cardName: String
-    @State private var rewardType: String
+    @State private var rewardType: RewardType
     @State private var hasMinimumSpending: Bool
     @State private var minimumSpendingAmount: String
     @State private var minimumSpendingByDayOfMonth: Int
@@ -29,7 +29,7 @@ struct CardFormView: View {
         case minSpendAmount
     }
     
-    private let rewardTypes = ["none", "miles", "cashback"]
+    private let rewardTypes = RewardType.allCases
     
     init(card: Card? = nil) {
         self.cardToEdit = card
@@ -41,7 +41,7 @@ struct CardFormView: View {
             _minimumSpendingByDayOfMonth = State(initialValue: card.minimumSpendingByDayOfMonth)
         } else {
             _cardName = State(initialValue: "")
-            _rewardType = State(initialValue: "none")
+            _rewardType = State(initialValue: .none)
             _hasMinimumSpending = State(initialValue: false)
             _minimumSpendingAmount = State(initialValue: "")
             _minimumSpendingByDayOfMonth = State(initialValue: 1)
@@ -62,8 +62,12 @@ struct CardFormView: View {
                     
                     Picker("Reward Type", selection: $rewardType) {
                         ForEach(rewardTypes, id: \.self) { type in
-                            Text(type.capitalized).tag(type)
+                            Text(type.displayName).tag(type)
                         }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: rewardType) { _, _ in
+                        focusedField = nil
                     }
                     
                     Toggle("Minimum Spending", isOn: $hasMinimumSpending)

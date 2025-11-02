@@ -8,20 +8,30 @@
 import Foundation
 import SwiftData
 
+enum RewardType: String, Codable, CaseIterable {
+    case none = "none"
+    case miles = "miles"
+    case cashback = "cashback"
+    
+    var displayName: String {
+        rawValue.capitalized
+    }
+}
+
 @Model
 final class Card {
     var id: UUID
     var name: String
     var minimumSpendingAmount: Decimal
     var hasMinimumSpending: Bool
-    var rewardType: String
+    var rewardType: RewardType
     var createdAt: Date
     var minimumSpendingByDayOfMonth: Int // 1...31
     
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
     
-    init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false, rewardType: String, minimumSpendingByDayOfMonth: Int = 1) {
+    init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false, rewardType: RewardType = .none, minimumSpendingByDayOfMonth: Int = 1) {
         self.id = UUID()
         self.name = name
         self.minimumSpendingAmount = minimumSpendingAmount
