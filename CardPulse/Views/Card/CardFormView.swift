@@ -44,7 +44,7 @@ struct CardFormView: View {
             _rewardType = State(initialValue: .none)
             _hasMinimumSpending = State(initialValue: false)
             _minimumSpendingAmount = State(initialValue: "")
-            _minimumSpendingByDayOfMonth = State(initialValue: 1)
+            _minimumSpendingByDayOfMonth = State(initialValue: 20)
         }
     }
     
