@@ -109,17 +109,23 @@ struct CardFormView: View {
                 
                 if cardToEdit != nil {
                     Section {
-                        Button("Delete Card") {
+                        Button(action: {
                             showingDeleteAlert = true
+                        }) {
+                            Text("Delete Card")
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
                         }
                         .foregroundColor(.red)
+                        .buttonStyle(.plain)
                     }
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedField = nil
-            }
+            .simultaneousGesture(
+                TapGesture().onEnded { _ in
+                    focusedField = nil
+                }
+            )
             .onAppear{
                 if (cardToEdit == nil) {
                     focusedField = .name
