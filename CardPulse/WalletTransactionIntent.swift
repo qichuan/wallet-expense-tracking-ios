@@ -49,7 +49,7 @@ struct WalletTransactionIntent: AppIntent {
                     name: cardName,
                     minimumSpendingAmount: 0,
                     hasMinimumSpending: false,
-                    rewardType: "none"
+                        rewardType: .none
                 )
                 context.insert(newCard)
                 matchedCard = newCard

@@ -87,7 +87,7 @@ struct TransactionRow: View {
         name: "Chase Sapphire Preferred",
         minimumSpendingAmount: 4000,
         hasMinimumSpending: true,
-        rewardType: "miles",
+        rewardType: .miles,
         minimumSpendingByDayOfMonth: 15
     )
     

@@ -186,7 +186,7 @@ class TransactionManager: ObservableObject {
                         name: cardName,
                         minimumSpendingAmount: 0,
                         hasMinimumSpending: false,
-                        rewardType: "none"
+                        rewardType: .none
                     )
                     modelContext.insert(newCard)
                     matchedCard = newCard

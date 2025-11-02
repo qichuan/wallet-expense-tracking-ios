@@ -14,26 +14,18 @@ struct CardRow: View {
     private var bankIcon: String { "creditcard" }
     
     private var rewardTypeColor: Color {
-        switch card.rewardType.lowercased() {
-        case "miles":
+        switch card.rewardType {
+        case .miles:
             return .teal
-        case "cashback":
+        case .cashback:
             return .yellow
-        
-        default:
+        case .none:
             return .teal
         }
     }
     
     private var rewardTypeText: String {
-        switch card.rewardType.lowercased() {
-        case "miles":
-            return "Miles"
-        case "cashback":
-            return "Cashback"
-        default:
-            return "None"
-        }
+        card.rewardType.displayName
     }
     
     var body: some View {
@@ -77,7 +69,7 @@ struct CardRow: View {
                 }
                 
                 // Reward Type Badge (hidden for none)
-                if card.rewardType.lowercased() != "none" {
+                if card.rewardType != .none {
                     HStack {
                         Text(rewardTypeText)
                             .font(.caption)
@@ -105,7 +97,7 @@ struct CardRow: View {
         name: "Chase Sapphire Preferred",
         minimumSpendingAmount: 4000,
         hasMinimumSpending: true,
-        rewardType: "miles",
+        rewardType: .miles,
         minimumSpendingByDayOfMonth: 15
     )
     
