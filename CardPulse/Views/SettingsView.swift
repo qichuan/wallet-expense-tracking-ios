@@ -278,6 +278,7 @@ struct SettingsRow: View {
                     .foregroundColor(.white.opacity(0.7))
             }
             .padding()
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
     }
