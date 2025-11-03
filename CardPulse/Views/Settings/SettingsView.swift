@@ -36,6 +36,7 @@ struct SettingsView: View {
     // Import progress states
     @State private var isImporting = false
     @State private var importProgressText = ""
+    @State private var showingHowToAutoTracking = false
     
     var body: some View {
         ZStack {
@@ -84,8 +85,8 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 SettingsRow(
                                     icon: "questionmark.circle",
-                                    title: "Help & FAQ",
-                                    action: {}
+                                    title: "How to setup automatic wallet transaction tracking?",
+                                    action: { showingHowToAutoTracking = true }
                                 )
                                 
                                 Divider()
@@ -182,6 +183,10 @@ struct SettingsView: View {
                     }
                 }
             )
+        }
+        // How-to carousel
+        .sheet(isPresented: $showingHowToAutoTracking) {
+            HowToAutoTrackingView()
         }
         .alert("Import Complete", isPresented: $showingImportAlert) {
             Button("OK") {}
