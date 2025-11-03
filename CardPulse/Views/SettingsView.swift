@@ -35,7 +35,6 @@ struct SettingsView: View {
     
     // Import progress states
     @State private var isImporting = false
-    @State private var importProgress: Double = 0.0
     @State private var importProgressText = ""
     
     var body: some View {
@@ -124,8 +123,8 @@ struct SettingsView: View {
             if isImporting {
                 ProgressOverlay(
                     title: "Importing CSV",
-                    message: importProgressText,
-                    progress: importProgress
+                    message: "Importing...",
+                    progress: nil
                 )
                 .transition(.opacity)
                 .zIndex(9999)
@@ -208,11 +207,28 @@ private extension SettingsView {
     @MainActor
     func performImport() async {
         isImporting = true
-        importProgress = 0.0
         importProgressText = "Starting import..."
         
         // Close the preview sheet
         showingImportPreview = false
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Build a cache of cards by name: prefetch existing and pre-create missing
+        let existingCards = (try? modelContext.fetch(FetchDescriptor<Card>())) ?? []
+        var nameToCard: [String: Card] = Dictionary(uniqueKeysWithValues: existingCards.map { ($0.name, $0) })
+        // Pre-create missing cards (collected during preview)
+        for name in missingCardNames where !name.isEmpty {
+            if nameToCard[name] == nil {
+                let newCard = Card(
+                    name: name,
+                    minimumSpendingAmount: 0,
+                    hasMinimumSpending: false,
+                    rewardType: .none
+                )
+                modelContext.insert(newCard)
+                nameToCard[name] = newCard
+            }
+        }
         
         let lines = importCSVContent.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         let totalLines = max(lines.count - 1, 1) // Exclude header
@@ -238,26 +254,8 @@ private extension SettingsView {
             guard let amount = Decimal(string: amountString),
                   let date = dateFormatter.date(from: dateString) else { continue }
             
-            var matchedCard: Card? = nil
-            if !cardName.isEmpty {
-                let cardRequest = FetchDescriptor<Card>(
-                    predicate: #Predicate { card in
-                        card.name == cardName
-                    }
-                )
-                if let found = try? modelContext.fetch(cardRequest).first {
-                    matchedCard = found
-                } else {
-                    let newCard = Card(
-                        name: cardName,
-                        minimumSpendingAmount: 0,
-                        hasMinimumSpending: false,
-                        rewardType: .none
-                    )
-                    modelContext.insert(newCard)
-                    matchedCard = newCard
-                }
-            }
+            // Resolve card via cache (pre-fetched/pre-created)
+            let matchedCard: Card? = cardName.isEmpty ? nil : nameToCard[cardName]
             
             let transaction = Transaction(
                 merchant: merchant,
@@ -268,20 +266,12 @@ private extension SettingsView {
                 card: matchedCard
             )
             modelContext.insert(transaction)
-            
             processedCount += 1
-            importProgress = Double(processedCount) / Double(totalLines)
             importProgressText = "Importing transaction \(processedCount) of \(totalLines)..."
-            
-            // Allow UI updates every 10 transactions or at the end
-            if processedCount % 10 == 0 || processedCount == totalLines {
-                try? await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
-            }
         }
         
         do {
             try modelContext.save()
-            importProgress = 1.0
             importProgressText = "Import completed!"
             importMessage = "Successfully imported \(processedCount) transactions."
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
