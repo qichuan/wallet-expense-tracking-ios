@@ -40,7 +40,7 @@ struct HowToAutoTrackingView: View {
             }
             .padding()
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
-            .navigationTitle("Wallet Transaction Tracking")
+            .navigationTitle("Set up Shortcut automation")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

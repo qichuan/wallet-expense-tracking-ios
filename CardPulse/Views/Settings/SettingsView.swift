@@ -85,7 +85,7 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 SettingsRow(
                                     icon: "questionmark.circle",
-                                    title: "How to setup automatic wallet transaction tracking?",
+                                    title: "How to set up an automation in Shortcuts app to track wallet transactions?",
                                     action: { showingHowToAutoTracking = true }
                                 )
                                 
