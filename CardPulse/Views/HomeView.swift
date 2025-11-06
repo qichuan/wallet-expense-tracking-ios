@@ -98,47 +98,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal)
                 } else {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            // Latest Transactions Section
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack {
-                                    Text("Latest Transactions")
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                    
-                                    Spacer()
-                                }
-                                
-                                LazyVStack(spacing: 8) {
-                                    ForEach(recentTransactions) { transaction in
-                                        Button(action: { selectedTransaction = transaction }) {
-                                            TransactionRow(transaction: transaction)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                    }
-                                    
-                                    // View All button at the end of the list
-                                    Button(action: { showingAllTransactions = true }) {
-                                        HStack {
-                                            Spacer()
-                                            Text("View All")
-                                                .font(.subheadline)
-                                                .foregroundColor(.teal)
-                                            Spacer()
-                                        }
-                                        .padding(.vertical, 12)
-                                        .background(Color.teal.opacity(0.1))
-                                        .cornerRadius(8)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                        .padding(.bottom, 100)
-                    }
+                    AllTransactionsView()
                 }
                 }
             }

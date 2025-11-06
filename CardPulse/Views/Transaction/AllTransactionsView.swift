@@ -10,7 +10,6 @@ import SwiftData
 
 struct AllTransactionsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     
     @State private var selectedTransaction: Transaction?
@@ -42,7 +41,6 @@ struct AllTransactionsView: View {
                     .padding(.vertical, 8)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
-                
                 }
                 .padding()
                 .background(Color(red: 0.05, green: 0.1, blue: 0.2))
@@ -77,15 +75,6 @@ struct AllTransactionsView: View {
                         .padding()
                     }
                     .background(Color(red: 0.05, green: 0.1, blue: 0.2))
-                }
-            }
-            .navigationTitle("All Transactions")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
                 }
             }
         }
