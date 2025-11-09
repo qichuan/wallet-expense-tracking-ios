@@ -55,7 +55,11 @@ struct NotificationBanner: View {
                 .padding(12)
                 .padding(.trailing, 32)
                 
-                Button(action: { }) {
+                Button(action: {
+                    DispatchQueue.main.async {
+                        hasDismissedNotificationBanner = true
+                    }
+                }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
