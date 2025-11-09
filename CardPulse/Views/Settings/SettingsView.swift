@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import UIKit
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -76,7 +77,7 @@ struct SettingsView: View {
                         
                         // SUPPORT & ABOUT Section
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("SUPPORT & ABOUT")
+                            Text("SUPPORT")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white.opacity(0.7))
@@ -93,9 +94,9 @@ struct SettingsView: View {
                                     .background(Color.white.opacity(0.1))
                                 
                                 SettingsRow(
-                                    icon: "info.circle",
-                                    title: "About CardPulse",
-                                    action: {}
+                                    icon: "envelope",
+                                    title: "Contact the Developer",
+                                    action: { openEmail() }
                                 )
                             }
                             .background(Color.gray.opacity(0.2))
@@ -203,6 +204,17 @@ struct SettingsView: View {
 
 // MARK: - Import/Export Handling
 private extension SettingsView {
+    func openEmail() {
+        let email = "qichuan@zhangqichuan.com"
+        let subject = "Feedback for CardPulse"
+        let subjectEncoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let mailtoURLString = "mailto:\(email)?subject=\(subjectEncoded)"
+        
+        if let url = URL(string: mailtoURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
