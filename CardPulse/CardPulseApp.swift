@@ -19,6 +19,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
 @main
 struct CardPulseApp: App {
+    
+    // register app delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Card.self,
