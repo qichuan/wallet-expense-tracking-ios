@@ -10,6 +10,7 @@ import AppIntents
 import SwiftData
 import UserNotifications
 import NaturalLanguage
+import FirebaseAnalytics
 
 @available(iOS 16.0, *)
 struct WalletTransactionIntent: AppIntent {
@@ -73,7 +74,11 @@ struct WalletTransactionIntent: AppIntent {
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation
-
+        Analytics.logEvent("add_wallet_transaction", parameters: [
+            "type": "ttp",
+            "merchant": merchantName,
+            "amount": amount,
+        ])
         do {
             try context.save()
         } catch {
