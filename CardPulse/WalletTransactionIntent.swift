@@ -30,6 +30,11 @@ struct WalletTransactionIntent: AppIntent {
     }
     
     func perform() async throws -> some IntentResult {
+        // Don't create a transaction if the amount is 0
+        guard amount != 0 else {
+            return .result()
+        }
+        
         // Persist a new Transaction into SwiftData
         let container = try ModelContainer(for: Card.self, Transaction.self)
         let context = ModelContext(container)
