@@ -18,6 +18,8 @@ struct AnalysisView: View {
     @State private var selectedGranularity: Granularity = .day
     @State private var selectedDate: Date = Date()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
+    @State private var selectedTransaction: Transaction?
+
     
     private var filteredTransactions: [Transaction] {
         let (start, end) = currentRange()
@@ -521,7 +523,10 @@ struct AnalysisView: View {
 
                             VStack(spacing: 8) {
                                 ForEach(recentTransactionsInRange) { tx in
-                                    TransactionRow(transaction: tx)
+                                    Button(action: { selectedTransaction = tx }) {
+                                        TransactionRow(transaction: tx)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
                             .padding()
@@ -532,6 +537,9 @@ struct AnalysisView: View {
                     }
                 }
                 .padding(.bottom, 100)
+            }
+            .sheet(item: $selectedTransaction) { transaction in
+                TransactionFormView(transaction: transaction)
             }
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             .onAppear {
