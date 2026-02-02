@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseAnalytics
 
 struct TransactionFormView: View {
     let transactionToEdit: Transaction?
@@ -184,6 +185,11 @@ struct TransactionFormView: View {
                 card: selectedCard
             )
             modelContext.insert(transaction)
+            Analytics.logEvent("add_wallet_transaction", parameters: [
+                "type": "manual",
+                "merchant": merchant,
+                "amount": amount,
+            ])
             do { try modelContext.save(); dismiss() } catch { print("Error saving transaction: \(error)") }
         }
     }
