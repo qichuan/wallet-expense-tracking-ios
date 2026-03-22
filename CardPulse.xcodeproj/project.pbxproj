@@ -7,22 +7,90 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E07836C2F7019C400F4C526 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E07836B2F7019C400F4C526 /* WidgetKit.framework */; };
+		2E07836E2F7019C400F4C526 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E07836D2F7019C400F4C526 /* SwiftUI.framework */; };
+		2E07837D2F7019C600F4C526 /* CardPulseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2EC114E52EDBFC4E00889086 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2EC114E42EDBFC4E00889086 /* FirebaseAnalytics */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		2E07837B2F7019C600F4C526 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EBD3BF22EAF392700295A20 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2E0783682F7019C400F4C526;
+			remoteInfo = CardPulseWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2E0783822F7019C600F4C526 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2E07837D2F7019C600F4C526 /* CardPulseWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CardPulseWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E07836B2F7019C400F4C526 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		2E07836D2F7019C400F4C526 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		2E07839A2F701BCC00F4C526 /* CardPulseWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CardPulseWidgetExtension.entitlements; sourceTree = "<group>"; };
 		2EBD3BFA2EAF392700295A20 /* CardPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CardPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2E07837E2F7019C600F4C526 /* Exceptions for "CardPulseWidget" folder in "CardPulseWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;
+		};
+		2E0783992F701AF400F4C526 /* Exceptions for "CardPulse" folder in "CardPulseWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetDataWriter.swift,
+			);
+			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		2E07836F2F7019C400F4C526 /* CardPulseWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2E07837E2F7019C600F4C526 /* Exceptions for "CardPulseWidget" folder in "CardPulseWidgetExtension" target */,
+			);
+			path = CardPulseWidget;
+			sourceTree = "<group>";
+		};
 		2EBD3BFC2EAF392700295A20 /* CardPulse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2E0783992F701AF400F4C526 /* Exceptions for "CardPulse" folder in "CardPulseWidgetExtension" target */,
+			);
 			path = CardPulse;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		2E0783662F7019C400F4C526 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E07836E2F7019C400F4C526 /* SwiftUI.framework in Frameworks */,
+				2E07836C2F7019C400F4C526 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2EBD3BF72EAF392700295A20 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -34,10 +102,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2E07836A2F7019C400F4C526 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2E07836B2F7019C400F4C526 /* WidgetKit.framework */,
+				2E07836D2F7019C400F4C526 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2EBD3BF12EAF392700295A20 = {
 			isa = PBXGroup;
 			children = (
+				2E07839A2F701BCC00F4C526 /* CardPulseWidgetExtension.entitlements */,
 				2EBD3BFC2EAF392700295A20 /* CardPulse */,
+				2E07836F2F7019C400F4C526 /* CardPulseWidget */,
+				2E07836A2F7019C400F4C526 /* Frameworks */,
 				2EBD3BFB2EAF392700295A20 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -46,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				2EBD3BFA2EAF392700295A20 /* CardPulse.app */,
+				2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,6 +134,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2E07837F2F7019C600F4C526 /* Build configuration list for PBXNativeTarget "CardPulseWidgetExtension" */;
+			buildPhases = (
+				2E0783652F7019C400F4C526 /* Sources */,
+				2E0783662F7019C400F4C526 /* Frameworks */,
+				2E0783672F7019C400F4C526 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2E07836F2F7019C400F4C526 /* CardPulseWidget */,
+			);
+			name = CardPulseWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = CardPulseWidgetExtension;
+			productReference = 2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		2EBD3BF92EAF392700295A20 /* CardPulse */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2EBD3C072EAF392800295A20 /* Build configuration list for PBXNativeTarget "CardPulse" */;
@@ -60,10 +163,12 @@
 				2EBD3BF62EAF392700295A20 /* Sources */,
 				2EBD3BF72EAF392700295A20 /* Frameworks */,
 				2EBD3BF82EAF392700295A20 /* Resources */,
+				2E0783822F7019C600F4C526 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				2E07837C2F7019C600F4C526 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2EBD3BFC2EAF392700295A20 /* CardPulse */,
@@ -83,9 +188,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					2E0783682F7019C400F4C526 = {
+						CreatedOnToolsVersion = 26.3;
+						LastSwiftMigration = 2630;
+					};
 					2EBD3BF92EAF392700295A20 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -109,11 +218,19 @@
 			projectRoot = "";
 			targets = (
 				2EBD3BF92EAF392700295A20 /* CardPulse */,
+				2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2E0783672F7019C400F4C526 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2EBD3BF82EAF392700295A20 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,6 +241,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2E0783652F7019C400F4C526 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2EBD3BF62EAF392700295A20 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -133,7 +257,82 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		2E07837C2F7019C600F4C526 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;
+			targetProxy = 2E07837B2F7019C600F4C526 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		2E0783802F7019C600F4C526 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CardPulseWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z88PXL4DBF;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CardPulseWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CardPulseWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zqc.TapTrack.CardPulseWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2E0783812F7019C600F4C526 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CardPulseWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z88PXL4DBF;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CardPulseWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CardPulseWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zqc.TapTrack.CardPulseWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		2EBD3C052EAF392800295A20 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -262,6 +461,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CardPulse/CardPulse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
@@ -302,6 +502,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CardPulse/CardPulse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
@@ -340,6 +541,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2E07837F2F7019C600F4C526 /* Build configuration list for PBXNativeTarget "CardPulseWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E0783802F7019C600F4C526 /* Debug */,
+				2E0783812F7019C600F4C526 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		2EBD3BF52EAF392700295A20 /* Build configuration list for PBXProject "CardPulse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
