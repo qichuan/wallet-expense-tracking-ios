@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import Combine
+import WidgetKit
 
 @MainActor
 class TransactionManager: ObservableObject {
@@ -36,14 +37,15 @@ class TransactionManager: ObservableObject {
         
         do {
             try modelContext.save()
+            refreshWidgetData()
         } catch {
             errorMessage = "Error saving transaction: \(error.localizedDescription)"
             print("Error saving transaction: \(error)")
         }
-        
+
         isLoading = false
     }
-    
+
     func deleteTransaction(_ transaction: Transaction) {
         isLoading = true
         errorMessage = nil
@@ -52,28 +54,48 @@ class TransactionManager: ObservableObject {
         
         do {
             try modelContext.save()
+            refreshWidgetData()
         } catch {
             errorMessage = "Error deleting transaction: \(error.localizedDescription)"
             print("Error deleting transaction: \(error)")
         }
-        
+
         isLoading = false
     }
-    
+
     func deleteCard(_ card: Card) {
         isLoading = true
         errorMessage = nil
-        
+
         modelContext.delete(card)
-        
+
         do {
             try modelContext.save()
+            refreshWidgetData()
         } catch {
             errorMessage = "Error deleting card: \(error.localizedDescription)"
             print("Error deleting card: \(error)")
         }
-        
+
         isLoading = false
+    }
+
+    private func refreshWidgetData() {
+        let request = FetchDescriptor<Card>()
+        guard let cards = try? modelContext.fetch(request) else { return }
+        let spendData = cards.map { card in
+            CardSpendData(
+                id: card.id,
+                name: card.name,
+                monthlySpent: Double(truncating: card.monthlySpent as NSDecimalNumber),
+                minimumSpending: Double(truncating: card.minimumSpendingAmount as NSDecimalNumber),
+                hasMinimumSpending: card.hasMinimumSpending,
+                daysRemaining: card.daysRemaining,
+                rewardType: card.rewardType.rawValue,
+                spendingPeriodDisplay: card.spendingPeriodDisplay
+            )
+        }
+        WidgetDataWriter.write(spendData: spendData)
     }
     
     
@@ -209,6 +231,7 @@ class TransactionManager: ObservableObject {
         
         do {
             try modelContext.save()
+            refreshWidgetData()
         } catch {
             print("Error saving imported data: \(error)")
         }
