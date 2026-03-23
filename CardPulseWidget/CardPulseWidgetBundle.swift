@@ -20,27 +20,15 @@ struct CardSpendWidget: Widget {
         }
         .configurationDisplayName("Card Spending")
         .description("Choose up to 3 cards to track minimum-spending progress.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular])
+        .supportedFamilies([.systemMedium])
     }
 }
 
-// MARK: - Entry view (routes to the correct layout by family)
-
 struct CardSpendWidgetEntryView: View {
-    @Environment(\.widgetFamily) var family
     let entry: CardWidgetEntry
 
     var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallCardWidgetView(entry: entry)
-        case .systemMedium:
-            MediumCardWidgetView(entry: entry)
-        case .accessoryCircular:
-            AccessoryCircularWidgetView(entry: entry)
-        default:
-            SmallCardWidgetView(entry: entry)
-        }
+        MediumCardWidgetView(entry: entry)
     }
 }
 
