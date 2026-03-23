@@ -155,7 +155,6 @@ struct CardFormView: View {
     
     private func saveCard() {
         if let editing = cardToEdit {
-            // Update existing
             editing.name = cardName
             editing.rewardType = rewardType
             editing.hasMinimumSpending = hasMinimumSpending
@@ -163,9 +162,9 @@ struct CardFormView: View {
                 editing.minimumSpendingAmount = parsed
                 editing.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
             }
-            do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
+            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+            catch { print("Error saving card: \(error)") }
         } else {
-            // Create new
             let newMinimumSpendingAmount: Decimal = {
                 if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) { return parsed }
                 return 0
@@ -179,14 +178,16 @@ struct CardFormView: View {
                 minimumSpendingByDayOfMonth: stmtDay
             )
             modelContext.insert(card)
-            do { try modelContext.save(); dismiss() } catch { print("Error saving card: \(error)") }
+            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+            catch { print("Error saving card: \(error)") }
         }
     }
-    
+
     private func deleteCard() {
         guard let editing = cardToEdit else { return }
         modelContext.delete(editing)
-        do { try modelContext.save(); dismiss() } catch { print("Error deleting card: \(error)") }
+        do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+        catch { print("Error deleting card: \(error)") }
     }
 }
 
