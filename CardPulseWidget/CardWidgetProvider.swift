@@ -42,14 +42,16 @@ struct CardWidgetProvider: AppIntentTimelineProvider {
         let snapshot = WidgetDataWriter.read()
         let eligible = (snapshot?.cards ?? []).filter { $0.hasMinimumSpending && $0.minimumSpending > 0 }
 
+        // Collect the three optional picks in order, skipping unset slots and "None" sentinels
+        let selectedIDs = [configuration.card1?.id, configuration.card2?.id, configuration.card3?.id]
+            .compactMap { $0 }
+            .filter { $0 != CardEntity.noneID }
+
         let cards: [CardSpendData]
-        let selectedIDs = configuration.selectedCards?.map { $0.id } ?? []
         if selectedIDs.isEmpty {
-            // Default: show up to 3 cards sorted by lowest progress (most urgent first)
             cards = Array(eligible.sorted { $0.progressPercentage < $1.progressPercentage }.prefix(3))
         } else {
-            // Respect the user's chosen order, max 3
-            cards = selectedIDs.prefix(3).compactMap { id in eligible.first { $0.id.uuidString == id } }
+            cards = selectedIDs.compactMap { id in eligible.first { $0.id.uuidString == id } }
         }
 
         return CardWidgetEntry(date: Date(), cards: cards, lastUpdated: snapshot?.lastUpdated ?? Date())

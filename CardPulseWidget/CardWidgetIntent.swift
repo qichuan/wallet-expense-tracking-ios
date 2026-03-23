@@ -12,7 +12,11 @@ struct CardEntity: AppEntity {
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "Card"
     static var defaultQuery = CardEntityQuery()
 
-    var id: String   // UUID string of the card
+    /// Sentinel ID used to represent "no card selected" in the picker.
+    static let noneID = "none"
+    static let none = CardEntity(id: noneID, name: "None")
+
+    var id: String   // UUID string of the card, or "none"
     var name: String
 
     var displayRepresentation: DisplayRepresentation {
@@ -22,15 +26,15 @@ struct CardEntity: AppEntity {
 
 struct CardEntityQuery: EntityQuery, EnumerableEntityQuery {
     func allEntities() async throws -> [CardEntity] {
-        eligibleCards()
+        [.none] + eligibleCards()
     }
 
     func entities(for identifiers: [String]) async throws -> [CardEntity] {
-        eligibleCards().filter { identifiers.contains($0.id) }
+        ([.none] + eligibleCards()).filter { identifiers.contains($0.id) }
     }
 
     func suggestedResults() async throws -> [CardEntity] {
-        eligibleCards()
+        [.none] + eligibleCards()
     }
 
     /// Only cards that have a minimum-spending goal are eligible for the widget.
@@ -41,15 +45,20 @@ struct CardEntityQuery: EntityQuery, EnumerableEntityQuery {
     }
 }
 
-// MARK: - Widget configuration intent
+// MARK: - Medium widget intent (up to 3 cards)
 
 struct CardWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Select Cards"
     static var description = IntentDescription("Choose up to 3 cards to display.")
 
-    @Parameter(title: "Cards")
-    var selectedCards: [CardEntity]?
+    @Parameter(title: "Card 1")
+    var card1: CardEntity?
 
-    init() { selectedCards = nil }
-    init(selectedCards: [CardEntity]?) { self.selectedCards = selectedCards }
+    @Parameter(title: "Card 2")
+    var card2: CardEntity?
+
+    @Parameter(title: "Card 3")
+    var card3: CardEntity?
+
+    init() {}
 }
