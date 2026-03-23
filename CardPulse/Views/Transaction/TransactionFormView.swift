@@ -69,7 +69,8 @@ struct TransactionFormView: View {
                             .keyboardType(.decimalPad)
                             .focused($focusedField, equals: .amount)
                             .onChange(of: amount) { _, newValue in
-                                amount = formatAmountInput(newValue)
+                                let formatted = formatAmountInput(newValue)
+                                if formatted != newValue { amount = formatted }
                             }
                     } label: {
                         Text("Amount")
@@ -123,11 +124,7 @@ struct TransactionFormView: View {
                     }
                 }
             }
-            .simultaneousGesture(
-                TapGesture().onEnded { _ in
-                    focusedField = nil
-                }
-            )
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(transactionToEdit == nil ? "Add Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

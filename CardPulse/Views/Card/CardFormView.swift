@@ -121,11 +121,7 @@ struct CardFormView: View {
                     }
                 }
             }
-            .simultaneousGesture(
-                TapGesture().onEnded { _ in
-                    focusedField = nil
-                }
-            )
+            .scrollDismissesKeyboard(.interactively)
             .onAppear{
                 if (cardToEdit == nil) {
                     focusedField = .name
