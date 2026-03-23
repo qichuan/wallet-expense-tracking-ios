@@ -16,51 +16,6 @@ private func progressTint(_ pct: Double) -> Color {
     return .orange
 }
 
-// MARK: - Small widget
-
-struct SmallCardWidgetView: View {
-    let entry: CardWidgetEntry
-
-    var body: some View {
-        if let card = entry.cards.first {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(card.name)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-
-                Spacer(minLength: 0)
-
-                ProgressView(value: card.progressPercentage)
-                    .progressViewStyle(LinearProgressViewStyle(tint: progressTint(card.progressPercentage)))
-                    .scaleEffect(x: 1, y: 1.4, anchor: .center)
-
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("$\(Int(card.monthlySpent))")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    Text("/ $\(Int(card.minimumSpending))")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.55))
-                }
-
-                Text("\(card.daysRemaining)d left · \(card.spendingPeriodDisplay)")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.45))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        } else {
-            EmptyWidgetView()
-        }
-    }
-}
-
 // MARK: - Medium widget (up to 3 cards)
 
 struct MediumCardWidgetView: View {
