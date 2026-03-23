@@ -2,6 +2,8 @@
 
 A modern iOS app built with SwiftUI, SwiftData, and App Intents that helps users automatically track Apple Wallet transactions and monitor credit card spending goals.
 
+App Store download link: https://apps.apple.com/sg/app/cardpulse-spending-tracker/id6754640005 
+
 ## Features
 
 ### 🏠 Home
