@@ -167,14 +167,14 @@ struct TransactionFormView: View {
     private func saveTransaction() {
         guard let amountDecimal = Decimal(string: amount) else { return }
         if let editing = transactionToEdit {
-            // Update
             editing.merchant = merchant
             editing.amount = amountDecimal
             editing.date = transactionDate
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
-            do { try modelContext.save(); dismiss() } catch { print("Error saving transaction: \(error)") }
+            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+            catch { print("Error saving transaction: \(error)") }
         } else {
             let transaction = Transaction(
                 merchant: merchant,
@@ -190,14 +190,16 @@ struct TransactionFormView: View {
                 "merchant": merchant,
                 "amount": amount,
             ])
-            do { try modelContext.save(); dismiss() } catch { print("Error saving transaction: \(error)") }
+            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+            catch { print("Error saving transaction: \(error)") }
         }
     }
-    
+
     private func deleteTransaction() {
         guard let editing = transactionToEdit else { return }
         modelContext.delete(editing)
-        do { try modelContext.save(); dismiss() } catch { print("Error deleting transaction: \(error)") }
+        do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
+        catch { print("Error deleting transaction: \(error)") }
     }
 }
 

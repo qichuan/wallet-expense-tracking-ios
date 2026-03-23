@@ -20,7 +20,11 @@ struct CardEntity: AppEntity {
     }
 }
 
-struct CardEntityQuery: EntityQuery {
+struct CardEntityQuery: EntityQuery, EnumerableEntityQuery {
+    func allEntities() async throws -> [CardEntity] {
+        eligibleCards()
+    }
+
     func entities(for identifiers: [String]) async throws -> [CardEntity] {
         eligibleCards().filter { identifiers.contains($0.id) }
     }

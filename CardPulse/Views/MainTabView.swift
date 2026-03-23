@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import WidgetKit
 
 struct MainTabView: View {
     @Environment(\.modelContext) private var modelContext
@@ -16,19 +15,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
 
     private func writeWidgetData() {
-        let spendData = cards.map { card in
-            CardSpendData(
-                id: card.id,
-                name: card.name,
-                monthlySpent: Double(truncating: card.monthlySpent as NSDecimalNumber),
-                minimumSpending: Double(truncating: card.minimumSpendingAmount as NSDecimalNumber),
-                hasMinimumSpending: card.hasMinimumSpending,
-                daysRemaining: card.daysRemaining,
-                rewardType: card.rewardType.rawValue,
-                spendingPeriodDisplay: card.spendingPeriodDisplay
-            )
-        }
-        WidgetDataWriter.write(spendData: spendData)
+        WidgetDataWriter.refresh(using: modelContext)
     }
 
     var body: some View {
