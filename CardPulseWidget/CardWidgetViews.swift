@@ -8,7 +8,6 @@ import WidgetKit
 
 // MARK: - Design tokens
 
-private let navyBackground = Color(red: 0.05, green: 0.10, blue: 0.20)
 private let teal = Color.teal
 
 private func progressTint(_ pct: Double) -> Color {
@@ -56,7 +55,6 @@ struct SmallCardWidgetView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .background(navyBackground)
         } else {
             EmptyWidgetView()
         }
@@ -85,7 +83,6 @@ struct MediumCardWidgetView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(navyBackground)
         }
     }
 }
@@ -111,6 +108,12 @@ private struct CardRowWidgetView: View {
             ProgressView(value: card.progressPercentage)
                 .progressViewStyle(LinearProgressViewStyle(tint: progressTint(card.progressPercentage)))
                 .scaleEffect(x: 1, y: 1.2, anchor: .center)
+
+            Text("\(card.daysRemaining)d left · \(card.spendingPeriodDisplay)")
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.45))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 }
@@ -149,6 +152,5 @@ struct EmptyWidgetView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(navyBackground)
     }
 }
