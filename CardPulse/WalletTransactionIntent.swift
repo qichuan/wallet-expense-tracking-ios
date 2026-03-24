@@ -21,22 +21,24 @@ struct WalletTransactionIntent: AppIntent {
     @Parameter(title: "Merchant Name")
     var merchantName: String
 
+    /// Raw amount string from Apple Wallet, e.g. "S$12.50", "MYR 8.00", "$4.99"
     @Parameter(title: "Amount")
-    var amount: Double
-    
+    var amount: String
+
     @Parameter(title: "Card Name")
     var cardName: String
-    
+
     static var parameterSummary: some ParameterSummary {
         Summary("Log transaction from \(\.$merchantName) for \(\.$amount) using \(\.$cardName)")
     }
-    
+
     func perform() async throws -> some IntentResult {
-        // Don't create a transaction if the amount is 0
-        guard amount != 0 else {
+        // Parse currency and numeric value from the raw amount string
+        guard let (resolvedCurrency, decimalAmount) = parseCurrencyAndAmount(from: amount),
+              decimalAmount != 0 else {
             return .result()
         }
-        
+
         // Persist a new Transaction into SwiftData
         let container = try ModelContainer(for: Card.self, Transaction.self)
         let context = ModelContext(container)
@@ -56,14 +58,13 @@ struct WalletTransactionIntent: AppIntent {
                     name: cardName,
                     minimumSpendingAmount: 0,
                     hasMinimumSpending: false,
-                        rewardType: .none
+                    rewardType: .none
                 )
                 context.insert(newCard)
                 matchedCard = newCard
             }
         }
 
-        let decimalAmount = Decimal(Double(amount))
         let guessedCategory = guessCategory(from: merchantName)
         let txn = Transaction(
             merchant: merchantName,
@@ -71,7 +72,8 @@ struct WalletTransactionIntent: AppIntent {
             date: Date(),
             category: guessedCategory,
             note: nil,
-            card: matchedCard
+            card: matchedCard,
+            currency: resolvedCurrency
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation
@@ -97,7 +99,7 @@ struct WalletTransactionIntent: AppIntent {
                         spendingPeriodDisplay: card.spendingPeriodDisplay
                     )
                 }
-                WidgetDataWriter.write(spendData: spendData)
+                await WidgetDataWriter.write(spendData: spendData)
             }
         } catch {
             // We intentionally swallow the error for the intent result to avoid user-facing failures
@@ -108,6 +110,52 @@ struct WalletTransactionIntent: AppIntent {
         await notifyUserAboutNewTransaction(merchant: merchantName, amount: decimalAmount, cardName: matchedCard?.name)
 
         return .result()
+    }
+
+    /// Parses a raw Wallet amount string (e.g. "S$12.50", "MYR 8.00", "$4.99")
+    /// into a (currencyCode, amount) pair. Falls back to the user's default currency
+    /// for ambiguous symbols like "$".
+    private func parseCurrencyAndAmount(from raw: String) -> (String, Decimal)? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+
+        // Ordered by specificity — longer/unambiguous symbols first
+        let symbolToCode: [(String, String)] = [
+            ("SGD", "SGD"), ("MYR", "MYR"), ("USD", "USD"), ("EUR", "EUR"),
+            ("GBP", "GBP"), ("HKD", "HKD"), ("AUD", "AUD"), ("CAD", "CAD"),
+            ("JPY", "JPY"), ("CNY", "CNY"), ("KRW", "KRW"), ("THB", "THB"),
+            ("IDR", "IDR"), ("PHP", "PHP"), ("INR", "INR"),
+            ("S$", "SGD"), ("HK$", "HKD"), ("A$", "AUD"), ("C$", "CAD"),
+            ("RM", "MYR"), ("Rp", "IDR"),
+            ("€", "EUR"), ("£", "GBP"), ("¥", "JPY"), ("₩", "KRW"),
+            ("₱", "PHP"), ("₹", "INR"), ("฿", "THB"),
+            // "$" is ambiguous — map to the user's configured default
+            ("$", CurrencyUtils.defaultCurrencyCode),
+        ]
+
+        for (symbol, code) in symbolToCode {
+            // Prefix match (e.g. "MYR 8.00", "S$12.50")
+            if trimmed.uppercased().hasPrefix(symbol.uppercased()) {
+                let rest = String(trimmed.dropFirst(symbol.count)).trimmingCharacters(in: .whitespaces)
+                if let amount = parseDecimal(from: rest) { return (code, amount) }
+            }
+            // Suffix match (e.g. "8.00 MYR")
+            if trimmed.uppercased().hasSuffix(symbol.uppercased()) {
+                let rest = String(trimmed.dropLast(symbol.count)).trimmingCharacters(in: .whitespaces)
+                if let amount = parseDecimal(from: rest) { return (code, amount) }
+            }
+        }
+
+        // No recognised symbol — try parsing as a bare number, use default currency
+        if let amount = parseDecimal(from: trimmed) {
+            return (CurrencyUtils.defaultCurrencyCode, amount)
+        }
+        return nil
+    }
+
+    private func parseDecimal(from string: String) -> Decimal? {
+        // Strip thousand-separators before parsing
+        let cleaned = string.replacingOccurrences(of: ",", with: "")
+        return Decimal(string: cleaned)
     }
 
     private func guessCategory(from merchant: String) -> String? {
