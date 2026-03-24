@@ -13,6 +13,10 @@ import UIKit
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("autoSyncWallet") private var autoSyncWallet = true
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,USD"
+    @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
+    @State private var showingCurrencyManager = false
     @State private var showingImportPicker = false
     @State private var importMessage: String = ""
     @State private var showingImportAlert = false
@@ -45,6 +49,56 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         
+                        // CURRENCY Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("CURRENCY")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal)
+
+                            VStack(spacing: 0) {
+                                // Default currency picker
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .stroke(Color.teal, lineWidth: 1)
+                                        .frame(width: 40, height: 40)
+                                        .overlay(
+                                            Image(systemName: "dollarsign.circle")
+                                                .font(.headline)
+                                                .foregroundColor(.white)
+                                        )
+
+                                    Text("Default Currency")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+
+                                    Spacer()
+
+                                    Picker("", selection: $defaultCurrencyCode) {
+                                        ForEach(enabledCurrencyList, id: \.code) { info in
+                                            Text(info.code).tag(info.code)
+                                        }
+                                    }
+                                    .pickerStyle(MenuPickerStyle())
+                                    .accentColor(.teal)
+                                }
+                                .padding()
+
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+
+                                SettingsRow(
+                                    icon: "list.bullet",
+                                    title: "Manage Currencies",
+                                    action: { showingCurrencyManager = true }
+                                )
+                            }
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
+
                         // DATA MANAGEMENT Section
                         VStack(alignment: .leading, spacing: 16) {
                             Text("DATA MANAGEMENT")
@@ -189,6 +243,14 @@ struct SettingsView: View {
         .sheet(isPresented: $showingHowToAutoTracking) {
             HowToAutoTrackingView()
         }
+        // Currency manager
+        .sheet(isPresented: $showingCurrencyManager) {
+            CurrencyManagerView(
+                enabledCurrenciesRaw: $enabledCurrenciesRaw,
+                customCurrenciesRaw: $customCurrenciesRaw,
+                defaultCurrencyCode: $defaultCurrencyCode
+            )
+        }
         .alert("Import Complete", isPresented: $showingImportAlert) {
             Button("OK") {}
         } message: {
@@ -199,6 +261,26 @@ struct SettingsView: View {
         } message: {
             Text(exportCompleteMessage)
         }
+    }
+}
+
+// MARK: - Currency Helpers
+private extension SettingsView {
+    var enabledCurrencyList: [CurrencyInfo] {
+        let codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        // Include custom currencies from the binding so the list updates reactively
+        let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
+        let custom = customCurrenciesRaw.components(separatedBy: ",")
+            .filter { !$0.isEmpty }
+            .compactMap { entry -> CurrencyInfo? in
+                let p = entry.components(separatedBy: "|")
+                guard p.count == 3 else { return nil }
+                return CurrencyInfo(code: p[0], name: p[1], symbol: p[2])
+            }
+            .filter { !builtInCodes.contains($0.code) }
+        let all = CurrencyUtils.allCurrencies + custom
+        let list = all.filter { codes.contains($0.code) }
+        return list.isEmpty ? all : list
     }
 }
 
@@ -399,6 +481,215 @@ struct ProgressOverlay: View {
             .cornerRadius(16)
             .shadow(radius: 10)
         }
+    }
+}
+
+// MARK: - Currency Manager Sheet
+
+struct CurrencyManagerView: View {
+    @Binding var enabledCurrenciesRaw: String
+    @Binding var customCurrenciesRaw: String
+    @Binding var defaultCurrencyCode: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingAddCurrency = false
+
+    private var enabledCodes: Set<String> {
+        Set(enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty })
+    }
+
+    private var parsedCustomCurrencies: [CurrencyInfo] {
+        let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
+        return customCurrenciesRaw.components(separatedBy: ",")
+            .filter { !$0.isEmpty }
+            .compactMap { entry -> CurrencyInfo? in
+                let p = entry.components(separatedBy: "|")
+                guard p.count == 3 else { return nil }
+                return CurrencyInfo(code: p[0], name: p[1], symbol: p[2])
+            }
+            .filter { !builtInCodes.contains($0.code) }
+    }
+
+    var body: some View {
+        NavigationView {
+            List {
+                Section("Built-in") {
+                    ForEach(CurrencyUtils.allCurrencies) { info in
+                        currencyRow(info)
+                    }
+                }
+                Section(header: HStack {
+                    Text("Custom")
+                    Spacer()
+                    Button {
+                        showingAddCurrency = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.teal)
+                    }
+                    .buttonStyle(.plain)
+                }) {
+                    if parsedCustomCurrencies.isEmpty {
+                        Text("Tap + to add a custom currency")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.4))
+                            .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+                    } else {
+                        ForEach(parsedCustomCurrencies) { info in
+                            currencyRow(info)
+                        }
+                        .onDelete(perform: deleteCustom)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .navigationTitle("Manage Currencies")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showingAddCurrency) {
+                AddCurrencyView(enabledCurrenciesRaw: $enabledCurrenciesRaw, customCurrenciesRaw: $customCurrenciesRaw)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private func currencyRow(_ info: CurrencyInfo) -> some View {
+        let isEnabled = enabledCodes.contains(info.code)
+        Button { toggle(info.code) } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(info.code)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    Text("\(info.name)  \(info.symbol)")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                Spacer()
+                if isEnabled {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.teal)
+                }
+            }
+        }
+        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+    }
+
+    private func toggle(_ code: String) {
+        var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        if codes.contains(code) {
+            guard codes.count > 1 else { return }
+            codes.removeAll { $0 == code }
+            if defaultCurrencyCode == code { defaultCurrencyCode = codes.first ?? "SGD" }
+        } else {
+            codes.append(code)
+        }
+        enabledCurrenciesRaw = codes.joined(separator: ",")
+    }
+
+    private func deleteCustom(at offsets: IndexSet) {
+        var entries = customCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
+        // Map offsets to the actual entries array (custom only, no built-ins)
+        var customEntries = entries.filter { entry in
+            let code = entry.components(separatedBy: "|").first ?? ""
+            return !builtInCodes.contains(code)
+        }
+        let codesToRemove = offsets.map { parsedCustomCurrencies[$0].code }
+        customEntries.removeAll { entry in
+            let code = entry.components(separatedBy: "|").first ?? ""
+            return codesToRemove.contains(code)
+        }
+        // Rebuild: built-in entries are not in customCurrenciesRaw, so just update custom
+        customCurrenciesRaw = customEntries.joined(separator: ",")
+        // Also remove from enabled if present
+        var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        codes.removeAll { codesToRemove.contains($0) }
+        if codes.isEmpty { codes = [defaultCurrencyCode] }
+        enabledCurrenciesRaw = codes.joined(separator: ",")
+        if codesToRemove.contains(defaultCurrencyCode) {
+            defaultCurrencyCode = codes.first ?? "SGD"
+        }
+    }
+}
+
+// MARK: - Add Currency Sheet
+
+struct AddCurrencyView: View {
+    @Binding var enabledCurrenciesRaw: String
+    @Binding var customCurrenciesRaw: String
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var code = ""
+    @State private var name = ""
+    @State private var symbol = ""
+    @State private var duplicateError = false
+
+    private var existingCodes: Set<String> {
+        let builtIn = Set(CurrencyUtils.allCurrencies.map { $0.code })
+        let custom = Set(customCurrenciesRaw.components(separatedBy: ",")
+            .compactMap { $0.components(separatedBy: "|").first }
+            .filter { !$0.isEmpty })
+        return builtIn.union(custom)
+    }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Currency Details") {
+                    TextField("Code (e.g. TWD)", text: $code)
+                        .textInputAutocapitalization(.characters)
+                        .onChange(of: code) { _, _ in duplicateError = false }
+                    TextField("Name (e.g. Taiwan Dollar)", text: $name)
+                    TextField("Symbol (e.g. NT$)", text: $symbol)
+                }
+                if duplicateError {
+                    Section {
+                        Text("\(code.uppercased()) already exists.")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .navigationTitle("Add Currency")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add") { addCurrency() }
+                        .disabled(code.trimmingCharacters(in: .whitespaces).isEmpty ||
+                                  name.trimmingCharacters(in: .whitespaces).isEmpty ||
+                                  symbol.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func addCurrency() {
+        let upperCode = code.uppercased().trimmingCharacters(in: .whitespaces)
+        guard !existingCodes.contains(upperCode) else {
+            duplicateError = true
+            return
+        }
+        let entry = "\(upperCode)|\(name.trimmingCharacters(in: .whitespaces))|\(symbol.trimmingCharacters(in: .whitespaces))"
+        customCurrenciesRaw = customCurrenciesRaw.isEmpty ? entry : "\(customCurrenciesRaw),\(entry)"
+        // Auto-enable the new currency
+        var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        if !codes.contains(upperCode) { codes.append(upperCode) }
+        enabledCurrenciesRaw = codes.joined(separator: ",")
+        dismiss()
     }
 }
 

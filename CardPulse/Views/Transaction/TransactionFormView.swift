@@ -17,14 +17,30 @@ struct TransactionFormView: View {
     
     @Query private var cards: [Card]
     
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,USD"
+
     @State private var merchant: String
     @State private var amount: String
+    @State private var currency: String
     @State private var selectedCard: Card?
     @State private var category: String
     @State private var note: String
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
     @FocusState private var focusedField: Field?
+
+    private var enabledCurrencies: [CurrencyInfo] {
+        let codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+        let all = CurrencyUtils.allAvailableCurrencies
+        let enabled = all.filter { codes.contains($0.code) }
+        // Always include the transaction's specific currency even if not in the enabled list
+        if !currency.isEmpty, !enabled.contains(where: { $0.code == currency }),
+           let info = all.first(where: { $0.code == currency }) {
+            return [info] + enabled
+        }
+        return enabled.isEmpty ? all : enabled
+    }
     
     private enum Field {
         case merchant, amount, note
@@ -37,6 +53,7 @@ struct TransactionFormView: View {
         if let transaction {
             _merchant = State(initialValue: transaction.merchant)
             _amount = State(initialValue: String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber)))
+            _currency = State(initialValue: transaction.currency)
             _selectedCard = State(initialValue: transaction.card)
             _category = State(initialValue: MerchantUtils.normalizedCategory(for: transaction.category))
             _note = State(initialValue: transaction.note ?? "")
@@ -44,6 +61,7 @@ struct TransactionFormView: View {
         } else {
             _merchant = State(initialValue: "")
             _amount = State(initialValue: "")
+            _currency = State(initialValue: "")
             _selectedCard = State(initialValue: nil)
             _category = State(initialValue: MerchantUtils.defaultCategories.first ?? "Other")
             _note = State(initialValue: "")
@@ -75,7 +93,16 @@ struct TransactionFormView: View {
                     } label: {
                         Text("Amount")
                     }
-                    
+
+                    Picker("Currency", selection: $currency) {
+                        Text("Default (\(CurrencyUtils.defaultCurrencyCode))").tag("")
+                        ForEach(enabledCurrencies) { info in
+                            Text("\(info.code) (\(info.symbol))").tag(info.code)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .onChange(of: currency) { _, _ in focusedField = nil }
+
                     DatePicker("Date", selection: $transactionDate, displayedComponents: [.date, .hourAndMinute])
                         .onChange(of: transactionDate) { _, _ in
                             focusedField = nil
@@ -166,6 +193,7 @@ struct TransactionFormView: View {
         if let editing = transactionToEdit {
             editing.merchant = merchant
             editing.amount = amountDecimal
+            editing.currency = currency
             editing.date = transactionDate
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
@@ -179,7 +207,8 @@ struct TransactionFormView: View {
                 date: transactionDate,
                 category: category.isEmpty ? nil : category,
                 note: note.isEmpty ? nil : note,
-                card: selectedCard
+                card: selectedCard,
+                currency: currency
             )
             modelContext.insert(transaction)
             Analytics.logEvent("add_wallet_transaction", parameters: [

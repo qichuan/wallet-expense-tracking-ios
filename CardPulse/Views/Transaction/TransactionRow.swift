@@ -87,10 +87,15 @@ struct TransactionRow: View {
             Spacer()
             
             // Amount
-            Text("-$\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("-\(CurrencyUtils.symbol(for: transaction.resolvedCurrency))\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                Text(transaction.resolvedCurrency)
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.5))
+            }
         }
         .padding()
         .background(Color.blue.opacity(0.1))
