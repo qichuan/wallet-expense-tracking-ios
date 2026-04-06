@@ -13,7 +13,23 @@ struct AnalysisView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var transactions: [Transaction]
     @Query private var cards: [Card]
-    
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+
+    private var cachedRates: [String: Double] {
+        (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
+    }
+
+    /// Converts a transaction's amount to the default currency using cached rates.
+    /// Falls back to the raw amount if no rate is available.
+    private func amountInDefault(_ tx: Transaction) -> Double {
+        let code = tx.resolvedCurrency
+        let raw = Double(truncating: tx.amount as NSDecimalNumber)
+        guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return raw }
+        return raw * rate
+    }
+
     private enum Granularity: Int, CaseIterable { case day, week, month, year }
     @State private var selectedGranularity: Granularity = .day
     @State private var selectedDate: Date = Date()
@@ -27,14 +43,14 @@ struct AnalysisView: View {
     }
     
     private var spendingByCategory: [CategorySpending] {
-        let categories = Dictionary(grouping: filteredTransactions) { transaction in
+        let grouped = Dictionary(grouping: filteredTransactions) { transaction in
             MerchantUtils.normalizedCategory(for: transaction.category)
         }
-        
-        return categories.map { category, transactions in
-            CategorySpending(
+        return grouped.map { category, txns in
+            let total = txns.reduce(0.0) { $0 + amountInDefault($1) }
+            return CategorySpending(
                 category: category,
-                amount: transactions.reduce(0) { $0 + $1.amount },
+                amount: Decimal(total),
                 color: MerchantUtils.color(for: category)
             )
         }.sorted { $0.amount > $1.amount }
@@ -176,12 +192,11 @@ struct AnalysisView: View {
             
             let bucketTx = filteredTransactions.filter { $0.date >= bucketStart && $0.date < bucketEnd }
             let byCategory = Dictionary(grouping: bucketTx) { MerchantUtils.normalizedCategory(for: $0.category) }
-            
+
             // Always include all categories, even with 0 amount
             for cat in MerchantUtils.defaultCategories {
-                let total = byCategory[cat]?.reduce(Decimal(0)) { $0 + $1.amount } ?? 0
-                let amount = Double(truncating: total as NSDecimalNumber)
-                result.append(StackedItem(bucketLabel: label, category: cat, amount: amount))
+                let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
+                result.append(StackedItem(bucketLabel: label, category: cat, amount: total))
             }
         }
         return result
@@ -196,9 +211,8 @@ struct AnalysisView: View {
             let label = df.string(from: Calendar.current.startOfDay(for: selectedDate))
             let byCategory = Dictionary(grouping: filteredTransactions) { MerchantUtils.normalizedCategory(for: $0.category) }
             return MerchantUtils.defaultCategories.compactMap { cat in
-                let total = byCategory[cat]?.reduce(Decimal(0)) { $0 + $1.amount } ?? 0
-                let amount = Double(truncating: total as NSDecimalNumber)
-                return amount > 0 ? StackedItem(bucketLabel: label, category: cat, amount: amount) : nil
+                let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
+                return total > 0 ? StackedItem(bucketLabel: label, category: cat, amount: total) : nil
             }
         }
         return stackedSeries
@@ -435,8 +449,9 @@ struct AnalysisView: View {
                                     Text("Total Spent")
                                         .font(.subheadline)
                                         .foregroundColor(.white.opacity(0.8))
-                                    
-                                    Text("$\(Double(truncating: filteredTransactions.reduce(0) { $0 + $1.amount } as NSDecimalNumber), specifier: "%.2f")")
+
+                                    let totalInDefault = filteredTransactions.reduce(0.0) { $0 + amountInDefault($1) }
+                                    Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(totalInDefault, specifier: "%.2f")")
                                         .font(.title)
                                         .fontWeight(.bold)
                                         .foregroundColor(.white)
@@ -490,7 +505,7 @@ struct AnalysisView: View {
                             .chartYAxis {
                                 AxisMarks(position: .leading) { value in
                                     AxisGridLine()
-                                    AxisValueLabel() { if let v = value.as(Double.self) { Text("$\(v, specifier: "%.0f")") } }
+                                    AxisValueLabel() { if let v = value.as(Double.self) { Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(v, specifier: "%.0f")") } }
                                         .foregroundStyle(.white.opacity(0.7))
                                 }
                             }
@@ -599,11 +614,13 @@ struct DonutChart: View {
 
 struct CategoryRow: View {
     let category: CategorySpending
-    
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+
     private var categoryIcon: String {
         MerchantUtils.icon(for: category.category)
     }
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
@@ -614,14 +631,14 @@ struct CategoryRow: View {
                         .font(.headline)
                         .foregroundColor(.white)
                 )
-            
+
             Text(category.category)
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Spacer()
-            
-            Text("$\(Double(truncating: category.amount as NSDecimalNumber), specifier: "%.2f")")
+
+            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Double(truncating: category.amount as NSDecimalNumber), specifier: "%.2f")")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
