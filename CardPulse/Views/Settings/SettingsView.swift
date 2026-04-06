@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,USD"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
     @State private var showingCurrencyManager = false
     @State private var showingImportPicker = false
     @State private var importMessage: String = ""
@@ -251,6 +252,23 @@ struct SettingsView: View {
                 defaultCurrencyCode: $defaultCurrencyCode
             )
         }
+        .onChange(of: defaultCurrencyCode) { _, newDefault in
+            // Rates are relative to the default currency — clear stale cache so views
+            // immediately fall back to raw amounts, then re-fetch against the new default.
+            exchangeRatesData = (try? JSONEncoder().encode([String: Double]())) ?? Data()
+            CurrencyUtils.saveRates([:], baseCurrency: newDefault)
+            Task {
+                let codes = CurrencyUtils.enabledCurrencies(
+                    fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw
+                ).map { $0.code }
+                if let fetched = await CurrencyUtils.fetchRates(for: codes, to: newDefault) {
+                    CurrencyUtils.saveRates(fetched, baseCurrency: newDefault)
+                    if let data = try? JSONEncoder().encode(fetched) {
+                        exchangeRatesData = data
+                    }
+                }
+            }
+        }
         .alert("Import Complete", isPresented: $showingImportAlert) {
             Button("OK") {}
         } message: {
@@ -267,20 +285,7 @@ struct SettingsView: View {
 // MARK: - Currency Helpers
 private extension SettingsView {
     var enabledCurrencyList: [CurrencyInfo] {
-        let codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
-        // Include custom currencies from the binding so the list updates reactively
-        let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
-        let custom = customCurrenciesRaw.components(separatedBy: ",")
-            .filter { !$0.isEmpty }
-            .compactMap { entry -> CurrencyInfo? in
-                let p = entry.components(separatedBy: "|")
-                guard p.count == 3 else { return nil }
-                return CurrencyInfo(code: p[0], name: p[1], symbol: p[2])
-            }
-            .filter { !builtInCodes.contains($0.code) }
-        let all = CurrencyUtils.allCurrencies + custom
-        let list = all.filter { codes.contains($0.code) }
-        return list.isEmpty ? all : list
+        CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
     }
 }
 
@@ -493,30 +498,48 @@ struct CurrencyManagerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingAddCurrency = false
 
+    // Exchange rate state — rates are [fromCode: rateToDefault]
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+    @State private var rates: [String: Double] = [:]
+    @State private var isFetchingRates = false
+    @State private var lastFetched: Date? = CurrencyUtils.exchangeRatesFetchedAt
+    // Transient edit buffer: code → text while user is typing
+    @State private var rateEditBuffer: [String: String] = [:]
+
     private var enabledCodes: Set<String> {
         Set(enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty })
     }
 
     private var parsedCustomCurrencies: [CurrencyInfo] {
-        let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
-        return customCurrenciesRaw.components(separatedBy: ",")
-            .filter { !$0.isEmpty }
-            .compactMap { entry -> CurrencyInfo? in
-                let p = entry.components(separatedBy: "|")
-                guard p.count == 3 else { return nil }
-                return CurrencyInfo(code: p[0], name: p[1], symbol: p[2])
-            }
-            .filter { !builtInCodes.contains($0.code) }
+        CurrencyUtils.parseCustomCurrencies(fromRaw: customCurrenciesRaw)
+    }
+
+    /// Enabled non-default currencies that need exchange rates shown.
+    private var foreignEnabledCurrencies: [CurrencyInfo] {
+        CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
+            .filter { $0.code != defaultCurrencyCode }
     }
 
     var body: some View {
         NavigationView {
             List {
+                // MARK: Exchange Rates section
+                if !foreignEnabledCurrencies.isEmpty {
+                    Section(header: ratesSectionHeader) {
+                        ForEach(foreignEnabledCurrencies) { info in
+                            rateRow(info)
+                        }
+                    }
+                }
+
+                // MARK: Built-in currencies
                 Section("Built-in") {
                     ForEach(CurrencyUtils.allCurrencies) { info in
                         currencyRow(info)
                     }
                 }
+
+                // MARK: Custom currencies
                 Section(header: HStack {
                     Text("Custom")
                     Spacer()
@@ -552,11 +575,99 @@ struct CurrencyManagerView: View {
                 }
             }
             .sheet(isPresented: $showingAddCurrency) {
-                AddCurrencyView(enabledCurrenciesRaw: $enabledCurrenciesRaw, customCurrenciesRaw: $customCurrenciesRaw)
+                AddCurrencyView(
+                    enabledCurrenciesRaw: $enabledCurrenciesRaw,
+                    customCurrenciesRaw: $customCurrenciesRaw,
+                    onAdded: { code in Task { await fetchRateForCurrency(code) } }
+                )
+            }
+            .onAppear {
+                rates = CurrencyUtils.cachedRates
+                lastFetched = CurrencyUtils.exchangeRatesFetchedAt
+                if CurrencyUtils.ratesNeedRefresh {
+                    Task { await fetchRates() }
+                }
             }
         }
         .preferredColorScheme(.dark)
     }
+
+    // MARK: - Rate section header
+
+    @ViewBuilder
+    private var ratesSectionHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Exchange Rates")
+                if isFetchingRates {
+                    Text("Fetching latest rates...")
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.5))
+                } else if let fetched = lastFetched {
+                    Text("Updated \(fetched, style: .relative) ago")
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.5))
+                }
+            }
+            Spacer()
+            if isFetchingRates {
+                ProgressView().scaleEffect(0.8)
+            } else {
+                Button("Refresh") {
+                    Task { await fetchRates() }
+                }
+                .font(.caption)
+                .foregroundColor(.teal)
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Rate row (editable)
+
+    @ViewBuilder
+    private func rateRow(_ info: CurrencyInfo) -> some View {
+        HStack(spacing: 8) {
+            Text("1 \(info.code) =")
+                .font(.subheadline)
+                .foregroundColor(.white)
+
+            TextField("0.0000", text: rateBinding(for: info.code))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .foregroundColor(.teal)
+                .frame(maxWidth: 80)
+
+            Text(defaultCurrencyCode)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+    }
+
+    private func rateBinding(for code: String) -> Binding<String> {
+        Binding(
+            get: {
+                if let text = rateEditBuffer[code] { return text }
+                if let rate = rates[code] { return String(format: "%.4f", rate) }
+                return ""
+            },
+            set: { newText in
+                rateEditBuffer[code] = newText
+                // Persist as soon as a valid positive number is entered
+                if let rate = Double(newText), rate > 0 {
+                    rates[code] = rate
+                    CurrencyUtils.cachedRates = rates
+                    // Sync @AppStorage so other views update reactively
+                    if let data = try? JSONEncoder().encode(rates) {
+                        exchangeRatesData = data
+                    }
+                }
+            }
+        )
+    }
+
+    // MARK: - Currency toggle row
 
     @ViewBuilder
     private func currencyRow(_ info: CurrencyInfo) -> some View {
@@ -581,6 +692,8 @@ struct CurrencyManagerView: View {
         .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
     }
 
+    // MARK: - Actions
+
     private func toggle(_ code: String) {
         var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         if codes.contains(code) {
@@ -589,32 +702,68 @@ struct CurrencyManagerView: View {
             if defaultCurrencyCode == code { defaultCurrencyCode = codes.first ?? "SGD" }
         } else {
             codes.append(code)
+            // Fetch rate immediately if this currency has no cached rate yet
+            if rates[code] == nil && code != defaultCurrencyCode {
+                Task { await fetchRateForCurrency(code) }
+            }
         }
         enabledCurrenciesRaw = codes.joined(separator: ",")
     }
 
     private func deleteCustom(at offsets: IndexSet) {
-        var entries = customCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         let builtInCodes = Set(CurrencyUtils.allCurrencies.map { $0.code })
-        // Map offsets to the actual entries array (custom only, no built-ins)
-        var customEntries = entries.filter { entry in
+        var customEntries = customCurrenciesRaw.components(separatedBy: ",").filter { entry in
             let code = entry.components(separatedBy: "|").first ?? ""
-            return !builtInCodes.contains(code)
+            return !builtInCodes.contains(code) && !code.isEmpty
         }
         let codesToRemove = offsets.map { parsedCustomCurrencies[$0].code }
         customEntries.removeAll { entry in
             let code = entry.components(separatedBy: "|").first ?? ""
             return codesToRemove.contains(code)
         }
-        // Rebuild: built-in entries are not in customCurrenciesRaw, so just update custom
         customCurrenciesRaw = customEntries.joined(separator: ",")
-        // Also remove from enabled if present
         var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         codes.removeAll { codesToRemove.contains($0) }
         if codes.isEmpty { codes = [defaultCurrencyCode] }
         enabledCurrenciesRaw = codes.joined(separator: ",")
         if codesToRemove.contains(defaultCurrencyCode) {
             defaultCurrencyCode = codes.first ?? "SGD"
+        }
+    }
+
+    /// Fetches rates for all currently enabled currencies and saves them.
+    @MainActor
+    private func fetchRates() async {
+        isFetchingRates = true
+        let codes = CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
+            .map { $0.code }
+        if let fetched = await CurrencyUtils.fetchRates(for: codes, to: defaultCurrencyCode) {
+            var updated = rates
+            for (code, rate) in fetched { updated[code] = rate }
+            saveRates(updated)
+            lastFetched = Date()
+        }
+        isFetchingRates = false
+    }
+
+    /// Fetches the rate for a single newly-added currency and merges it into the cache.
+    @MainActor
+    private func fetchRateForCurrency(_ code: String) async {
+        guard code != defaultCurrencyCode else { return }
+        isFetchingRates = true
+        if let fetched = await CurrencyUtils.fetchRates(for: [code], to: defaultCurrencyCode) {
+            var updated = rates
+            for (c, rate) in fetched { updated[c] = rate }
+            saveRates(updated)
+        }
+        isFetchingRates = false
+    }
+
+    private func saveRates(_ updated: [String: Double]) {
+        rates = updated
+        CurrencyUtils.saveRates(updated, baseCurrency: defaultCurrencyCode)
+        if let data = try? JSONEncoder().encode(updated) {
+            exchangeRatesData = data
         }
     }
 }
@@ -624,6 +773,7 @@ struct CurrencyManagerView: View {
 struct AddCurrencyView: View {
     @Binding var enabledCurrenciesRaw: String
     @Binding var customCurrenciesRaw: String
+    var onAdded: (String) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
 
     @State private var code = ""
@@ -689,6 +839,7 @@ struct AddCurrencyView: View {
         var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         if !codes.contains(upperCode) { codes.append(upperCode) }
         enabledCurrenciesRaw = codes.joined(separator: ",")
+        onAdded(upperCode)
         dismiss()
     }
 }

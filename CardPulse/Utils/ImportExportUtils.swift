@@ -65,12 +65,12 @@ struct ImportExportUtils {
             if fields.count <= max(iMerchant, iAmount, iDate) { continue }
             let merchant = fields.indices.contains(iMerchant) ? fields[iMerchant] : ""
             let amount = fields.indices.contains(iAmount) ? fields[iAmount] : ""
+            let currency = (iCurrency != nil && fields.indices.contains(iCurrency!)) ? fields[iCurrency!] : ""
             let category = (iCategory != nil && fields.indices.contains(iCategory!)) ? fields[iCategory!] : ""
             let card = (iCard != nil && fields.indices.contains(iCard!)) ? fields[iCard!] : ""
             let date = fields.indices.contains(iDate) ? fields[iDate] : ""
             let note = (iNote != nil && fields.indices.contains(iNote!)) ? fields[iNote!] : ""
-            let _ = (iCurrency != nil && fields.indices.contains(iCurrency!)) ? fields[iCurrency!] : ""
-            rows.append(ImportPreviewRow(merchant: merchant, amount: amount, category: category, card: card, date: date, note: note))
+            rows.append(ImportPreviewRow(merchant: merchant, amount: amount, currency: currency, category: category, card: card, date: date, note: note))
             if !card.isEmpty { cardNames.insert(card) }
         }
 

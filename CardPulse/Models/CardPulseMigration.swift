@@ -12,8 +12,7 @@ enum SchemaV1: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
     static var models: [any PersistentModel.Type] { [SchemaV1.Card.self, SchemaV1.Transaction.self] }
 
-    @Model
-    final class Card {
+    @Model final class Card {
         var id: UUID
         var name: String
         var minimumSpendingAmount: Decimal
@@ -37,8 +36,7 @@ enum SchemaV1: VersionedSchema {
         }
     }
 
-    @Model
-    final class Transaction {
+    @Model final class Transaction {
         var id: UUID
         var merchant: String
         var amount: Decimal
@@ -60,7 +58,7 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
-// MARK: - V2 Schema (current — Transaction gains currency field)
+// MARK: - V2 Schema (current — Transaction gains `currency` field)
 
 enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
@@ -73,12 +71,12 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] { [SchemaV1.self, SchemaV2.self] }
     static var stages: [MigrationStage] { [migrateV1toV2] }
 
+    /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: SchemaV1.self,
         toVersion: SchemaV2.self,
         willMigrate: nil,
         didMigrate: { context in
-            // Backfill currency on every existing transaction using the user's default
             let defaultCurrency = UserDefaults.standard.string(forKey: CurrencyUtils.defaultCurrencyKey) ?? "SGD"
             let transactions = try context.fetch(FetchDescriptor<Transaction>())
             for txn in transactions where txn.currency.isEmpty {

@@ -118,19 +118,23 @@ struct WalletTransactionIntent: AppIntent {
     private func parseCurrencyAndAmount(from raw: String) -> (String, Decimal)? {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
 
-        // Ordered by specificity — longer/unambiguous symbols first
-        let symbolToCode: [(String, String)] = [
-            ("SGD", "SGD"), ("MYR", "MYR"), ("USD", "USD"), ("EUR", "EUR"),
-            ("GBP", "GBP"), ("HKD", "HKD"), ("AUD", "AUD"), ("CAD", "CAD"),
-            ("JPY", "JPY"), ("CNY", "CNY"), ("KRW", "KRW"), ("THB", "THB"),
-            ("IDR", "IDR"), ("PHP", "PHP"), ("INR", "INR"),
-            ("S$", "SGD"), ("HK$", "HKD"), ("A$", "AUD"), ("C$", "CAD"),
-            ("RM", "MYR"), ("Rp", "IDR"),
-            ("€", "EUR"), ("£", "GBP"), ("¥", "JPY"), ("₩", "KRW"),
-            ("₱", "PHP"), ("₹", "INR"), ("฿", "THB"),
-            // "$" is ambiguous — map to the user's configured default
-            ("$", CurrencyUtils.defaultCurrencyCode),
-        ]
+        // Build symbol→code mapping dynamically from CurrencyUtils so new currencies
+        // (including user-added custom ones) are supported automatically.
+        let currencies = CurrencyUtils.allAvailableCurrencies
+        var symbolToCode: [(String, String)] = []
+        // 1. Unambiguous ISO code prefixes (e.g. "SGD 12.50", "MYR 8.00")
+        symbolToCode += currencies.map { ($0.code, $0.code) }
+        // 2. Currency symbols, longest first so "S$" is tried before "$".
+        //    Use a stable sort (preserve original order for equal-length symbols)
+        //    so JPY wins over CNY when both share "¥".
+        let indexed = currencies.filter { $0.symbol != "$" }.enumerated().map { ($0.offset, $0.element) }
+        let sortedBySymbolLength = indexed.sorted {
+            if $0.1.symbol.count != $1.1.symbol.count { return $0.1.symbol.count > $1.1.symbol.count }
+            return $0.0 < $1.0
+        }
+        symbolToCode += sortedBySymbolLength.map { ($0.1.symbol, $0.1.code) }
+        // 3. "$" is ambiguous — map to the user's configured default currency
+        symbolToCode.append(("$", CurrencyUtils.defaultCurrencyCode))
 
         for (symbol, code) in symbolToCode {
             // Prefix match (e.g. "MYR 8.00", "S$12.50")
