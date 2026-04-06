@@ -96,7 +96,7 @@ struct TransactionFormView: View {
                     Picker("Currency", selection: $currency) {
                         Text("Default (\(CurrencyUtils.defaultCurrencyCode))").tag("")
                         ForEach(enabledCurrencies) { info in
-                            Text("\(info.code) (\(info.symbol))").tag(info.code)
+                            Text("\(info.name) (\(info.code))").tag(info.code)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())

@@ -102,13 +102,11 @@ struct TransactionRow: View {
             // Amount
             VStack(alignment: .trailing, spacing: 2) {
                 if let converted = convertedAmount {
-                    // Bold line: estimated amount in default currency
-                    Text("~-\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(converted, specifier: "%.2f")")
+                    Text("-\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(converted, specifier: "%.2f")")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    // Secondary line: original currency amount
-                    Text("\(CurrencyUtils.symbol(for: transaction.resolvedCurrency))\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f") \(transaction.resolvedCurrency)")
+                    Text("\(transaction.resolvedCurrency) \(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
                         .font(.caption2)
                         .foregroundColor(.white.opacity(0.5))
                 } else {
@@ -116,9 +114,11 @@ struct TransactionRow: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    Text(transaction.resolvedCurrency)
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
+                    if transaction.resolvedCurrency != defaultCurrencyCode {
+                        Text(transaction.resolvedCurrency)
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.5))
+                    }
                 }
             }
         }
