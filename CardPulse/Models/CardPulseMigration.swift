@@ -72,12 +72,18 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var stages: [MigrationStage] { [migrateV1toV2] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
+    /// Skipped when the user has not yet chosen a default currency — `CurrencyOnboardingView`
+    /// will perform the backfill after the user makes their selection.
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: SchemaV1.self,
         toVersion: SchemaV2.self,
         willMigrate: nil,
         didMigrate: { context in
-            let defaultCurrency = UserDefaults.standard.string(forKey: CurrencyUtils.defaultCurrencyKey) ?? "SGD"
+            guard UserDefaults.standard.bool(forKey: "hasChosenDefaultCurrency"),
+                  let defaultCurrency = UserDefaults.standard.string(forKey: CurrencyUtils.defaultCurrencyKey),
+                  !defaultCurrency.isEmpty
+            else { return }
+
             let transactions = try context.fetch(FetchDescriptor<Transaction>())
             for txn in transactions where txn.currency.isEmpty {
                 txn.currency = defaultCurrency

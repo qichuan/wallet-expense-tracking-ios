@@ -13,6 +13,7 @@ struct MainTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var cards: [Card]
     @State private var selectedTab = 0
+    @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
 
     private func writeWidgetData() {
         WidgetDataWriter.refresh(using: modelContext)
@@ -50,6 +51,10 @@ struct MainTabView: View {
         }
         .accentColor(.teal)
         .preferredColorScheme(.dark)
+        .fullScreenCover(isPresented: .constant(!hasChosenDefaultCurrency)) {
+            CurrencyOnboardingView()
+                .interactiveDismissDisabled(true)
+        }
         .onAppear { writeWidgetData() }
         .onChange(of: cards.count) { writeWidgetData() }
         .onChange(of: scenePhase) {
