@@ -10,6 +10,7 @@ struct ImportPreviewRow: Identifiable {
     let id = UUID()
     let merchant: String
     let amount: String
+    let currency: String
     let category: String
     let card: String
     let date: String
@@ -111,7 +112,8 @@ private extension ImportPreviewView {
             date: date,
             category: row.category.isEmpty ? nil : row.category,
             note: row.note.isEmpty ? nil : row.note,
-            card: card
+            card: card,
+            currency: row.currency
         )
     }
 }
