@@ -43,6 +43,7 @@ struct SettingsView: View {
     @State private var isImporting = false
     @State private var importProgressText = ""
     @State private var showingHowToAutoTracking = false
+    @State private var showingTroubleshooting = false
     
     var body: some View {
         ZStack {
@@ -144,10 +145,19 @@ struct SettingsView: View {
                                     title: "How to set up an automation in Shortcuts app to track wallet transactions?",
                                     action: { showingHowToAutoTracking = true }
                                 )
-                                
+
                                 Divider()
                                     .background(Color.white.opacity(0.1))
-                                
+
+                                SettingsRow(
+                                    icon: "exclamationmark.triangle",
+                                    title: "Transactions not recording automatically?",
+                                    action: { showingTroubleshooting = true }
+                                )
+
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+
                                 SettingsRow(
                                     icon: "envelope",
                                     title: "Contact the Developer",
@@ -278,6 +288,11 @@ struct SettingsView: View {
             Button("OK") {}
         } message: {
             Text(exportCompleteMessage)
+        }
+        .alert("Troubleshooting", isPresented: $showingTroubleshooting) {
+            Button("OK") {}
+        } message: {
+            Text("If transactions aren't being recorded automatically, or a dialog keeps prompting you after you tap to pay, try deleting the automation in the Shortcuts app and setting it up again from scratch.")
         }
     }
 }
