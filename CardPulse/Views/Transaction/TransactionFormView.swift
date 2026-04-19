@@ -214,6 +214,7 @@ struct TransactionFormView: View {
                 "type": "manual",
                 "merchant": merchant,
                 "amount": amount,
+                "currency": currency
             ])
             do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
             catch { print("Error saving transaction: \(error)") }
