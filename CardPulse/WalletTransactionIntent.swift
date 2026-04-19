@@ -34,7 +34,7 @@ struct WalletTransactionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         // Parse currency and numeric value from the raw amount string
-        guard let (resolvedCurrency, decimalAmount) = parseCurrencyAndAmount(from: amount),
+        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
               decimalAmount != 0 else {
             return .result()
         }
@@ -112,57 +112,7 @@ struct WalletTransactionIntent: AppIntent {
 
         return .result()
     }
-
-    /// Parses a raw Wallet amount string (e.g. "S$12.50", "MYR 8.00", "$4.99")
-    /// into a (currencyCode, amount) pair. Falls back to the user's default currency
-    /// for ambiguous symbols like "$".
-    private func parseCurrencyAndAmount(from raw: String) -> (String, Decimal)? {
-        let trimmed = raw.trimmingCharacters(in: .whitespaces)
-
-        // Build symbol→code mapping dynamically from CurrencyUtils so new currencies
-        // (including user-added custom ones) are supported automatically.
-        let currencies = CurrencyUtils.allAvailableCurrencies
-        var symbolToCode: [(String, String)] = []
-        // 1. Unambiguous ISO code prefixes (e.g. "SGD 12.50", "MYR 8.00")
-        symbolToCode += currencies.map { ($0.code, $0.code) }
-        // 2. Currency symbols, longest first so "S$" is tried before "$".
-        //    Use a stable sort (preserve original order for equal-length symbols)
-        //    so JPY wins over CNY when both share "¥".
-        let indexed = currencies.filter { $0.symbol != "$" }.enumerated().map { ($0.offset, $0.element) }
-        let sortedBySymbolLength = indexed.sorted {
-            if $0.1.symbol.count != $1.1.symbol.count { return $0.1.symbol.count > $1.1.symbol.count }
-            return $0.0 < $1.0
-        }
-        symbolToCode += sortedBySymbolLength.map { ($0.1.symbol, $0.1.code) }
-        // 3. "$" is ambiguous — map to the user's configured default currency
-        symbolToCode.append(("$", CurrencyUtils.defaultCurrencyCode))
-
-        for (symbol, code) in symbolToCode {
-            // Prefix match (e.g. "MYR 8.00", "S$12.50")
-            if trimmed.uppercased().hasPrefix(symbol.uppercased()) {
-                let rest = String(trimmed.dropFirst(symbol.count)).trimmingCharacters(in: .whitespaces)
-                if let amount = parseDecimal(from: rest) { return (code, amount) }
-            }
-            // Suffix match (e.g. "8.00 MYR")
-            if trimmed.uppercased().hasSuffix(symbol.uppercased()) {
-                let rest = String(trimmed.dropLast(symbol.count)).trimmingCharacters(in: .whitespaces)
-                if let amount = parseDecimal(from: rest) { return (code, amount) }
-            }
-        }
-
-        // No recognised symbol — try parsing as a bare number, use default currency
-        if let amount = parseDecimal(from: trimmed) {
-            return (CurrencyUtils.defaultCurrencyCode, amount)
-        }
-        return nil
-    }
-
-    private func parseDecimal(from string: String) -> Decimal? {
-        // Strip thousand-separators before parsing
-        let cleaned = string.replacingOccurrences(of: ",", with: "")
-        return Decimal(string: cleaned)
-    }
-
+    
     private func guessCategory(from merchant: String) -> String? {
         let categories = MerchantUtils.defaultCategories
         // Seed words representing each category's semantics
