@@ -235,4 +235,49 @@ struct CurrencyUtils {
         }
         return nil
     }
+
+    // MARK: - Currency & Amount Parsing
+
+    /// Parses a raw amount string (e.g. "S$12.50", "MYR 8.00", "8.00 MYR", "$4.99")
+    /// into a (currencyCode, amount) tuple.  Falls back to the user's default currency
+    /// when no symbol/code is recognised.
+    static func parseCurrencyAndAmount(from raw: String) -> (String, Decimal)? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+
+        let currencies = allAvailableCurrencies
+        var symbolToCode: [(String, String)] = []
+        // 1. ISO code prefixes (e.g. "SGD 12.50")
+        symbolToCode += currencies.map { ($0.code, $0.code) }
+        // 2. Currency symbols, longest first so "S$" is tried before "$".
+        let indexed = currencies.filter { $0.symbol != "$" }.enumerated().map { ($0.offset, $0.element) }
+        let sortedBySymbolLength = indexed.sorted {
+            if $0.1.symbol.count != $1.1.symbol.count { return $0.1.symbol.count > $1.1.symbol.count }
+            return $0.0 < $1.0
+        }
+        symbolToCode += sortedBySymbolLength.map { ($0.1.symbol, $0.1.code) }
+        // 3. "$" is ambiguous — map to default currency
+        symbolToCode.append(("$", defaultCurrencyCode))
+
+        for (symbol, code) in symbolToCode {
+            if trimmed.uppercased().hasPrefix(symbol.uppercased()) {
+                let rest = String(trimmed.dropFirst(symbol.count)).trimmingCharacters(in: .whitespaces)
+                if let amount = parseDecimal(from: rest) { return (code, amount) }
+            }
+            if trimmed.uppercased().hasSuffix(symbol.uppercased()) {
+                let rest = String(trimmed.dropLast(symbol.count)).trimmingCharacters(in: .whitespaces)
+                if let amount = parseDecimal(from: rest) { return (code, amount) }
+            }
+        }
+
+        // No recognised symbol — bare number with default currency
+        if let amount = parseDecimal(from: trimmed) {
+            return (defaultCurrencyCode, amount)
+        }
+        return nil
+    }
+
+    static func parseDecimal(from string: String) -> Decimal? {
+        let cleaned = string.replacingOccurrences(of: ",", with: "")
+        return Decimal(string: cleaned)
+    }
 }

@@ -11,6 +11,8 @@
 		2E07836E2F7019C400F4C526 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E07836D2F7019C400F4C526 /* SwiftUI.framework */; };
 		2E07837D2F7019C600F4C526 /* CardPulseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2EC114E52EDBFC4E00889086 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2EC114E42EDBFC4E00889086 /* FirebaseAnalytics */; };
+		4973E47AB83EBFFD431047A5 /* CurrencyParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */; };
+		E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C3ADE3BAF41D282E245C402 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,6 +22,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 2E0783682F7019C400F4C526;
 			remoteInfo = CardPulseWidgetExtension;
+		};
+		E375282A9D316AF7047C1F9F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EBD3BF22EAF392700295A20 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2EBD3BF92EAF392700295A20;
+			remoteInfo = CardPulse;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -38,11 +47,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C3ADE3BAF41D282E245C402 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CardPulseWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E07836B2F7019C400F4C526 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		2E07836D2F7019C400F4C526 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		2E07839A2F701BCC00F4C526 /* CardPulseWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CardPulseWidgetExtension.entitlements; sourceTree = "<group>"; };
 		2EBD3BFA2EAF392700295A20 /* CardPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CardPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrencyParsingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -99,6 +111,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DECDCA4C11D51883CA9157CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -107,6 +127,7 @@
 			children = (
 				2E07836B2F7019C400F4C526 /* WidgetKit.framework */,
 				2E07836D2F7019C400F4C526 /* SwiftUI.framework */,
+				965D2A3CDEB791006C4EE277 /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -119,6 +140,7 @@
 				2E07836F2F7019C400F4C526 /* CardPulseWidget */,
 				2E07836A2F7019C400F4C526 /* Frameworks */,
 				2EBD3BFB2EAF392700295A20 /* Products */,
+				AA595A788BF9D310D78E561E /* CardPulseTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -127,8 +149,26 @@
 			children = (
 				2EBD3BFA2EAF392700295A20 /* CardPulse.app */,
 				2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */,
+				D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		965D2A3CDEB791006C4EE277 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				0C3ADE3BAF41D282E245C402 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		AA595A788BF9D310D78E561E /* CardPulseTests */ = {
+			isa = PBXGroup;
+			children = (
+				EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */,
+			);
+			name = CardPulseTests;
+			path = CardPulseTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -150,8 +190,6 @@
 				2E07836F2F7019C400F4C526 /* CardPulseWidget */,
 			);
 			name = CardPulseWidgetExtension;
-			packageProductDependencies = (
-			);
 			productName = CardPulseWidgetExtension;
 			productReference = 2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -180,6 +218,24 @@
 			productName = TapTrack;
 			productReference = 2EBD3BFA2EAF392700295A20 /* CardPulse.app */;
 			productType = "com.apple.product-type.application";
+		};
+		2EFC23BA3FBBD1295410A031 /* CardPulseTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ACE1BFAE711635B821D91FAC /* Build configuration list for PBXNativeTarget "CardPulseTests" */;
+			buildPhases = (
+				5F59AFDF4D025C2EC721F551 /* Sources */,
+				DECDCA4C11D51883CA9157CF /* Frameworks */,
+				5A6157C34ED2A1E324A97AFE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C3E93606FE5ACE99C0125A4F /* PBXTargetDependency */,
+			);
+			name = CardPulseTests;
+			productName = CardPulseTests;
+			productReference = D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -219,6 +275,7 @@
 			targets = (
 				2EBD3BF92EAF392700295A20 /* CardPulse */,
 				2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */,
+				2EFC23BA3FBBD1295410A031 /* CardPulseTests */,
 			);
 		};
 /* End PBXProject section */
@@ -232,6 +289,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2EBD3BF82EAF392700295A20 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A6157C34ED2A1E324A97AFE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,6 +319,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5F59AFDF4D025C2EC721F551 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4973E47AB83EBFFD431047A5 /* CurrencyParsingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -262,6 +334,12 @@
 			isa = PBXTargetDependency;
 			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;
 			targetProxy = 2E07837B2F7019C600F4C526 /* PBXContainerItemProxy */;
+		};
+		C3E93606FE5ACE99C0125A4F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CardPulse;
+			target = 2EBD3BF92EAF392700295A20 /* CardPulse */;
+			targetProxy = E375282A9D316AF7047C1F9F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -538,6 +616,41 @@
 			};
 			name = Release;
 		};
+		6EB46695C5AB7B363AFD4E60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Z88PXL4DBF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhangqichuan.CardPulse.tests;
+				PRODUCT_NAME = CardPulseTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CardPulse.app/CardPulse";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		745E19455A2739EC0C28E48B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Z88PXL4DBF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhangqichuan.CardPulse.tests;
+				PRODUCT_NAME = CardPulseTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CardPulse.app/CardPulse";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -564,6 +677,15 @@
 			buildConfigurations = (
 				2EBD3C082EAF392800295A20 /* Debug */,
 				2EBD3C092EAF392800295A20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ACE1BFAE711635B821D91FAC /* Build configuration list for PBXNativeTarget "CardPulseTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6EB46695C5AB7B363AFD4E60 /* Release */,
+				745E19455A2739EC0C28E48B /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
