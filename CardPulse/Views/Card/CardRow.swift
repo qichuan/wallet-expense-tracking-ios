@@ -10,9 +10,15 @@ import SwiftData
 
 struct CardRow: View {
     let card: Card
-    
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+
+    private var currencySymbol: String {
+        CurrencyUtils.symbol(for: defaultCurrencyCode)
+    }
+
     private var bankIcon: String { "creditcard" }
-    
+
     private var rewardTypeColor: Color {
         switch card.rewardType {
         case .miles:
@@ -55,7 +61,7 @@ struct CardRow: View {
                             .frame(height: 6)
                         
                         HStack {
-                            Text("$\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / $\(Double(truncating: card.minimumSpendingAmount as NSDecimalNumber), specifier: "%.0f")")
+                            Text("\(currencySymbol)\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / \(currencySymbol)\(Double(truncating: card.minimumSpendingAmount as NSDecimalNumber), specifier: "%.0f")")
                                 .font(.caption)
                                 .foregroundColor(.white)
                             Spacer()

@@ -85,26 +85,9 @@ struct WalletTransactionIntent: AppIntent {
         ])
         do {
             try context.save()
-            // Refresh the widget after the intent saves new data
-            let cardRequest = FetchDescriptor<Card>()
-            if let allCards = try? context.fetch(cardRequest) {
-                let spendData = allCards.map { card in
-                    CardSpendData(
-                        id: card.id,
-                        name: card.name,
-                        monthlySpent: Double(truncating: card.monthlySpent as NSDecimalNumber),
-                        minimumSpending: Double(truncating: card.minimumSpendingAmount as NSDecimalNumber),
-                        hasMinimumSpending: card.hasMinimumSpending,
-                        daysRemaining: card.daysRemaining,
-                        rewardType: card.rewardType.rawValue,
-                        spendingPeriodDisplay: card.spendingPeriodDisplay
-                    )
-                }
-                await WidgetDataWriter.write(spendData: spendData)
-            }
+            WidgetDataWriter.refresh(using: context)
         } catch {
-            // We intentionally swallow the error for the intent result to avoid user-facing failures
-            // In production, consider logging via OSLog
+            // Swallow — the intent should never surface save errors to the user
         }
 
         // Notify user about the new transaction

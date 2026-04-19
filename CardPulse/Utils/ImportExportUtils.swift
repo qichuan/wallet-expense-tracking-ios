@@ -120,7 +120,7 @@ struct ImportExportUtils {
         let iDate     = col(["date"]) ?? (iCurrency != nil ? 5 : 4)
         let iNote     = col(["note"])
 
-        let defaultCurrency = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "SGD"
+        let defaultCurrency = CurrencyUtils.defaultCurrencyCode
 
         for (index, line) in lines.enumerated() {
             if index == 0 || line.isEmpty { continue }
