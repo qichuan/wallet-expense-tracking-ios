@@ -13,17 +13,7 @@ struct HomeView: View {
     @Query private var transactions: [Transaction]
     
     @State private var showingAddTransaction = false
-    @State private var showingAllTransactions = false
-    @State private var selectedTransaction: Transaction?
     @State private var showingHowToAutoTracking = false
-    
-    
-    private var recentTransactions: [Transaction] {
-        transactions
-            .sorted { $0.date > $1.date }
-            .prefix(10)
-            .map { $0 }
-    }
     
     var body: some View {
         NavigationView {
@@ -67,7 +57,7 @@ struct HomeView: View {
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .frame(width: 56, height: 56)
-                                .background(Color.yellow)
+                                .background(Color.teal)
                                 .clipShape(Circle())
                                 .shadow(radius: 8)
                         }
@@ -80,14 +70,8 @@ struct HomeView: View {
         .sheet(isPresented: $showingAddTransaction) {
             TransactionFormView()
         }
-        .sheet(isPresented: $showingAllTransactions) {
-            AllTransactionsView()
-        }
         .sheet(isPresented: $showingHowToAutoTracking) {
             HowToAutoTrackingView()
-        }
-        .sheet(item: $selectedTransaction) { transaction in
-            TransactionFormView(transaction: transaction)
         }
     }
 }

@@ -18,7 +18,7 @@ struct TransactionFormView: View {
     @Query private var cards: [Card]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
-    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,USD"
+    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
 
     @State private var merchant: String

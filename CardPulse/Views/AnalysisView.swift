@@ -142,15 +142,18 @@ struct AnalysisView: View {
         switch selectedGranularity {
         case .day:
             if let dayStart = cal.dateInterval(of: .day, for: start)?.start {
-                for h in 0..<24 { bucketDates.append(cal.date(byAdding: .hour, value: h, to: dayStart)!) }
+                for h in 0..<24 {
+                    if let d = cal.date(byAdding: .hour, value: h, to: dayStart) { bucketDates.append(d) }
+                }
             }
         case .week:
             if let week = cal.dateInterval(of: .weekOfYear, for: start) {
-                for d in 0..<7 { bucketDates.append(cal.date(byAdding: .day, value: d, to: week.start)!) }
+                for d in 0..<7 {
+                    if let date = cal.date(byAdding: .day, value: d, to: week.start) { bucketDates.append(date) }
+                }
             }
         case .month:
             if let month = cal.dateInterval(of: .month, for: start) {
-                // For month, always show exactly 4 weeks (wk1, wk2, wk3, wk4)
                 for w in 0..<4 {
                     let weekStart = cal.date(byAdding: .weekOfYear, value: w, to: month.start) ?? month.start
                     bucketDates.append(weekStart)
@@ -158,7 +161,9 @@ struct AnalysisView: View {
             }
         case .year:
             if let year = cal.dateInterval(of: .year, for: start) {
-                for m in 0..<12 { bucketDates.append(cal.date(byAdding: .month, value: m, to: year.start)!) }
+                for m in 0..<12 {
+                    if let d = cal.date(byAdding: .month, value: m, to: year.start) { bucketDates.append(d) }
+                }
             }
         }
         
@@ -304,28 +309,6 @@ struct AnalysisView: View {
     // MARK: - Recent Transactions for current range
     private var recentTransactionsInRange: [Transaction] {
         filteredTransactions.sorted { $0.date > $1.date }
-    }
-    
-    private var monthlyTrends: [MonthlyTrend] {
-        let calendar = Calendar.current
-        let now = Date()
-        var trends: [MonthlyTrend] = []
-        
-        for monthOffset in 0..<3 {
-            let month = calendar.date(byAdding: .month, value: -2 + monthOffset, to: now) ?? now
-            let monthName = DateFormatter().monthSymbols[calendar.component(.month, from: month) - 1].prefix(3).uppercased()
-            
-            let monthSpending = filteredTransactions
-                .filter { calendar.isDate($0.date, equalTo: month, toGranularity: .month) }
-                .reduce(0) { $0 + $1.amount }
-            
-            trends.append(MonthlyTrend(
-                month: String(monthName),
-                amount: Double(truncating: monthSpending as NSDecimalNumber)
-            ))
-        }
-        
-        return trends
     }
     
     var body: some View {
@@ -574,12 +557,6 @@ struct CategorySpending: Identifiable {
     let color: Color
 }
 
-struct MonthlyTrend: Identifiable {
-    let id = UUID()
-    let month: String
-    let amount: Double
-}
-
 struct DonutChart: View {
     let data: [CategorySpending]
     
@@ -605,7 +582,7 @@ struct DonutChart: View {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
                 Circle()
                     .trim(from: seg.start, to: seg.end)
-                    .stroke(seg.color, style: StrokeStyle(lineWidth: 12, lineCap: .butt, lineJoin: .round))
+                    .stroke(seg.color, style: StrokeStyle(lineWidth: 16, lineCap: .butt, lineJoin: .round))
                     .rotationEffect(.degrees(-90))
             }
         }
