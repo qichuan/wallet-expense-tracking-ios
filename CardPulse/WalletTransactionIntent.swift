@@ -80,6 +80,7 @@ struct WalletTransactionIntent: AppIntent {
         Analytics.logEvent("add_wallet_transaction", parameters: [
             "type": "ttp",
             "merchant": merchantName,
+            "currency": resolvedCurrency,
             "amount": amount,
         ])
         do {
