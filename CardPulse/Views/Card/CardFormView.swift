@@ -44,7 +44,7 @@ struct CardFormView: View {
             _rewardType = State(initialValue: .none)
             _hasMinimumSpending = State(initialValue: false)
             _minimumSpendingAmount = State(initialValue: "")
-            _minimumSpendingByDayOfMonth = State(initialValue: 20)
+            _minimumSpendingByDayOfMonth = State(initialValue: 1)
         }
     }
     
@@ -98,7 +98,7 @@ struct CardFormView: View {
                                 Text("By Day \(minimumSpendingByDayOfMonth) of each month")
                             }
                             
-                            Text("Your mininum spending resets on this day each month. Try to reach the minimum spending amount before then to earn rewards from your card issuer")
+                            Text("Your minimum spending resets on this day each month. Try to reach the minimum spending amount before then to earn rewards from your card issuer")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .padding(.top, 4)

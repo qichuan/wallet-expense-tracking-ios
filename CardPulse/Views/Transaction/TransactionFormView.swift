@@ -11,32 +11,48 @@ import FirebaseAnalytics
 
 struct TransactionFormView: View {
     let transactionToEdit: Transaction?
-    
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     @Query private var cards: [Card]
-    
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
+    @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
+
     @State private var merchant: String
     @State private var amount: String
+    @State private var currency: String
     @State private var selectedCard: Card?
     @State private var category: String
     @State private var note: String
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
     @FocusState private var focusedField: Field?
-    
+
+    private var enabledCurrencies: [CurrencyInfo] {
+        let enabled = CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
+        // Always include the transaction's specific currency even if it was disabled
+        if !currency.isEmpty, !enabled.contains(where: { $0.code == currency }),
+           let info = CurrencyUtils.info(for: currency) {
+            return [info] + enabled
+        }
+        return enabled
+    }
+
     private enum Field {
         case merchant, amount, note
     }
-    
+
     private let categories = MerchantUtils.defaultCategories
-    
+
     init(transaction: Transaction? = nil) {
         self.transactionToEdit = transaction
         if let transaction {
             _merchant = State(initialValue: transaction.merchant)
             _amount = State(initialValue: String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber)))
+            _currency = State(initialValue: transaction.currency)
             _selectedCard = State(initialValue: transaction.card)
             _category = State(initialValue: MerchantUtils.normalizedCategory(for: transaction.category))
             _note = State(initialValue: transaction.note ?? "")
@@ -44,13 +60,14 @@ struct TransactionFormView: View {
         } else {
             _merchant = State(initialValue: "")
             _amount = State(initialValue: "")
+            _currency = State(initialValue: "")
             _selectedCard = State(initialValue: nil)
             _category = State(initialValue: MerchantUtils.defaultCategories.first ?? "Other")
             _note = State(initialValue: "")
             _transactionDate = State(initialValue: Date())
         }
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -62,7 +79,7 @@ struct TransactionFormView: View {
                     } label: {
                         Text("Merchant")
                     }
-                    
+
                     LabeledContent {
                         TextField("", text: $amount)
                             .textFieldStyle(.roundedBorder)
@@ -75,12 +92,21 @@ struct TransactionFormView: View {
                     } label: {
                         Text("Amount")
                     }
-                    
+
+                    Picker("Currency", selection: $currency) {
+                        Text("Default (\(CurrencyUtils.defaultCurrencyCode))").tag("")
+                        ForEach(enabledCurrencies) { info in
+                            Text("\(info.name) (\(info.code))").tag(info.code)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .onChange(of: currency) { _, _ in focusedField = nil }
+
                     DatePicker("Date", selection: $transactionDate, displayedComponents: [.date, .hourAndMinute])
                         .onChange(of: transactionDate) { _, _ in
                             focusedField = nil
                         }
-                    
+
                     Picker("Card", selection: $selectedCard) {
                         Text("No card selected").tag(nil as Card?)
                         ForEach(cards) { card in
@@ -91,7 +117,7 @@ struct TransactionFormView: View {
                     .onChange(of: selectedCard) { _, _ in
                         focusedField = nil
                     }
-                    
+
                     Picker("Category", selection: $category) {
                         ForEach(categories, id: \.self) { category in
                             Text(category).tag(category)
@@ -102,14 +128,14 @@ struct TransactionFormView: View {
                         focusedField = nil
                     }
                 }
-                
+
                 Section("Note") {
                     TextField("This transaction is about...", text: $note, axis: .vertical)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .lineLimit(3...6)
                         .focused($focusedField, equals: .note)
                 }
-                
+
                 if transactionToEdit != nil {
                     Section {
                         Button(action: {
@@ -136,8 +162,8 @@ struct TransactionFormView: View {
                         .disabled(merchant.isEmpty || amount.isEmpty)
                 }
             }
-            .onAppear{
-                if (transactionToEdit == nil) {
+            .onAppear {
+                if transactionToEdit == nil {
                     focusedField = .merchant
                 }
             }
@@ -149,7 +175,7 @@ struct TransactionFormView: View {
             Text("Are you sure you want to delete this transaction? This action cannot be undone.")
         }
     }
-    
+
     private func formatAmountInput(_ input: String) -> String {
         let filtered = input.filter { $0.isNumber || $0 == "." }
         let parts = filtered.components(separatedBy: ".")
@@ -160,12 +186,13 @@ struct TransactionFormView: View {
         }
         return filtered
     }
-    
+
     private func saveTransaction() {
         guard let amountDecimal = Decimal(string: amount) else { return }
         if let editing = transactionToEdit {
             editing.merchant = merchant
             editing.amount = amountDecimal
+            editing.currency = currency
             editing.date = transactionDate
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
@@ -179,13 +206,15 @@ struct TransactionFormView: View {
                 date: transactionDate,
                 category: category.isEmpty ? nil : category,
                 note: note.isEmpty ? nil : note,
-                card: selectedCard
+                card: selectedCard,
+                currency: currency
             )
             modelContext.insert(transaction)
             Analytics.logEvent("add_wallet_transaction", parameters: [
                 "type": "manual",
                 "merchant": merchant,
                 "amount": amount,
+                "currency": currency
             ])
             do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
             catch { print("Error saving transaction: \(error)") }
@@ -204,5 +233,3 @@ struct TransactionFormView: View {
     TransactionFormView()
         .modelContainer(ModelContainer.createMockContainer())
 }
-
-

@@ -21,22 +21,24 @@ struct WalletTransactionIntent: AppIntent {
     @Parameter(title: "Merchant Name")
     var merchantName: String
 
+    /// Raw amount string from Apple Wallet, e.g. "S$12.50", "MYR 8.00", "$4.99"
     @Parameter(title: "Amount")
-    var amount: Double
-    
+    var amount: String
+
     @Parameter(title: "Card Name")
     var cardName: String
-    
+
     static var parameterSummary: some ParameterSummary {
         Summary("Log transaction from \(\.$merchantName) for \(\.$amount) using \(\.$cardName)")
     }
-    
+
     func perform() async throws -> some IntentResult {
-        // Don't create a transaction if the amount is 0
-        guard amount != 0 else {
+        // Parse currency and numeric value from the raw amount string
+        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
+              decimalAmount != 0 else {
             return .result()
         }
-        
+
         // Persist a new Transaction into SwiftData
         let container = try ModelContainer(for: Card.self, Transaction.self)
         let context = ModelContext(container)
@@ -56,14 +58,13 @@ struct WalletTransactionIntent: AppIntent {
                     name: cardName,
                     minimumSpendingAmount: 0,
                     hasMinimumSpending: false,
-                        rewardType: .none
+                    rewardType: .none
                 )
                 context.insert(newCard)
                 matchedCard = newCard
             }
         }
 
-        let decimalAmount = Decimal(Double(amount))
         let guessedCategory = guessCategory(from: merchantName)
         let txn = Transaction(
             merchant: merchantName,
@@ -71,37 +72,22 @@ struct WalletTransactionIntent: AppIntent {
             date: Date(),
             category: guessedCategory,
             note: nil,
-            card: matchedCard
+            card: matchedCard,
+            currency: resolvedCurrency
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation
         Analytics.logEvent("add_wallet_transaction", parameters: [
             "type": "ttp",
             "merchant": merchantName,
+            "currency": resolvedCurrency,
             "amount": amount,
         ])
         do {
             try context.save()
-            // Refresh the widget after the intent saves new data
-            let cardRequest = FetchDescriptor<Card>()
-            if let allCards = try? context.fetch(cardRequest) {
-                let spendData = allCards.map { card in
-                    CardSpendData(
-                        id: card.id,
-                        name: card.name,
-                        monthlySpent: Double(truncating: card.monthlySpent as NSDecimalNumber),
-                        minimumSpending: Double(truncating: card.minimumSpendingAmount as NSDecimalNumber),
-                        hasMinimumSpending: card.hasMinimumSpending,
-                        daysRemaining: card.daysRemaining,
-                        rewardType: card.rewardType.rawValue,
-                        spendingPeriodDisplay: card.spendingPeriodDisplay
-                    )
-                }
-                WidgetDataWriter.write(spendData: spendData)
-            }
+            WidgetDataWriter.refresh(using: context)
         } catch {
-            // We intentionally swallow the error for the intent result to avoid user-facing failures
-            // In production, consider logging via OSLog
+            // Swallow — the intent should never surface save errors to the user
         }
 
         // Notify user about the new transaction
@@ -109,7 +95,7 @@ struct WalletTransactionIntent: AppIntent {
 
         return .result()
     }
-
+    
     private func guessCategory(from merchant: String) -> String? {
         let categories = MerchantUtils.defaultCategories
         // Seed words representing each category's semantics
