@@ -99,14 +99,12 @@ struct CurrencyOnboardingView: View {
                 Button {
                     guard !selectedCode.isEmpty else { return }
                     defaultCurrencyCode = selectedCode
-                    // Ensure the chosen currency is in the enabled list
-                    var codes = enabledCurrenciesRaw
-                        .components(separatedBy: ",")
-                        .filter { !$0.isEmpty }
+                    // Start from the full default enabled set and add the selection if not already present
+                    var codes = CurrencyUtils.defaultEnabledCurrencies
                     if !codes.contains(selectedCode) {
                         codes.insert(selectedCode, at: 0)
-                        enabledCurrenciesRaw = codes.joined(separator: ",")
                     }
+                    enabledCurrenciesRaw = codes.joined(separator: ",")
                     // Backfill any transactions that the migration left with an empty currency
                     // (happens when the user was new and hadn't chosen a currency at migration time)
                     backfillTransactions(currency: selectedCode)

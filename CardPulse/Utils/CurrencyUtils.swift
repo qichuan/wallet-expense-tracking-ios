@@ -73,6 +73,21 @@ struct CurrencyUtils {
         return allCurrencies + uniqueCustom
     }
 
+    static let defaultEnabledCurrencies = ["SGD", "MYR", "HKD", "USD", "EUR"]
+    private static let defaultCurrenciesAppliedKey = "defaultCurrenciesV1Applied"
+
+    /// Ensures the default major currencies are present in the enabled list.
+    /// Runs once per install; safe to call on every launch.
+    static func ensureDefaultCurrenciesEnabled() {
+        guard !UserDefaults.standard.bool(forKey: defaultCurrenciesAppliedKey) else { return }
+        var current = enabledCurrencyCodes
+        for code in defaultEnabledCurrencies where !current.contains(code) {
+            current.append(code)
+        }
+        enabledCurrencyCodes = current
+        UserDefaults.standard.set(true, forKey: defaultCurrenciesAppliedKey)
+    }
+
     // MARK: - UserDefaults accessors
 
     static var defaultCurrencyCode: String {
@@ -84,7 +99,7 @@ struct CurrencyUtils {
         get {
             guard let stored = UserDefaults.standard.string(forKey: enabledCurrenciesKey),
                   !stored.isEmpty else {
-                return ["SGD", "MYR", "USD"]
+                return ["SGD", "MYR", "HKD", "USD", "EUR"]
             }
             return stored.components(separatedBy: ",").filter { !$0.isEmpty }
         }
@@ -164,11 +179,13 @@ struct CurrencyUtils {
     }
 
     /// Returns true when the cached rates are missing, stale (> 5 days old),
-    /// or were fetched against a different default currency.
+    /// were fetched against a different default currency, or all cached values are zero.
     static var ratesNeedRefresh: Bool {
         guard let fetchedAt = exchangeRatesFetchedAt,
               exchangeRatesBase == defaultCurrencyCode else { return true }
-        return Date().timeIntervalSince(fetchedAt) > rateCacheTTL
+        if Date().timeIntervalSince(fetchedAt) > rateCacheTTL { return true }
+        let rates = cachedRates
+        return !rates.isEmpty && rates.values.allSatisfy { $0 == 0 }
     }
 
     /// Rate to convert 1 unit of `fromCode` into the default currency.

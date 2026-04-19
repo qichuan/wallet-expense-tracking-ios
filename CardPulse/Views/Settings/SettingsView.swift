@@ -14,7 +14,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("autoSyncWallet") private var autoSyncWallet = true
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
-    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,USD"
+    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
     @State private var showingCurrencyManager = false
