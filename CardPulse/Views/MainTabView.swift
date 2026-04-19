@@ -14,9 +14,23 @@ struct MainTabView: View {
     @Query private var cards: [Card]
     @State private var selectedTab = 0
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     private func writeWidgetData() {
         WidgetDataWriter.refresh(using: modelContext)
+    }
+
+    private func refreshExchangeRatesIfNeeded() {
+        guard hasChosenDefaultCurrency, CurrencyUtils.ratesNeedRefresh else { return }
+        Task {
+            let codes = CurrencyUtils.enabledCurrencyCodes
+            let base = CurrencyUtils.defaultCurrencyCode
+            guard let fetched = await CurrencyUtils.fetchRates(for: codes, to: base) else { return }
+            CurrencyUtils.saveRates(fetched, baseCurrency: base)
+            if let data = try? JSONEncoder().encode(fetched) {
+                exchangeRatesData = data
+            }
+        }
     }
 
     var body: some View {
@@ -55,10 +69,17 @@ struct MainTabView: View {
             CurrencyOnboardingView()
                 .interactiveDismissDisabled(true)
         }
-        .onAppear { writeWidgetData() }
+        .onAppear {
+            writeWidgetData()
+            CurrencyUtils.ensureDefaultCurrenciesEnabled()
+            refreshExchangeRatesIfNeeded()
+        }
         .onChange(of: cards.count) { writeWidgetData() }
         .onChange(of: scenePhase) {
-            if scenePhase == .active { writeWidgetData() }
+            if scenePhase == .active {
+                writeWidgetData()
+                refreshExchangeRatesIfNeeded()
+            }
         }
     }
 }
