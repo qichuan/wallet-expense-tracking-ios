@@ -29,20 +29,18 @@ struct TransactionFormView: View {
     @State private var note: String
     @State private var transactionDate: Date
     @State private var showingDeleteAlert = false
-    @FocusState private var focusedField: Field?
+
+    @FocusState private var merchantFocused: Bool
+    @FocusState private var amountFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     private var enabledCurrencies: [CurrencyInfo] {
         let enabled = CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
-        // Always include the transaction's specific currency even if it was disabled
         if !currency.isEmpty, !enabled.contains(where: { $0.code == currency }),
            let info = CurrencyUtils.info(for: currency) {
             return [info] + enabled
         }
         return enabled
-    }
-
-    private enum Field {
-        case merchant, amount, note
     }
 
     private let categories = MerchantUtils.defaultCategories
@@ -68,106 +66,45 @@ struct TransactionFormView: View {
         }
     }
 
+    private var isValid: Bool {
+        !merchant.trimmingCharacters(in: .whitespaces).isEmpty
+        && !amount.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var body: some View {
-        NavigationView {
-            Form {
-                Section("Transaction Details") {
-                    LabeledContent {
-                        TextField("", text: $merchant)
-                            .textFieldStyle(.roundedBorder)
-                            .focused($focusedField, equals: .merchant)
-                    } label: {
-                        Text("Merchant")
-                    }
+        NavigationStack {
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
-                    LabeledContent {
-                        TextField("", text: $amount)
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.decimalPad)
-                            .focused($focusedField, equals: .amount)
-                            .onChange(of: amount) { _, newValue in
-                                let formatted = formatAmountInput(newValue)
-                                if formatted != newValue { amount = formatted }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        merchantSection
+                        amountSection
+                        detailsSection
+                        noteSection
+
+                        if transactionToEdit != nil {
+                            DestructiveButton(title: "Delete Transaction") {
+                                showingDeleteAlert = true
                             }
-                    } label: {
-                        Text("Amount")
-                    }
-
-                    Picker("Currency", selection: $currency) {
-                        Text("Default (\(CurrencyUtils.defaultCurrencyCode))").tag("")
-                        ForEach(enabledCurrencies) { info in
-                            Text("\(info.name) (\(info.code))").tag(info.code)
+                            .padding(.top, 8)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .onChange(of: currency) { _, _ in focusedField = nil }
-
-                    DatePicker("Date", selection: $transactionDate, displayedComponents: [.date, .hourAndMinute])
-                        .onChange(of: transactionDate) { _, _ in
-                            focusedField = nil
-                        }
-
-                    Picker("Card", selection: $selectedCard) {
-                        Text("No card selected").tag(nil as Card?)
-                        ForEach(cards) { card in
-                            Text(card.name).tag(card as Card?)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .onChange(of: selectedCard) { _, _ in
-                        focusedField = nil
-                    }
-
-                    Picker("Category", selection: $category) {
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .onChange(of: category) { _, _ in
-                        focusedField = nil
-                    }
+                    .padding(.top, 18)
+                    .padding(.bottom, 40)
                 }
-
-                Section("Note") {
-                    TextField("This transaction is about...", text: $note, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .lineLimit(3...6)
-                        .focused($focusedField, equals: .note)
-                }
-
-                if transactionToEdit != nil {
-                    Section {
-                        Button(action: {
-                            showingDeleteAlert = true
-                        }) {
-                            Text("Delete Transaction")
-                                .frame(maxWidth: .infinity)
-                                .multilineTextAlignment(.center)
-                        }
-                        .foregroundColor(.red)
-                        .buttonStyle(.plain)
-                    }
-                }
+                .scrollDismissesKeyboard(.interactively)
             }
-            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(transactionToEdit == nil ? "Add Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") { saveTransaction() }
-                        .disabled(merchant.isEmpty || amount.isEmpty)
-                }
-            }
+            .toolbar { toolbar }
             .onAppear {
                 if transactionToEdit == nil {
-                    focusedField = .merchant
+                    merchantFocused = true
                 }
             }
         }
+        .preferredColorScheme(.dark)
         .alert("Delete Transaction", isPresented: $showingDeleteAlert) {
             Button("Delete", role: .destructive) { deleteTransaction() }
             Button("Cancel", role: .cancel) { }
@@ -175,6 +112,163 @@ struct TransactionFormView: View {
             Text("Are you sure you want to delete this transaction? This action cannot be undone.")
         }
     }
+
+    // MARK: - Sections
+
+    @ViewBuilder
+    private var merchantSection: some View {
+        FormSection("Merchant") {
+            FormTextFieldRow(
+                title: "Name",
+                placeholder: "Apple Store",
+                text: $merchant,
+                isFocused: $merchantFocused
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var amountSection: some View {
+        FormSection("Amount") {
+            HStack(spacing: 12) {
+                Text(CurrencyUtils.symbol(for: currency.isEmpty ? defaultCurrencyCode : currency))
+                    .font(AppTypography.amount)
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(minWidth: 36, alignment: .leading)
+
+                TextField("", text: $amount, prompt: Text("0.00").foregroundColor(AppColors.textTertiary))
+                    .font(AppTypography.amount)
+                    .foregroundColor(AppColors.textPrimary)
+                    .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .onChange(of: amount) { _, newValue in
+                        let formatted = formatAmountInput(newValue)
+                        if formatted != newValue { amount = formatted }
+                    }
+
+                Menu {
+                    Picker("", selection: $currency) {
+                        Text("Default (\(defaultCurrencyCode))").tag("")
+                        ForEach(enabledCurrencies) { info in
+                            Text("\(info.name) (\(info.code))").tag(info.code)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(currency.isEmpty ? defaultCurrencyCode : currency)
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(AppColors.accent)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(AppColors.accentSoft)
+                    .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+        }
+    }
+
+    @ViewBuilder
+    private var detailsSection: some View {
+        FormSection("Details") {
+            FormDateRow(title: "Date", date: $transactionDate)
+            FormDivider()
+
+            cardRow
+            FormDivider()
+
+            categoryRow
+        }
+    }
+
+    @ViewBuilder
+    private var cardRow: some View {
+        HStack(spacing: 12) {
+            Text("Card")
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Menu {
+                Picker("", selection: $selectedCard) {
+                    Text("None").tag(nil as Card?)
+                    ForEach(cards) { card in
+                        Text(card.name).tag(card as Card?)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(selectedCard?.name ?? "None")
+                        .foregroundColor(AppColors.accent)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(AppColors.accent)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var categoryRow: some View {
+        HStack(spacing: 12) {
+            Text("Category")
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Menu {
+                Picker("", selection: $category) {
+                    ForEach(categories, id: \.self) { cat in
+                        Text(cat).tag(cat)
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(MerchantUtils.color(for: category))
+                        .frame(width: 8, height: 8)
+                    Text(category)
+                        .foregroundColor(AppColors.accent)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(AppColors.accent)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var noteSection: some View {
+        FormSection("Note") {
+            FormNoteEditor(
+                text: $note,
+                placeholder: "This transaction is about…",
+                isFocused: $noteFocused
+            )
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") { dismiss() }
+                .foregroundColor(AppColors.textSecondary)
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Save") { saveTransaction() }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
+                .disabled(!isValid)
+        }
+    }
+
+    // MARK: - Actions
 
     private func formatAmountInput(_ input: String) -> String {
         let filtered = input.filter { $0.isNumber || $0 == "." }
