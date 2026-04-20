@@ -45,135 +45,78 @@ struct SettingsView: View {
     @State private var showingHowToAutoTracking = false
     @State private var showingTroubleshooting = false
     
+    private var appVersion: String {
+        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        return short
+    }
+
     var body: some View {
         ZStack {
-            NavigationView {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        
-                        // CURRENCY Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("CURRENCY")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
+            NavigationStack {
+                ZStack {
+                    AppColors.backgroundPrimary.ignoresSafeArea()
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            BrandHeader(title: "Settings")
 
-                            VStack(spacing: 0) {
-                                // Default currency picker
-                                HStack(spacing: 12) {
-                                    Circle()
-                                        .stroke(Color.teal, lineWidth: 1)
-                                        .frame(width: 40, height: 40)
-                                        .overlay(
-                                            Image(systemName: "dollarsign.circle")
-                                                .font(.headline)
-                                                .foregroundColor(.white)
-                                        )
-
-                                    Text("Default Currency")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-
-                                    Spacer()
-
-                                    Picker("", selection: $defaultCurrencyCode) {
-                                        ForEach(enabledCurrencyList, id: \.code) { info in
-                                            Text(info.code).tag(info.code)
-                                        }
-                                    }
-                                    .pickerStyle(MenuPickerStyle())
-                                    .accentColor(.teal)
-                                }
-                                .padding()
-
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-
-                                SettingsRow(
-                                    icon: "list.bullet",
-                                    title: "Manage Currencies",
+                            // CURRENCY
+                            SettingsSection(title: "Currency") {
+                                SettingsPickerRow(
+                                    title: "Default currency",
+                                    selection: $defaultCurrencyCode,
+                                    options: enabledCurrencyList.map { $0.code }
+                                )
+                                SettingsValueRow(
+                                    title: "Enabled currencies",
+                                    value: "\(enabledCurrencyList.count)",
                                     action: { showingCurrencyManager = true }
                                 )
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
 
-                        // DATA MANAGEMENT Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("DATA MANAGEMENT")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                SettingsRow(
-                                    icon: "square.and.arrow.up",
-                                    title: "Import from CSV",
+                            // AUTOMATION
+                            SettingsSection(title: "Automation") {
+                                SettingsValueRow(
+                                    title: "How to auto-track",
+                                    value: "Setup",
+                                    action: { showingHowToAutoTracking = true }
+                                )
+                                SettingsValueRow(
+                                    title: "Troubleshoot auto-tracking",
+                                    value: "Help",
+                                    action: { showingTroubleshooting = true }
+                                )
+                            }
+
+                            // DATA
+                            SettingsSection(title: "Data") {
+                                SettingsValueRow(
+                                    title: "Import CSV",
+                                    value: "",
                                     action: { showingImportPicker = true }
                                 )
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-                                
-                                SettingsRow(
-                                    icon: "square.and.arrow.down",
-                                    title: "Export to CSV",
+                                SettingsValueRow(
+                                    title: "Export CSV",
+                                    value: "",
                                     action: { showingExportOptions = true }
                                 )
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-                        
-                        
-                        // SUPPORT & ABOUT Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("SUPPORT")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                SettingsRow(
-                                    icon: "questionmark.circle",
-                                    title: "How to set up an automation in Shortcuts app to track wallet transactions?",
-                                    action: { showingHowToAutoTracking = true }
-                                )
 
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-
-                                SettingsRow(
-                                    icon: "exclamationmark.triangle",
-                                    title: "Transactions not recording automatically?",
-                                    action: { showingTroubleshooting = true }
-                                )
-
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-
-                                SettingsRow(
-                                    icon: "envelope",
+                            // ABOUT
+                            SettingsSection(title: "About") {
+                                SettingsValueRow(
                                     title: "Contact the Developer",
+                                    value: "Email",
                                     action: { openEmail() }
                                 )
+                                SettingsStaticRow(title: "Version", value: appVersion)
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
                         }
+                        .padding(.bottom, 40)
                     }
-                    .padding(.bottom, 100)
                 }
-                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+                .navigationBarHidden(true)
             }
-            
+
             // Export progress overlay
             if isExporting {
                 ProgressOverlay(
@@ -185,7 +128,7 @@ struct SettingsView: View {
                 .zIndex(9999)
                 .allowsHitTesting(true)
             }
-            
+
             // Import progress overlay
             if isImporting {
                 ProgressOverlay(
@@ -427,37 +370,97 @@ private extension SettingsView {
     }
 }
 
-struct SettingsRow: View {
-    let icon: String
+// MARK: - Settings rows
+
+struct SettingsSection<Content: View>: View {
     let title: String
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionLabel(text: title)
+                .padding(.horizontal, 20)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(AppColors.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, 20)
+        }
+    }
+}
+
+struct SettingsValueRow: View {
+    let title: String
+    let value: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Circle()
-                    .stroke(Color.teal, lineWidth: 1)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: icon)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    )
-                
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.leading)
                 Spacer()
-                
+                if !value.isEmpty {
+                    Text(value)
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.textSecondary)
+                }
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
+    }
+}
+
+struct SettingsStaticRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+}
+
+struct SettingsPickerRow: View {
+    let title: String
+    @Binding var selection: String
+    let options: [String]
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Picker("", selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(AppColors.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 }
 
@@ -465,39 +468,39 @@ struct ProgressOverlay: View {
     let title: String
     let message: String
     let progress: Double?
-    
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.6)
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 20) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(AppColors.textPrimary)
+
                 if let progress = progress {
                     ProgressView(value: progress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: .teal))
+                        .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accent))
                         .frame(width: 200)
-                    
+
                     Text("\(Int(progress * 100))%")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(AppColors.textSecondary)
                 } else {
                     ProgressView()
                         .scaleEffect(1.2)
-                        .tint(.teal)
+                        .tint(AppColors.accent)
                 }
-                
+
                 Text(message)
                     .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
             .padding(24)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundCard)
             .cornerRadius(16)
             .shadow(radius: 10)
         }
@@ -562,7 +565,7 @@ struct CurrencyManagerView: View {
                         showingAddCurrency = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.teal)
+                            .foregroundColor(AppColors.accent)
                     }
                     .buttonStyle(.plain)
                 }) {
@@ -570,7 +573,7 @@ struct CurrencyManagerView: View {
                         Text("Tap + to add a custom currency")
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.4))
-                            .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+                            .listRowBackground(AppColors.backgroundCard)
                     } else {
                         ForEach(parsedCustomCurrencies) { info in
                             currencyRow(info)
@@ -581,7 +584,7 @@ struct CurrencyManagerView: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Manage Currencies")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -632,7 +635,7 @@ struct CurrencyManagerView: View {
                     Task { await fetchRates() }
                 }
                 .font(.caption)
-                .foregroundColor(.teal)
+                .foregroundColor(AppColors.accent)
                 .buttonStyle(.plain)
             }
         }
@@ -650,14 +653,14 @@ struct CurrencyManagerView: View {
             TextField("0.0000", text: rateBinding(for: info.code))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .foregroundColor(.teal)
+                .foregroundColor(AppColors.accent)
                 .frame(maxWidth: 80)
 
             Text(defaultCurrencyCode)
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.7))
         }
-        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .listRowBackground(AppColors.backgroundCard)
     }
 
     private func rateBinding(for code: String) -> Binding<String> {
@@ -700,11 +703,11 @@ struct CurrencyManagerView: View {
                 Spacer()
                 if isEnabled {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.teal)
+                        .foregroundColor(AppColors.accent)
                 }
             }
         }
-        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .listRowBackground(AppColors.backgroundCard)
     }
 
     // MARK: - Actions
@@ -824,7 +827,7 @@ struct AddCurrencyView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Add Currency")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

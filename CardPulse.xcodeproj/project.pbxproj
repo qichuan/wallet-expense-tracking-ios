@@ -71,6 +71,8 @@
 		2E0783992F701AF400F4C526 /* Exceptions for "CardPulse" folder in "CardPulseWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Theme/AppColors.swift,
+				Theme/CardStatus.swift,
 				Utils/WidgetDataWriter.swift,
 			);
 			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;

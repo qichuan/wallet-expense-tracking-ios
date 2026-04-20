@@ -70,46 +70,41 @@ struct AllTransactionsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
             // Search and Filter Bar
-            HStack {
+            HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                
-                TextField("Search transactions...", text: $searchText)
+                    .foregroundColor(AppColors.textTertiary)
+
+                TextField("Search transactions…", text: $searchText)
                     .textFieldStyle(PlainTextFieldStyle())
-                
-                // Filter Icon Button
+                    .foregroundColor(AppColors.textPrimary)
+
                 Button(action: { showingFilterSheet = true }) {
                     Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        .foregroundColor(hasActiveFilters ? .teal : .gray)
+                        .foregroundColor(hasActiveFilters ? AppColors.accent : AppColors.textTertiary)
                         .font(.system(size: 20))
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
-            
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(AppColors.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
             // Transactions List
             if filteredTransactions.isEmpty {
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     Image(systemName: "creditcard")
-                        .font(.system(size: 48))
-                        .foregroundColor(.gray)
-                    
+                        .font(.system(size: 40))
+                        .foregroundColor(AppColors.textTertiary)
                     Text("No transactions found")
                         .font(.headline)
-                        .foregroundColor(.gray)
-                    
+                        .foregroundColor(AppColors.textSecondary)
                     Text("Try adjusting your search or filter")
                         .font(.subheadline)
-                        .foregroundColor(.gray.opacity(0.7))
+                        .foregroundColor(AppColors.textTertiary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
@@ -120,12 +115,12 @@ struct AllTransactionsView: View {
                             .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .padding(.vertical)
                 }
-                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
             }
         }
-        .padding()
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .background(AppColors.backgroundPrimary)
         .sheet(item: $selectedTransaction) { transaction in
             TransactionFormView(transaction: transaction)
         }

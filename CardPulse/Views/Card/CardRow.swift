@@ -1,5 +1,5 @@
 //
-//  GoalCard.swift
+//  CardRow.swift
 //  CardPulse
 //
 //  Created by Zhang Qichuan on 27/10/25.
@@ -10,6 +10,7 @@ import SwiftData
 
 struct CardRow: View {
     let card: Card
+    var status: CardStatus? = nil
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
 
@@ -17,101 +18,134 @@ struct CardRow: View {
         CurrencyUtils.symbol(for: defaultCurrencyCode)
     }
 
-    private var bankIcon: String { "creditcard" }
+    private var issuer: String {
+        // First word of the card name = issuer (DBS Altitude Visa → DBS).
+        card.name.split(separator: " ").first.map(String.init) ?? ""
+    }
 
-    private var rewardTypeColor: Color {
-        switch card.rewardType {
-        case .miles:
-            return .teal
-        case .cashback:
-            return .yellow
-        case .none:
-            return .teal
-        }
+    private var resolvedStatus: CardStatus {
+        status ?? CardStatus.derive(progress: card.progressPercentage)
     }
-    
-    private var rewardTypeText: String {
-        card.rewardType.displayName
+
+    private var spentAmount: String {
+        "\(currencySymbol)\(formatted(card.monthlySpent))"
     }
-    
+
+    private var targetAmount: String {
+        "\(currencySymbol)\(formatted(card.minimumSpendingAmount))"
+    }
+
+    private func formatted(_ amount: Decimal) -> String {
+        let number = Double(truncating: amount as NSDecimalNumber)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: number)) ?? "0"
+    }
+
     var body: some View {
-        HStack(spacing: 16) {
-            // Bank Logo
-            Circle()
-                .fill(Color.white)
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Image(systemName: bankIcon)
-                        .font(.title2)
-                        .foregroundColor(.blue)
-                )
-            
-            VStack(alignment: .leading, spacing: 8) {
-                // Card Name 
-                Text(card.name)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                
-                // Progress Bar (only if card has a goal)
+        HStack(alignment: .top, spacing: 0) {
+            // Left accent bar
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(resolvedStatus.color)
+                .frame(width: 3)
+                .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 12) {
+                header
                 if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
-                    VStack(spacing: 4) {
-                        ProgressView(value: card.progressPercentage)
-                            .progressViewStyle(LinearProgressViewStyle(tint: .teal))
-                            .frame(height: 6)
-                        
-                        HStack {
-                            Text("\(currencySymbol)\(Double(truncating: card.monthlySpent as NSDecimalNumber), specifier: "%.0f") / \(currencySymbol)\(Double(truncating: card.minimumSpendingAmount as NSDecimalNumber), specifier: "%.0f")")
-                                .font(.caption)
-                                .foregroundColor(.white)
-                            Spacer()
-                            Text(card.spendingPeriodDisplay)
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                            Spacer()
-                            Text("\(card.daysRemaining) days left")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        
-                        
-                    }
-                }
-                
-                // Reward Type Badge (hidden for none)
-                if card.rewardType != .none {
-                    HStack {
-                        Text(rewardTypeText)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(rewardTypeColor == .yellow ? .black : .white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(rewardTypeColor)
-                            .cornerRadius(6)
-                        
-                        Spacer()
-                    }
+                    goalBlock
                 }
             }
+            .padding(.leading, 14)
+            .padding(.trailing, 2)
         }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(16)
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var header: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(card.name)
+                    .font(AppTypography.cardTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Text(issuer.isEmpty ? " " : issuer)
+                    if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
+                        Text("·")
+                        Text(card.spendingPeriodDisplay)
+                    }
+                }
+                .font(.system(size: 13))
+                .foregroundColor(AppColors.textSecondary)
+            }
+
+            Spacer()
+
+            RewardTypePill(rewardType: card.rewardType)
+        }
+    }
+
+    @ViewBuilder
+    private var goalBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(spentAmount)
+                        .font(AppTypography.amount)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("/ \(targetAmount)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    StatusPill(status: resolvedStatus)
+                    Text("\(card.daysRemaining)d left")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+            progressBar
+        }
+    }
+
+    @ViewBuilder
+    private var progressBar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColors.backgroundCardSoft)
+                Capsule()
+                    .fill(resolvedStatus.color)
+                    .frame(width: geo.size.width * CGFloat(card.progressPercentage))
+            }
+        }
+        .frame(height: 6)
     }
 }
 
 #Preview {
     let card = Card(
-        name: "Chase Sapphire Preferred",
-        minimumSpendingAmount: 4000,
+        name: "DBS Altitude Visa",
+        minimumSpendingAmount: 5000,
         hasMinimumSpending: true,
         rewardType: .miles,
         minimumSpendingByDayOfMonth: 15
     )
-    
-    CardRow(card: card)
-        .padding()
-        .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+    return VStack(spacing: 12) {
+        CardRow(card: card, status: .onTrack)
+        CardRow(card: card, status: .hit)
+        CardRow(card: card, status: .behind)
+    }
+    .padding()
+    .background(AppColors.backgroundPrimary)
 }
