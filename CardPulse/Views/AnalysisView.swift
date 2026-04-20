@@ -108,6 +108,10 @@ struct AnalysisView: View {
         return transactions.filter { $0.date >= start && $0.date < end }
     }
 
+    private var sortedFilteredTransactions: [Transaction] {
+        filteredTransactions.sorted { $0.date > $1.date }
+    }
+
     // MARK: - Donut data
 
     private var donutSlices: [DonutSlice] {
@@ -276,8 +280,13 @@ struct AnalysisView: View {
                         donutCard
                             .padding(.horizontal, 20)
 
-                        stackedBarCard
-                            .padding(.horizontal, 20)
+                        if selectedGranularity == .day {
+                            dayTransactionsCard
+                                .padding(.horizontal, 20)
+                        } else {
+                            stackedBarCard
+                                .padding(.horizontal, 20)
+                        }
                     }
                     .padding(.bottom, 40)
                 }
@@ -411,6 +420,30 @@ struct AnalysisView: View {
                     AxisMarks(values: stackedXAxisValues) { _ in
                         AxisValueLabel()
                             .foregroundStyle(AppColors.textTertiary)
+                    }
+                }
+            }
+        }
+        .cardSurface(padding: 18)
+    }
+
+    @ViewBuilder
+    private var dayTransactionsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionLabel(text: "Transactions")
+            if sortedFilteredTransactions.isEmpty {
+                Text("No transactions in this range")
+                    .font(.footnote)
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.vertical, 30)
+                    .frame(maxWidth: .infinity)
+            } else {
+                LazyVStack(spacing: 8) {
+                    ForEach(sortedFilteredTransactions) { transaction in
+                        Button(action: { selectedTransaction = transaction }) {
+                            TransactionRow(transaction: transaction)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
