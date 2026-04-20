@@ -10,6 +10,8 @@
 		2E07836C2F7019C400F4C526 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E07836B2F7019C400F4C526 /* WidgetKit.framework */; };
 		2E07836E2F7019C400F4C526 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E07836D2F7019C400F4C526 /* SwiftUI.framework */; };
 		2E07837D2F7019C600F4C526 /* CardPulseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E0783692F7019C400F4C526 /* CardPulseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2EA927262F94F7C7008F0355 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2EA927252F94F7C7008F0355 /* GoogleService-Info.plist */; };
+		2EA927272F94F7CF008F0355 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2EA927252F94F7C7008F0355 /* GoogleService-Info.plist */; };
 		2EC114E52EDBFC4E00889086 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2EC114E42EDBFC4E00889086 /* FirebaseAnalytics */; };
 		4973E47AB83EBFFD431047A5 /* CurrencyParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */; };
 		E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C3ADE3BAF41D282E245C402 /* Foundation.framework */; };
@@ -52,6 +54,7 @@
 		2E07836B2F7019C400F4C526 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		2E07836D2F7019C400F4C526 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		2E07839A2F701BCC00F4C526 /* CardPulseWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CardPulseWidgetExtension.entitlements; sourceTree = "<group>"; };
+		2EA927252F94F7C7008F0355 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2EBD3BFA2EAF392700295A20 /* CardPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CardPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrencyParsingTests.swift; sourceTree = "<group>"; };
@@ -141,6 +144,7 @@
 				2E07836A2F7019C400F4C526 /* Frameworks */,
 				2EBD3BFB2EAF392700295A20 /* Products */,
 				AA595A788BF9D310D78E561E /* CardPulseTests */,
+				2EA927252F94F7C7008F0355 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -167,7 +171,6 @@
 			children = (
 				EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */,
 			);
-			name = CardPulseTests;
 			path = CardPulseTests;
 			sourceTree = "<group>";
 		};
@@ -285,6 +288,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EA927272F94F7CF008F0355 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -292,6 +296,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EA927262F94F7C7008F0355 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
