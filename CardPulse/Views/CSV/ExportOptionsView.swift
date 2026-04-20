@@ -43,8 +43,8 @@ struct ExportOptionsView: View {
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(12)
+                    .background(AppColors.backgroundCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 
                 // (Buttons moved to bottom)
@@ -107,11 +107,11 @@ struct ExportOptionsView: View {
                     Button(action: { dismiss() }) {
                         Text("Cancel")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.gray.opacity(0.3))
-                            .cornerRadius(12)
+                            .background(AppColors.backgroundCard)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     Button(action: { onExport() }) {
                         Text("Export")
@@ -119,14 +119,14 @@ struct ExportOptionsView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.teal)
-                            .cornerRadius(12)
+                            .background(AppColors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .disabled(startDate > endDate)
                 }
             }
             .padding()
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Export Options")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { }

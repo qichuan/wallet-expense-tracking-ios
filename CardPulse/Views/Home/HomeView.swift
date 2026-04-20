@@ -10,62 +10,136 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var transactions: [Transaction]
-    
+    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
+    @Query private var cards: [Card]
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+
     @State private var showingAddTransaction = false
     @State private var showingHowToAutoTracking = false
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 12) {
-                // Suggestion banner for Shortcut automation setup
-                ShortcutsBanner(showingHowToAutoTracking: $showingHowToAutoTracking)
-                
-                // Notification banner
-                NotificationBanner()
+    @State private var showingAllTransactions = false
+    @State private var selectedTransaction: Transaction?
 
-                Group {
-                if transactions.isEmpty {
-                    VStack {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            Text("No transactions yet")
-                                .foregroundColor(.white)
-                            Text("Tap + to add your first transaction")
-                                .foregroundColor(.white.opacity(0.7))
-                                .font(.caption)
+    private var cachedRates: [String: Double] {
+        (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
+    }
+
+    private func amountInDefault(_ tx: Transaction) -> Double {
+        let code = tx.resolvedCurrency
+        let raw = Double(truncating: tx.amount as NSDecimalNumber)
+        guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return raw }
+        return raw * rate
+    }
+
+    // MARK: - Hero metrics
+
+    private var cardsWithGoals: [Card] {
+        cards.filter { $0.hasMinimumSpending && $0.minimumSpendingAmount > 0 }
+    }
+
+    private var totalMinSpend: Decimal {
+        cardsWithGoals.reduce(0) { $0 + $1.minimumSpendingAmount }
+    }
+
+    private var cardsHitCount: Int {
+        cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.count
+    }
+
+    private var bonusEarned: Decimal {
+        cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.reduce(0) { $0 + $1.minimumSpendingAmount }
+    }
+
+    private var nextDeadlineDays: Int? {
+        cardsWithGoals.map { $0.daysRemaining }.filter { $0 > 0 }.min()
+    }
+
+    private var heroDonutSlices: [DonutSlice] {
+        let palette: [Color] = [
+            AppColors.accent,
+            AppColors.brandGold,
+            AppColors.categoryShopping,
+            AppColors.categoryEntertainment,
+            AppColors.categoryTravel
+        ]
+        return cardsWithGoals.enumerated().map { index, card in
+            DonutSlice(
+                category: card.name,
+                amount: card.monthlySpent,
+                color: palette[index % palette.count]
+            )
+        }
+    }
+
+    private var periodLabel: String {
+        let df = DateFormatter()
+        df.dateFormat = "MMMM"
+        return "TOTAL MIN-SPEND · \(df.string(from: Date()).uppercased())"
+    }
+
+    private var formattedTotalMinSpend: String {
+        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+        return "\(symbol)\(formatted(totalMinSpend))"
+    }
+
+    private var formattedBonusEarned: String {
+        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+        return "\(symbol)\(formatted(bonusEarned))"
+    }
+
+    private func formatted(_ amount: Decimal) -> String {
+        let number = Double(truncating: amount as NSDecimalNumber)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: number)) ?? "0"
+    }
+
+    private var latestTransactions: [Transaction] {
+        Array(transactions.prefix(10))
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        BrandHeader(title: "Home") {
+                            Button(action: { showingAddTransaction = true }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 26))
+                                    .foregroundColor(AppColors.accent)
+                            }
                         }
-                        .multilineTextAlignment(.center)
-                        Spacer()
+
+                        if !cardsWithGoals.isEmpty {
+                            SummaryHeroCard(
+                                periodLabel: periodLabel,
+                                totalAmount: formattedTotalMinSpend,
+                                cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
+                                bonusEarned: formattedBonusEarned,
+                                nextDeadline: nextDeadlineDays.map { "\($0)d" } ?? "—",
+                                donutSlices: heroDonutSlices
+                            )
+                            .padding(.horizontal, 20)
+                        }
+
+                        ShortcutsBanner(showingHowToAutoTracking: $showingHowToAutoTracking)
+
+                        NotificationBanner()
+
+                        if transactions.isEmpty {
+                            emptyState
+                        } else {
+                            latestActivitySection
+                        }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal)
-                } else {
-                    AllTransactionsView()
-                }
+                    .padding(.bottom, 32)
                 }
             }
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
-            .overlay(
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: { showingAddTransaction = true }) {
-                            Image(systemName: "plus")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(Color.teal)
-                                .clipShape(Circle())
-                                .shadow(radius: 8)
-                        }
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 20)
-                    }
-                }
-            )
+            .navigationBarHidden(true)
         }
         .sheet(isPresented: $showingAddTransaction) {
             TransactionFormView()
@@ -73,6 +147,66 @@ struct HomeView: View {
         .sheet(isPresented: $showingHowToAutoTracking) {
             HowToAutoTrackingView()
         }
+        .sheet(isPresented: $showingAllTransactions) {
+            NavigationStack {
+                AllTransactionsView()
+                    .screenBackground()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showingAllTransactions = false }
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
+            }
+        }
+        .sheet(item: $selectedTransaction) { tx in
+            TransactionFormView(transaction: tx)
+        }
+    }
+
+    @ViewBuilder
+    private var latestActivitySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                SectionLabel(text: "Latest Activity")
+                Spacer()
+                Button(action: { showingAllTransactions = true }) {
+                    HStack(spacing: 4) {
+                        Text("View all")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(AppColors.accent)
+                }
+            }
+            .padding(.horizontal, 20)
+
+            VStack(spacing: 8) {
+                ForEach(latestTransactions) { tx in
+                    Button(action: { selectedTransaction = tx }) {
+                        TransactionRow(transaction: tx)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Text("No transactions yet")
+                .foregroundColor(AppColors.textPrimary)
+                .font(.headline)
+            Text("Tap + to add your first transaction")
+                .foregroundColor(AppColors.textSecondary)
+                .font(.caption)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 40)
     }
 }
 

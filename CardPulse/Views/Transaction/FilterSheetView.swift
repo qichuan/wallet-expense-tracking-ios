@@ -54,8 +54,8 @@ struct FilterSheetView: View {
                         .pickerStyle(MenuPickerStyle())
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(12)
+                        .background(AppColors.backgroundCard)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     
                     // Date Range Filter Section
@@ -145,7 +145,7 @@ struct FilterSheetView: View {
                 }
                 .padding()
             }
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Filters")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

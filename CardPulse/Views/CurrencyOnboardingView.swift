@@ -26,24 +26,21 @@ struct CurrencyOnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.05, green: 0.1, blue: 0.2)
+            AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
                 VStack(spacing: 12) {
-                    Image(systemName: "dollarsign.circle.fill")
-                        .font(.system(size: 56))
-                        .foregroundColor(.teal)
+                    BrandMark(size: 56)
 
                     Text("Choose Your Currency")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .font(AppTypography.cardTitle)
+                        .foregroundColor(AppColors.textPrimary)
 
                     Text("Select the default currency for your spending. You can add more currencies in Settings later.")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
@@ -60,20 +57,20 @@ struct CurrencyOnboardingView: View {
                                 HStack(spacing: 16) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(info.code)
-                                            .font(.headline)
-                                            .foregroundColor(.white)
+                                            .font(AppTypography.rowTitle)
+                                            .foregroundColor(AppColors.textPrimary)
                                         Text("\(info.name)  \(info.symbol)")
                                             .font(.caption)
-                                            .foregroundColor(.white.opacity(0.6))
+                                            .foregroundColor(AppColors.textSecondary)
                                     }
                                     Spacer()
                                     if selectedCode == info.code {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.teal)
+                                            .foregroundColor(AppColors.accent)
                                             .font(.title3)
                                     } else {
                                         Image(systemName: "circle")
-                                            .foregroundColor(.white.opacity(0.3))
+                                            .foregroundColor(AppColors.textTertiary)
                                             .font(.title3)
                                     }
                                 }
@@ -85,14 +82,14 @@ struct CurrencyOnboardingView: View {
 
                             if info.code != currencies.last?.code {
                                 Divider()
-                                    .background(Color.white.opacity(0.08))
+                                    .background(AppColors.divider)
                                     .padding(.leading, 20)
                             }
                         }
                     }
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(14)
-                    .padding(.horizontal, 16)
+                    .background(AppColors.backgroundCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(.horizontal, 20)
                 }
 
                 // Continue button
@@ -112,16 +109,16 @@ struct CurrencyOnboardingView: View {
                 } label: {
                     Text("Get Started")
                         .font(.headline)
-                        .foregroundColor(selectedCode.isEmpty ? .white.opacity(0.4) : Color(red: 0.05, green: 0.1, blue: 0.2))
+                        .foregroundColor(selectedCode.isEmpty ? AppColors.textTertiary : .white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(selectedCode.isEmpty ? Color.white.opacity(0.1) : Color.teal)
-                        .cornerRadius(14)
+                        .background(selectedCode.isEmpty ? AppColors.backgroundCard : AppColors.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .disabled(selectedCode.isEmpty)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
                 .padding(.top, 24)
-                .padding(.bottom, 48)
+                .padding(.bottom, 40)
             }
         }
     }

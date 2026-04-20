@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct MainTabView: View {
     @Environment(\.modelContext) private var modelContext
@@ -15,6 +16,28 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+
+    init() {
+        configureTabBarAppearance()
+    }
+
+    private func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(AppColors.backgroundPrimary)
+        appearance.shadowColor = UIColor(AppColors.divider)
+
+        let unselected = UIColor(AppColors.textTertiary)
+        appearance.stackedLayoutAppearance.normal.iconColor = unselected
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+        appearance.inlineLayoutAppearance.normal.iconColor = unselected
+        appearance.inlineLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+        appearance.compactInlineLayoutAppearance.normal.iconColor = unselected
+        appearance.compactInlineLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     private func writeWidgetData() {
         WidgetDataWriter.refresh(using: modelContext)
@@ -58,12 +81,12 @@ struct MainTabView: View {
             
             SettingsView()
                 .tabItem {
-                    Image(systemName: "gear")
+                    Image(systemName: "record.circle")
                     Text("Settings")
                 }
                 .tag(3)
         }
-        .accentColor(.teal)
+        .tint(AppColors.accent)
         .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: .constant(!hasChosenDefaultCurrency)) {
             CurrencyOnboardingView()

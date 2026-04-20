@@ -58,22 +58,14 @@ class MerchantUtils {
     static func color(for category: String?) -> Color {
         let normalized = normalizedCategory(for: category)
         switch normalized {
-        case "Shopping":
-            return .pink
-        case "Food & Drinks":
-            return .orange
-        case "Services":
-            return .yellow
-        case "Travel":
-            return .blue
-        case "Entertainment":
-            return .purple
-        case "Health":
-            return .red
-        case "Other":
-            return .teal
-        default:
-            return .teal
+        case "Shopping":        return AppColors.categoryShopping
+        case "Food & Drinks":   return AppColors.categoryFoodDrinks
+        case "Services":        return AppColors.categoryServices
+        case "Travel":          return AppColors.categoryTravel
+        case "Entertainment":   return AppColors.categoryEntertainment
+        case "Health":          return AppColors.categoryHealth
+        case "Other":           return AppColors.categoryOther
+        default:                return AppColors.categoryOther
         }
     }
 }

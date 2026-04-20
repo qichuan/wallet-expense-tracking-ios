@@ -36,7 +36,7 @@ struct HowToAutoTrackingView: View {
                 }
                 .tabViewStyle(.page)
                 .indexViewStyle(.page(backgroundDisplayMode: .always))
-                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+                .background(AppColors.backgroundPrimary)
             }
             .padding()
             .background(Color(red: 0.05, green: 0.1, blue: 0.2))
@@ -65,15 +65,15 @@ private struct StepView: View {
                     .onAppear { player.seek(to: .zero); player.play() }
             } else {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.2))
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(AppColors.backgroundCard)
                         .frame(height: 500)
                     VStack(spacing: 8) {
                         Image(systemName: "play.rectangle")
                             .font(.system(size: 40))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(AppColors.textSecondary)
                         Text("Video not found")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
             }

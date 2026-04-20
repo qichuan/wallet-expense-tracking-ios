@@ -15,7 +15,13 @@ struct TransactionRow: View {
 
     private static let dateFormatter: DateFormatter = {
         let df = DateFormatter()
-        df.dateFormat = "d MMM yyyy"
+        df.dateFormat = "d MMM"
+        return df
+    }()
+
+    private static let timeFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "HH:mm"
         return df
     }()
 
@@ -27,117 +33,123 @@ struct TransactionRow: View {
         MerchantUtils.color(for: transaction.category)
     }
 
-    private var dateDisplayString: String {
-        let calendar = Calendar.current
-        let now = Date()
-        let transactionStartOfDay = calendar.startOfDay(for: transaction.date)
-        let todayStartOfDay = calendar.startOfDay(for: now)
-        let yesterdayStartOfDay = calendar.date(byAdding: .day, value: -1, to: todayStartOfDay) ?? todayStartOfDay
-
-        if transactionStartOfDay == todayStartOfDay {
-            return "Today"
-        } else if transactionStartOfDay == yesterdayStartOfDay {
-            return "Yesterday"
-        } else {
-            return Self.dateFormatter.string(from: transaction.date)
-        }
-    }
-
     private var cachedRates: [String: Double] {
         (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
     }
 
-    /// Converted amount in the default currency, or nil if same currency / no rate cached.
     private var convertedAmount: Double? {
         let code = transaction.resolvedCurrency
         guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return nil }
         return Double(truncating: transaction.amount as NSDecimalNumber) * rate
     }
 
+    private var subtitle: String {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let txDay = cal.startOfDay(for: transaction.date)
+        let daysAgo = cal.dateComponents([.day], from: txDay, to: today).day ?? 0
+
+        let dayLabel: String
+        switch daysAgo {
+        case 0: dayLabel = "Today"
+        case 1: dayLabel = "Yesterday"
+        default: dayLabel = Self.dateFormatter.string(from: transaction.date)
+        }
+
+        let time = Self.timeFormatter.string(from: transaction.date)
+        let label = "\(dayLabel) \(time)"
+
+        if let card = transaction.card {
+            return "\(card.name)  ·  \(label)"
+        }
+        return label
+    }
+
+    private var primaryAmountText: String {
+        let amountValue: Double
+        let symbol: String
+        if let converted = convertedAmount {
+            amountValue = converted
+            symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+        } else {
+            amountValue = Double(truncating: transaction.amount as NSDecimalNumber)
+            symbol = CurrencyUtils.symbol(for: transaction.resolvedCurrency)
+        }
+        return String(format: "-%@%.2f", symbol, amountValue)
+    }
+
+    private var secondaryAmountText: String? {
+        if convertedAmount != nil {
+            let raw = Double(truncating: transaction.amount as NSDecimalNumber)
+            return String(format: "%@ %.2f", transaction.resolvedCurrency, raw)
+        }
+        if transaction.resolvedCurrency != defaultCurrencyCode {
+            return transaction.resolvedCurrency
+        }
+        return nil
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            // Merchant Icon
             Circle()
                 .fill(iconColor)
                 .frame(width: 40, height: 40)
                 .overlay(
                     Image(systemName: merchantIcon)
-                        .font(.headline)
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                 )
 
-            // Transaction Details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.merchant)
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
 
-                if let card = transaction.card {
-                    Label(card.name, systemImage: "creditcard")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-
-                HStack(spacing: 8) {
-                    Text(dateDisplayString)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-
-                    Text(transaction.date, style: .time)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                }
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
 
                 if let note = transaction.note, !note.isEmpty {
                     Text(note)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColors.textTertiary)
                         .italic()
-                        .lineLimit(2)
+                        .lineLimit(1)
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            // Amount
             VStack(alignment: .trailing, spacing: 2) {
-                if let converted = convertedAmount {
-                    Text("-\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(converted, specifier: "%.2f")")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    Text("\(transaction.resolvedCurrency) \(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
-                } else {
-                    Text("-\(CurrencyUtils.symbol(for: transaction.resolvedCurrency))\(Double(truncating: transaction.amount as NSDecimalNumber), specifier: "%.2f")")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    if transaction.resolvedCurrency != defaultCurrencyCode {
-                        Text(transaction.resolvedCurrency)
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.5))
-                    }
+                Text(primaryAmountText)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+                if let secondary = secondaryAmountText {
+                    Text(secondary)
+                        .font(.system(size: 11))
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
         }
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(12)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
 #Preview {
     let card = Card(
-        name: "Chase Sapphire Preferred",
+        name: "DBS Altitude",
         minimumSpendingAmount: 4000,
         hasMinimumSpending: true,
         rewardType: .miles,
         minimumSpendingByDayOfMonth: 15
     )
 
-    VStack {
+    return VStack(spacing: 8) {
         TransactionRow(transaction: Transaction(
             merchant: "Apple Store",
             amount: 999.00,
@@ -147,20 +159,21 @@ struct TransactionRow: View {
         ))
 
         TransactionRow(transaction: Transaction(
-            merchant: "Mr. DIY",
-            amount: 9.00,
+            merchant: "Tiong Bahru Bakery",
+            amount: 12.80,
             date: Date(),
-            category: "Other",
-            card: card,
-            currency: "MYR"
+            category: "Food & Drinks",
+            card: card
         ))
 
         TransactionRow(transaction: Transaction(
-            merchant: "Netflix",
-            amount: 9.00,
+            merchant: "Grab",
+            amount: 14.20,
             date: Date(),
-            category: "Entertainment",
+            category: "Travel",
             card: card
         ))
-    }.background(Color(red: 0.05, green: 0.1, blue: 0.2)).padding()
+    }
+    .padding()
+    .background(AppColors.backgroundPrimary)
 }

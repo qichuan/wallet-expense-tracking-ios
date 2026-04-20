@@ -21,8 +21,6 @@ struct AnalysisView: View {
         (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
     }
 
-    /// Converts a transaction's amount to the default currency using cached rates.
-    /// Falls back to the raw amount if no rate is available.
     private func amountInDefault(_ tx: Transaction) -> Double {
         let code = tx.resolvedCurrency
         let raw = Double(truncating: tx.amount as NSDecimalNumber)
@@ -30,114 +28,116 @@ struct AnalysisView: View {
         return raw * rate
     }
 
-    private enum Granularity: Int, CaseIterable { case day, week, month, year }
-    @State private var selectedGranularity: Granularity = .day
+    enum Granularity: String, CaseIterable, Hashable {
+        case day, week, month, year
+        var title: String {
+            switch self {
+            case .day: return "Day"
+            case .week: return "Week"
+            case .month: return "Month"
+            case .year: return "Year"
+            }
+        }
+    }
+
+    @State private var selectedGranularity: Granularity = .month
     @State private var selectedDate: Date = Date()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedTransaction: Transaction?
 
-    
+    // MARK: - Ranges
+
+    private func currentRange(for date: Date, granularity: Granularity) -> (Date, Date) {
+        let cal = Calendar.current
+        switch granularity {
+        case .day:
+            let start = cal.startOfDay(for: date)
+            let end = cal.date(byAdding: .day, value: 1, to: start) ?? date
+            return (start, end)
+        case .week:
+            let interval = cal.dateInterval(of: .weekOfYear, for: date) ?? DateInterval(start: date, duration: 7 * 24 * 3600)
+            return (interval.start, interval.end)
+        case .month:
+            let interval = cal.dateInterval(of: .month, for: date) ?? DateInterval(start: date, duration: 30 * 24 * 3600)
+            return (interval.start, interval.end)
+        case .year:
+            let interval = cal.dateInterval(of: .year, for: date) ?? DateInterval(start: date, duration: 365 * 24 * 3600)
+            return (interval.start, interval.end)
+        }
+    }
+
+    private func previousDate(from date: Date, granularity: Granularity) -> Date {
+        let cal = Calendar.current
+        switch granularity {
+        case .day:   return cal.date(byAdding: .day, value: -1, to: date) ?? date
+        case .week:  return cal.date(byAdding: .weekOfYear, value: -1, to: date) ?? date
+        case .month: return cal.date(byAdding: .month, value: -1, to: date) ?? date
+        case .year:  return cal.date(byAdding: .year, value: -1, to: date) ?? date
+        }
+    }
+
+    private var currentTotal: Double {
+        let (start, end) = currentRange(for: selectedDate, granularity: selectedGranularity)
+        return transactions
+            .filter { $0.date >= start && $0.date < end }
+            .reduce(0.0) { $0 + amountInDefault($1) }
+    }
+
+    private var previousTotal: Double {
+        let prevDate = previousDate(from: selectedDate, granularity: selectedGranularity)
+        let (start, end) = currentRange(for: prevDate, granularity: selectedGranularity)
+        return transactions
+            .filter { $0.date >= start && $0.date < end }
+            .reduce(0.0) { $0 + amountInDefault($1) }
+    }
+
+    private var previousPeriodLabel: String {
+        let df = DateFormatter()
+        let prevDate = previousDate(from: selectedDate, granularity: selectedGranularity)
+        switch selectedGranularity {
+        case .day:   df.dateFormat = "d MMM"
+        case .week:  df.dateFormat = "d MMM"
+        case .month: df.dateFormat = "MMMM"
+        case .year:  df.dateFormat = "yyyy"
+        }
+        return df.string(from: prevDate)
+    }
+
     private var filteredTransactions: [Transaction] {
-        let (start, end) = currentRange()
+        let (start, end) = currentRange(for: selectedDate, granularity: selectedGranularity)
         return transactions.filter { $0.date >= start && $0.date < end }
     }
-    
-    private var spendingByCategory: [CategorySpending] {
-        let grouped = Dictionary(grouping: filteredTransactions) { transaction in
-            MerchantUtils.normalizedCategory(for: transaction.category)
+
+    // MARK: - Donut data
+
+    private var donutSlices: [DonutSlice] {
+        let grouped = Dictionary(grouping: filteredTransactions) { tx in
+            MerchantUtils.normalizedCategory(for: tx.category)
         }
         return grouped.map { category, txns in
             let total = txns.reduce(0.0) { $0 + amountInDefault($1) }
-            return CategorySpending(
+            return DonutSlice(
                 category: category,
                 amount: Decimal(total),
                 color: MerchantUtils.color(for: category)
             )
-        }.sorted { $0.amount > $1.amount }
+        }
+        .sorted { $0.amount > $1.amount }
     }
-    
-    // MARK: - Period Helpers
-    private func title(for g: Granularity) -> String {
-        switch g {
-        case .day: return "Day"
-        case .week: return "Week"
-        case .month: return "Month"
-        case .year: return "Year"
-        }
-    }
-    
-    private func currentRange() -> (Date, Date) {
-        let cal = Calendar.current
-        switch selectedGranularity {
-        case .day:
-            let start = cal.startOfDay(for: selectedDate)
-            let end = cal.date(byAdding: .day, value: 1, to: start) ?? selectedDate
-            return (start, end)
-        case .week:
-            let interval = cal.dateInterval(of: .weekOfYear, for: selectedDate) ?? DateInterval(start: selectedDate, duration: 7 * 24 * 3600)
-            return (interval.start, interval.end)
-        case .month:
-            let interval = cal.dateInterval(of: .month, for: selectedDate) ?? DateInterval(start: selectedDate, duration: 30 * 24 * 3600)
-            return (interval.start, interval.end)
-        case .year:
-            let interval = cal.dateInterval(of: .year, for: selectedDate) ?? DateInterval(start: selectedDate, duration: 365 * 24 * 3600)
-            return (interval.start, interval.end)
-        }
-    }
-    
-    private func step(_ delta: Int) {
-        let cal = Calendar.current
-        let availableDates = Set(transactions.map { cal.startOfDay(for: $0.date) })
-        
-        var candidate: Date
-        switch selectedGranularity {
-        case .day:
-            candidate = cal.date(byAdding: .day, value: delta, to: selectedDate) ?? selectedDate
-        case .week:
-            candidate = cal.date(byAdding: .weekOfYear, value: delta, to: selectedDate) ?? selectedDate
-        case .month:
-            candidate = cal.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
-        case .year:
-            candidate = cal.date(byAdding: .year, value: delta, to: selectedDate) ?? selectedDate
-        }
-        
-        // Find the next available date with data
-        let searchDirection = delta > 0 ? 1 : -1
-        var current = candidate
-        let maxAttempts = 100 // Prevent infinite loops
-        var attempts = 0
-        
-        while !availableDates.contains(cal.startOfDay(for: current)) && attempts < maxAttempts {
-            current = cal.date(byAdding: .day, value: searchDirection, to: current) ?? current
-            attempts += 1
-        }
-        
-        if availableDates.contains(cal.startOfDay(for: current)) {
-            selectedDate = current
-        }
-    }
-    
-    // MARK: - Stacked Series
+
+    // MARK: - Stacked chart
+
     struct StackedItem: Identifiable {
         let id = UUID()
         let bucketLabel: String
         let category: String
         let amount: Double
     }
-    
-    private var xAxisTitle: String {
-        switch selectedGranularity { case .day: return "Hour"; case .week: return "Day"; case .month: return "Day"; case .year: return "Month" }
-    }
-    
-    private var stackedXAxisValues: [String] {
-        stackedSeries.map { $0.bucketLabel }.uniqued()
-    }
-    
+
     private var stackedSeries: [StackedItem] {
         let cal = Calendar.current
-        let (start, _) = currentRange()
-        
-        // Define buckets based on granularity
+        let (start, _) = currentRange(for: selectedDate, granularity: selectedGranularity)
+
         var bucketDates: [Date] = []
         switch selectedGranularity {
         case .day:
@@ -166,16 +166,15 @@ struct AnalysisView: View {
                 }
             }
         }
-        
+
         let formatter = DateFormatter()
         switch selectedGranularity {
-        case .day: formatter.dateFormat = "HH" // 00-23
-        case .week: formatter.dateFormat = "EEE" // Mon-Sun
-        case .month: formatter.dateFormat = "EEE" // Will be overridden below
-        case .year: formatter.dateFormat = "MMM" // Jan-Dec
+        case .day: formatter.dateFormat = "HH"
+        case .week: formatter.dateFormat = "EEE"
+        case .month: formatter.dateFormat = "EEE"
+        case .year: formatter.dateFormat = "MMM"
         }
-        
-        // Aggregate amounts per bucket per category
+
         var result: [StackedItem] = []
         for (index, bucketStart) in bucketDates.enumerated() {
             let bucketEnd: Date
@@ -185,20 +184,16 @@ struct AnalysisView: View {
             case .month: bucketEnd = cal.date(byAdding: .weekOfYear, value: 1, to: bucketStart) ?? bucketStart
             case .year: bucketEnd = cal.date(byAdding: .month, value: 1, to: bucketStart) ?? bucketStart
             }
-            
-            // Generate label based on granularity
+
             let label: String
             switch selectedGranularity {
-            case .month:
-                label = "wk\(index + 1)" // wk1, wk2, wk3, wk4
-            default:
-                label = formatter.string(from: bucketStart)
+            case .month: label = "W\(index + 1)"
+            default: label = formatter.string(from: bucketStart)
             }
-            
+
             let bucketTx = filteredTransactions.filter { $0.date >= bucketStart && $0.date < bucketEnd }
             let byCategory = Dictionary(grouping: bucketTx) { MerchantUtils.normalizedCategory(for: $0.category) }
 
-            // Always include all categories, even with 0 amount
             for cat in MerchantUtils.defaultCategories {
                 let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
                 result.append(StackedItem(bucketLabel: label, category: cat, amount: total))
@@ -207,420 +202,232 @@ struct AnalysisView: View {
         return result
     }
 
-    // For UI: adjust series/x-axis for current granularity
-    private var stackedSeriesForCurrentGranularity: [StackedItem] {
-        if selectedGranularity == .day {
-            // Collapse to a single bucket (the selected date) with stacked categories
-            let df = DateFormatter()
-            df.dateFormat = "yyyy-MM-dd"
-            let label = df.string(from: Calendar.current.startOfDay(for: selectedDate))
-            let byCategory = Dictionary(grouping: filteredTransactions) { MerchantUtils.normalizedCategory(for: $0.category) }
-            return MerchantUtils.defaultCategories.compactMap { cat in
-                let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
-                return total > 0 ? StackedItem(bucketLabel: label, category: cat, amount: total) : nil
-            }
-        }
-        return stackedSeries
+    private var stackedXAxisValues: [String] {
+        stackedSeries.map { $0.bucketLabel }.uniqued()
     }
 
-    private var stackedXAxisValuesForCurrentGranularity: [String] {
-        if selectedGranularity == .day {
-            let df = DateFormatter()
-            df.dateFormat = "yyyy-MM-dd"
-            let label = df.string(from: Calendar.current.startOfDay(for: selectedDate))
-            return [label]
+    private var stackedTitle: String {
+        switch selectedGranularity {
+        case .day: return "By Hour"
+        case .week: return "By Day"
+        case .month: return "By Week"
+        case .year: return "By Month"
         }
-        return stackedXAxisValues
     }
 
-    // Limit selectable dates to those with data
-    private func availableDateRange() -> ClosedRange<Date> {
-        let dates = transactions.map { Calendar.current.startOfDay(for: $0.date) }
-        guard let min = dates.min(), let max = dates.max() else {
-            let today = Calendar.current.startOfDay(for: Date())
-            return today...today
-        }
-        return min...max
-    }
-    
-    private var availableDatesSet: Set<Date> {
+    // MARK: - Step navigation
+
+    private func step(_ delta: Int) {
         let cal = Calendar.current
-        return Set(transactions.map { cal.startOfDay(for: $0.date) })
-    }
-    
-    private func snapToNearestAvailableDate() {
-        let cal = Calendar.current
-        let day = cal.startOfDay(for: selectedDate)
-        if availableDatesSet.contains(day) { return }
-        // Search backward then forward up to 365 days to find the closest available date
-        let maxHops = 365
-        for offset in 1...maxHops {
-            if let prev = cal.date(byAdding: .day, value: -offset, to: day), availableDatesSet.contains(cal.startOfDay(for: prev)) {
-                selectedDate = prev
-                return
+        let candidate: Date = {
+            switch selectedGranularity {
+            case .day: return cal.date(byAdding: .day, value: delta, to: selectedDate) ?? selectedDate
+            case .week: return cal.date(byAdding: .weekOfYear, value: delta, to: selectedDate) ?? selectedDate
+            case .month: return cal.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
+            case .year: return cal.date(byAdding: .year, value: delta, to: selectedDate) ?? selectedDate
             }
-            if let next = cal.date(byAdding: .day, value: offset, to: day), availableDatesSet.contains(cal.startOfDay(for: next)) {
-                selectedDate = next
-                return
-            }
-        }
-        // If nothing found, keep current date (will show empty state)
+        }()
+        selectedDate = candidate
     }
-    
-    private func availableYears() -> [Int] {
-        let cal = Calendar.current
-        let years = transactions.map { cal.component(.year, from: $0.date) }
-        let set = Set(years)
-        return set.sorted()
-    }
-    
-    private func availableMonths() -> [Date] {
-        let cal = Calendar.current
-        let monthStarts = transactions.map { tx -> Date in
-            let comps = cal.dateComponents([.year, .month], from: tx.date)
-            return cal.date(from: comps) ?? tx.date
-        }
-        let unique = Array(Set(monthStarts)).sorted()
-        return unique
-    }
-    
-    private func monthLabel(for date: Date) -> String {
+
+    private var centralDateLabel: String {
         let df = DateFormatter()
-        df.dateFormat = "MMM yyyy" // e.g., Oct 2025
-        return df.string(from: date)
-    }
-
-    private func monthStart(for date: Date) -> Date {
-        let cal = Calendar.current
-        let comps = cal.dateComponents([.year, .month], from: date)
-        return cal.date(from: comps) ?? date
-    }
-
-    private func normalizeSelectedDateForMonth() {
-        let start = monthStart(for: selectedDate)
-        let months = availableMonths()
-        if months.contains(start) {
-            if selectedDate != start { selectedDate = start }
-        } else if let nearest = months.last {
-            selectedDate = nearest
+        switch selectedGranularity {
+        case .day:
+            df.dateFormat = "d MMMM yyyy"
+        case .week:
+            let (s, e) = currentRange(for: selectedDate, granularity: .week)
+            let f = DateFormatter()
+            f.dateFormat = "d MMM"
+            let end = Calendar.current.date(byAdding: .day, value: -1, to: e) ?? e
+            return "\(f.string(from: s)) – \(f.string(from: end))"
+        case .month:
+            df.dateFormat = "MMMM yyyy"
+        case .year:
+            df.dateFormat = "yyyy"
         }
+        return df.string(from: selectedDate)
     }
 
-    // MARK: - Recent Transactions for current range
-    private var recentTransactionsInRange: [Transaction] {
-        filteredTransactions.sorted { $0.date > $1.date }
-    }
-    
+    // MARK: - Body
+
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 24) {
-                    
-                    // Period Tabs + Navigation
-                    VStack(spacing: 12) {
-                        HStack(spacing: 0) {
-                            ForEach(Granularity.allCases, id: \.self) { g in
-                                Button(action: { selectedGranularity = g }) {
-                                    Text(title(for: g))
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(selectedGranularity == g ? .white : .white.opacity(0.7))
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(selectedGranularity == g ? Color.teal : Color.clear)
-                                        )
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        HStack(spacing: 12) {
-                            Button(action: { step(-1) }) {
-                                Image(systemName: "chevron.left")
-                                    .foregroundColor(.white)
-                            }
-                            
-                            if selectedGranularity == .year {
-                                Picker("", selection: $selectedYear) {
-                                    ForEach(availableYears(), id: \.self) { year in
-                                        Text(String(year)).tag(year)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .labelsHidden()
-                            } else if selectedGranularity == .month {
-                                let monthSelection = Binding<Date>(
-                                    get: { monthStart(for: selectedDate) },
-                                    set: { newValue in selectedDate = monthStart(for: newValue) }
-                                )
-                                Picker("", selection: monthSelection) {
-                                    ForEach(availableMonths(), id: \.self) { monthStart in
-                                        Text(monthLabel(for: monthStart)).tag(monthStart)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .labelsHidden()
-                            } else {
-                                DatePicker("", selection: $selectedDate, in: availableDateRange(), displayedComponents: .date)
-                                    .labelsHidden()
-                                    .colorScheme(.dark)
-                            }
-                            
-                            Button(action: { step(1) }) {
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .onChange(of: selectedGranularity) { _, newValue in
-                            if newValue == .year {
-                                selectedYear = Calendar.current.component(.year, from: selectedDate)
-                            } else if newValue == .month {
-                                // Snap to the latest month that has data
-                                normalizeSelectedDateForMonth()
-                            } else if newValue == .day || newValue == .week {
-                                // Ensure we land on a day that has data so breakdown/over-time are populated
-                                snapToNearestAvailableDate()
-                            } else {
-                                // When leaving year mode, keep selectedDate as-is
-                            }
-                        }
-                        .onChange(of: selectedDate) { _, _ in
-                            if selectedGranularity == .month {
-                                normalizeSelectedDateForMonth()
-                            }
-                        }
-                        .onChange(of: selectedYear) { _, newYear in
-                            if selectedGranularity == .year {
-                                if let jan1 = Calendar.current.date(from: DateComponents(year: newYear, month: 1, day: 1)) {
-                                    selectedDate = jan1
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Spending Breakdown Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Spending Breakdown")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal)
-                        
-                        if filteredTransactions.isEmpty {
-                            VStack(spacing: 8) {
-                                Text("No transactions in this range")
-                                    .foregroundColor(.white)
-                                Text("Try selecting a different period")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            .padding()
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                            .frame(maxWidth: .infinity)
-                        } else {
-                            VStack(spacing: 16) {
-                            // Donut Chart
-                            ZStack {
-                                DonutChart(data: spendingByCategory)
-                                    .frame(height: 240) // Bigger circle
-                                
-                                VStack(spacing: 4) {
-                                    Text("Total Spent")
-                                        .font(.subheadline)
-                                        .foregroundColor(.white.opacity(0.8))
+        NavigationStack {
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
 
-                                    let totalInDefault = filteredTransactions.reduce(0.0) { $0 + amountInDefault($1) }
-                                    Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(totalInDefault, specifier: "%.2f")")
-                                        .font(.title)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            
-                            // Category List
-                            LazyVStack(spacing: 8) {
-                                ForEach(spendingByCategory) { category in
-                                    CategoryRow(category: category)
-                                }
-                            }
-                            }
-                            .padding()
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    // Stacked Bar Chart for Selected Period
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Spending Over Time")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal)
-                        
-                        if filteredTransactions.isEmpty {
-                            VStack(spacing: 8) {
-                                Text("No transactions in this range")
-                                    .foregroundColor(.white)
-                            }
-                            .padding()
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                            .frame(maxWidth: .infinity)
-                        } else {
-                            VStack(spacing: 16) {
-                            Chart(stackedSeriesForCurrentGranularity) { item in
-                                BarMark(
-                                    x: .value(xAxisTitle, item.bucketLabel),
-                                    y: .value("Amount", item.amount)
-                                )
-                                .foregroundStyle(MerchantUtils.color(for: item.category))
-                                .opacity(item.amount > 0 ? 1.0 : 0.0) // Hide bars with 0 amount
-                            }
-                            .chartLegend(.hidden)
-                            .frame(height: 180)
-                            .chartYAxis {
-                                AxisMarks(position: .leading) { value in
-                                    AxisGridLine()
-                                    AxisValueLabel() { if let v = value.as(Double.self) { Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(v, specifier: "%.0f")") } }
-                                        .foregroundStyle(.white.opacity(0.7))
-                                }
-                            }
-                            .chartXAxis {
-                                AxisMarks(values: stackedXAxisValuesForCurrentGranularity) { val in
-                                    AxisValueLabel()
-                                        .foregroundStyle(.white.opacity(0.7))
-                                        .font(.caption)
-                                }
-                            }
-                            }
-                            .padding()
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        BrandHeader(title: "Analysis")
 
-                    // Recent transactions (only for Day/Week)
-                    if (selectedGranularity == .day || selectedGranularity == .week) && !recentTransactionsInRange.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Recent Transactions")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal)
+                        SegmentedPillControl(
+                            selection: $selectedGranularity,
+                            options: Granularity.allCases,
+                            title: { $0.title }
+                        )
+                        .padding(.horizontal, 20)
 
-                            VStack(spacing: 8) {
-                                ForEach(recentTransactionsInRange) { tx in
-                                    Button(action: { selectedTransaction = tx }) {
-                                        TransactionRow(transaction: tx)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding()
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                        }
+                        dateNavigator
+                            .padding(.horizontal, 20)
+
+                        totalSpendCard
+                            .padding(.horizontal, 20)
+
+                        donutCard
+                            .padding(.horizontal, 20)
+
+                        stackedBarCard
+                            .padding(.horizontal, 20)
                     }
+                    .padding(.bottom, 40)
                 }
-                .padding(.bottom, 100)
             }
-            .sheet(item: $selectedTransaction) { transaction in
-                TransactionFormView(transaction: transaction)
-            }
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .navigationBarHidden(true)
             .onAppear {
                 let cal = Calendar.current
                 if let latest = transactions.map({ cal.startOfDay(for: $0.date) }).max() {
                     selectedDate = latest
                 }
             }
-        }
-    }
-}
-
-struct CategorySpending: Identifiable {
-    let id = UUID()
-    let category: String
-    let amount: Decimal
-    let color: Color
-}
-
-struct DonutChart: View {
-    let data: [CategorySpending]
-    
-    private var totalAmount: Double {
-        Double(truncating: data.reduce(0) { $0 + $1.amount } as NSDecimalNumber)
-    }
-    
-    private var segments: [(start: Double, end: Double, color: Color)] {
-        guard totalAmount > 0 else { return [] }
-        var cumulative: Double = 0
-        return data.map { item in
-            let value = Double(truncating: item.amount as NSDecimalNumber)
-            let fraction = value / totalAmount
-            let start = cumulative
-            let end = cumulative + fraction
-            cumulative = end
-            return (start: start, end: end, color: item.color)
-        }
-    }
-    
-    var body: some View {
-        ZStack {
-            ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
-                Circle()
-                    .trim(from: seg.start, to: seg.end)
-                    .stroke(seg.color, style: StrokeStyle(lineWidth: 16, lineCap: .butt, lineJoin: .round))
-                    .rotationEffect(.degrees(-90))
+            .sheet(item: $selectedTransaction) { transaction in
+                TransactionFormView(transaction: transaction)
             }
         }
     }
-}
 
-struct CategoryRow: View {
-    let category: CategorySpending
-
-    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
-
-    private var categoryIcon: String {
-        MerchantUtils.icon(for: category.category)
-    }
-
-    var body: some View {
+    @ViewBuilder
+    private var dateNavigator: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(category.color)
-                .frame(width: 32, height: 32)
-                .overlay(
-                    Image(systemName: categoryIcon)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                )
-
-            Text(category.category)
-                .font(.headline)
-                .foregroundColor(.white)
+            Button(action: { step(-1) }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
 
             Spacer()
 
-            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Double(truncating: category.amount as NSDecimalNumber), specifier: "%.2f")")
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
+            Text(centralDateLabel)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            Button(action: { step(1) }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 4)
+    }
+
+    @ViewBuilder
+    private var totalSpendCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionLabel(text: "Total Spend")
+            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(currentTotal, specifier: "%.2f")")
+                .font(AppTypography.amountLarge)
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            SpendingDeltaLabel(current: currentTotal, previous: previousTotal, previousLabel: previousPeriodLabel)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(padding: 18)
+    }
+
+    @ViewBuilder
+    private var donutCard: some View {
+        if filteredTransactions.isEmpty {
+            emptyCard(message: "No transactions in this range")
+        } else {
+            HStack(alignment: .center, spacing: 16) {
+                DonutChartView(slices: donutSlices, lineWidth: 14)
+                    .frame(width: 130, height: 130)
+
+                VStack(spacing: 8) {
+                    ForEach(donutSlices.prefix(6)) { slice in
+                        categoryRow(slice)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .cardSurface(padding: 18)
+        }
+    }
+
+    @ViewBuilder
+    private func categoryRow(_ slice: DonutSlice) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(slice.color)
+                .frame(width: 8, height: 8)
+            Text(slice.category)
+                .font(.system(size: 13))
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Double(truncating: slice.amount as NSDecimalNumber), specifier: "%.0f")")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(AppColors.textPrimary)
+        }
+    }
+
+    @ViewBuilder
+    private var stackedBarCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionLabel(text: stackedTitle)
+            if filteredTransactions.isEmpty {
+                Text("No transactions in this range")
+                    .font(.footnote)
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.vertical, 30)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Chart(stackedSeries) { item in
+                    BarMark(
+                        x: .value("Bucket", item.bucketLabel),
+                        y: .value("Amount", item.amount)
+                    )
+                    .foregroundStyle(MerchantUtils.color(for: item.category))
+                    .opacity(item.amount > 0 ? 1.0 : 0.0)
+                }
+                .chartLegend(.hidden)
+                .frame(height: 170)
+                .chartYAxis {
+                    AxisMarks(position: .leading) { value in
+                        AxisGridLine().foregroundStyle(AppColors.divider)
+                        AxisValueLabel {
+                            if let v = value.as(Double.self) {
+                                Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Int(v))")
+                            }
+                        }
+                        .foregroundStyle(AppColors.textTertiary)
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks(values: stackedXAxisValues) { _ in
+                        AxisValueLabel()
+                            .foregroundStyle(AppColors.textTertiary)
+                    }
+                }
+            }
+        }
+        .cardSurface(padding: 18)
+    }
+
+    @ViewBuilder
+    private func emptyCard(message: String) -> some View {
+        VStack(spacing: 6) {
+            Text(message)
+                .font(.footnote)
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+        .cardSurface(padding: 18)
     }
 }
 
@@ -628,4 +435,3 @@ struct CategoryRow: View {
     AnalysisView()
         .modelContainer(ModelContainer.createMockContainer())
 }
-

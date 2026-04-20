@@ -15,52 +15,56 @@ struct ShortcutsBanner: View {
     var body: some View {
         if !hasDismissedShortcutBanner {
             ZStack(alignment: .topTrailing) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image("shortcuts")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .padding(.top, 2)
+                HStack(alignment: .top, spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(hex: 0xEF4444).opacity(0.18))
+                        Image("shortcuts")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                    }
+                    .frame(width: 38, height: 38)
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Set up an automation in Shortcuts app")
-                            .foregroundColor(.white)
-                            .font(.headline)
-                        Text("Use an automation in Shortcuts app to track tap‑to‑pay transactions automatically.")
-                            .foregroundColor(.white.opacity(0.8))
-                            .font(.subheadline)
+                            .foregroundColor(AppColors.textPrimary)
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Auto-log tap-to-pay transactions.")
+                            .foregroundColor(AppColors.textSecondary)
+                            .font(.system(size: 13))
 
                         Button(action: { showingHowToAutoTracking = true }) {
                             Text("View Instructions")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.yellow)
-                                .cornerRadius(8)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(AppColors.backgroundPrimary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(AppColors.brandGold)
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .padding(.top, 2)
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(12)
+                .padding(14)
                 .padding(.trailing, 32)
-                
+
                 Button(action: { showingDismissBannerAlert = true }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 24, height: 24)
-                        .background(Color.white.opacity(0.1))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 22, height: 22)
+                        .background(AppColors.backgroundCardSoft)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .padding(12)
+                .padding(10)
             }
-            .background(Color.white.opacity(0.08))
-            .cornerRadius(12)
-            .padding(.horizontal)
+            .background(AppColors.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, 20)
             .alert("", isPresented: $showingDismissBannerAlert) {
                 Button("OK") {
                     hasDismissedShortcutBanner = true
@@ -77,6 +81,6 @@ struct ShortcutsBanner: View {
 
 #Preview {
     ShortcutsBanner(showingHowToAutoTracking: .constant(false))
-        .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .background(AppColors.backgroundPrimary)
 }
 

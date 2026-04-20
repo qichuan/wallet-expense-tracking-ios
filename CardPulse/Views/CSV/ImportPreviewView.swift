@@ -38,8 +38,8 @@ struct ImportPreviewView: View {
                         }
                     }
                     .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(12)
+                    .background(AppColors.backgroundCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 
                 VStack(spacing: 0) {
@@ -69,19 +69,19 @@ struct ImportPreviewView: View {
                     Button("Cancel") { onCancel(); dismiss() }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray.opacity(0.3))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .background(AppColors.backgroundCard)
+                        .foregroundColor(AppColors.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     Button("Import") { onConfirm(); dismiss() }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.teal)
+                        .background(AppColors.accent)
                         .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
             .padding()
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Import Preview")
             .navigationBarTitleDisplayMode(.inline)
         }
