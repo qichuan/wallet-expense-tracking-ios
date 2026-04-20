@@ -46,10 +46,6 @@ struct HomeView: View {
         cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.count
     }
 
-    private var bonusEarned: Decimal {
-        cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.reduce(0) { $0 + $1.minimumSpendingAmount }
-    }
-
     private var nextDeadlineDays: Int? {
         cardsWithGoals.map { $0.daysRemaining }.filter { $0 > 0 }.min()
     }
@@ -80,11 +76,6 @@ struct HomeView: View {
     private var formattedTotalMinSpend: String {
         let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
         return "\(symbol)\(formatted(totalMinSpend))"
-    }
-
-    private var formattedBonusEarned: String {
-        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
-        return "\(symbol)\(formatted(bonusEarned))"
     }
 
     private func formatted(_ amount: Decimal) -> String {
@@ -119,7 +110,6 @@ struct HomeView: View {
                                 periodLabel: periodLabel,
                                 totalAmount: formattedTotalMinSpend,
                                 cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
-                                bonusEarned: formattedBonusEarned,
                                 nextDeadline: nextDeadlineDays.map { "\($0)d" } ?? "—",
                                 donutSlices: heroDonutSlices
                             )
