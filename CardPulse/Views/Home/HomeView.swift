@@ -46,25 +46,50 @@ struct HomeView: View {
         cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.count
     }
 
-    private var nextDeadlineDays: Int? {
-        cardsWithGoals.map { $0.daysRemaining }.filter { $0 > 0 }.min()
+    private var nextDeadlineCard: Card? {
+        cardsWithGoals.min { $0.daysRemaining < $1.daysRemaining }
+    }
+
+    private var nextDeadlineDisplay: String {
+        guard let card = nextDeadlineCard else { return "—" }
+        return "\(card.daysRemaining)d"
+    }
+
+    private var cappedSpentTowardGoals: Double {
+        cardsWithGoals.reduce(0.0) { partial, card in
+            let spent = Double(truncating: card.monthlySpent as NSDecimalNumber)
+            let target = Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)
+            return partial + min(spent, target)
+        }
     }
 
     private var heroDonutSlices: [DonutSlice] {
-        let palette: [Color] = [
-            AppColors.accent,
-            AppColors.brandGold,
-            AppColors.categoryShopping,
-            AppColors.categoryEntertainment,
-            AppColors.categoryTravel
-        ]
-        return cardsWithGoals.enumerated().map { index, card in
+        let totalTarget = Double(truncating: totalMinSpend as NSDecimalNumber)
+        let spentForProgress = min(cappedSpentTowardGoals, totalTarget)
+        let remaining = max(0.0, totalTarget - spentForProgress)
+
+        return [
             DonutSlice(
-                category: card.name,
-                amount: card.monthlySpent,
-                color: palette[index % palette.count]
+                category: "Spent",
+                amount: Decimal(spentForProgress),
+                color: AppColors.accent
+            ),
+            DonutSlice(
+                category: "Remaining",
+                amount: Decimal(remaining),
+                color: AppColors.backgroundCardSoft
             )
-        }
+        ]
+    }
+
+    private var remainingToSpendAmount: Decimal {
+        let totalTarget = Double(truncating: totalMinSpend as NSDecimalNumber)
+        return Decimal(max(0.0, totalTarget - cappedSpentTowardGoals))
+    }
+
+    private var remainingToSpendText: String {
+        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+        return "\(symbol)\(formatted(remainingToSpendAmount))"
     }
 
     private var periodLabel: String {
@@ -110,8 +135,9 @@ struct HomeView: View {
                                 periodLabel: periodLabel,
                                 totalAmount: formattedTotalMinSpend,
                                 cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
-                                nextDeadline: nextDeadlineDays.map { "\($0)d" } ?? "—",
-                                donutSlices: heroDonutSlices
+                                nextDeadline: nextDeadlineDisplay,
+                                donutSlices: heroDonutSlices,
+                                donutCenterLabel: remainingToSpendText
                             )
                             .padding(.horizontal, 20)
                         }
