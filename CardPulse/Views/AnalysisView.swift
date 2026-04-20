@@ -66,6 +66,11 @@ struct AnalysisView: View {
         }
     }
 
+    private var canGoForward: Bool {
+        let (_, end) = currentRange(for: selectedDate, granularity: selectedGranularity)
+        return end <= Date()
+    }
+
     private func previousDate(from date: Date, granularity: Granularity) -> Date {
         let cal = Calendar.current
         switch granularity {
@@ -330,6 +335,8 @@ struct AnalysisView: View {
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
+            .disabled(!canGoForward)
+            .opacity(canGoForward ? 1.0 : 0.3)
         }
     }
 

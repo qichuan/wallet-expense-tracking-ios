@@ -58,22 +58,34 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
-// MARK: - V2 Schema (current — Transaction gains `currency` field)
+// MARK: - V2 Schema (Transaction gains `currency` field)
 
 enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
     static var models: [any PersistentModel.Type] { [Card.self, Transaction.self] }
 }
 
+// MARK: - V3 Schema (current — adds `SpendingCategory` model)
+
+enum SchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Card.self, Transaction.self, SpendingCategory.self]
+    }
+}
+
 // MARK: - Migration Plan
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [SchemaV1.self, SchemaV2.self] }
-    static var stages: [MigrationStage] { [migrateV1toV2] }
+    static var schemas: [any VersionedSchema.Type] {
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
+    }
+
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
-    /// Skipped when the user has not yet chosen a default currency — `CurrencyOnboardingView`
-    /// will perform the backfill after the user makes their selection.
+    /// Skipped when the user has not yet chosen a default currency — the onboarding
+    /// currency step will perform the backfill after the user makes their selection.
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: SchemaV1.self,
         toVersion: SchemaV2.self,
@@ -91,4 +103,39 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
             try context.save()
         }
     )
+
+    /// V2 → V3: seed the 7 built-in `SpendingCategory` records if none exist yet.
+    /// Transaction.category strings continue to function as loose foreign keys by name.
+    static let migrateV2toV3 = MigrationStage.custom(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self,
+        willMigrate: nil,
+        didMigrate: { context in
+            try CategorySeeding.seedBuiltInsIfNeeded(in: context)
+        }
+    )
+}
+
+/// Seeds the 7 built-in `SpendingCategory` records.
+///
+/// Used both by the V2→V3 migration and at launch (for users who install
+/// on V3 directly — no migration runs, so we need a safety seed).
+enum CategorySeeding {
+    @discardableResult
+    static func seedBuiltInsIfNeeded(in context: ModelContext) throws -> Bool {
+        let existing = try context.fetch(FetchDescriptor<SpendingCategory>())
+        guard existing.isEmpty else { return false }
+        for (idx, name) in MerchantUtils.defaultCategories.enumerated() {
+            let category = SpendingCategory(
+                name: name,
+                icon: MerchantUtils.defaultIcon(for: name),
+                colorHex: MerchantUtils.defaultColorHex(for: name),
+                isBuiltIn: true,
+                sortOrder: idx
+            )
+            context.insert(category)
+        }
+        try context.save()
+        return true
+    }
 }

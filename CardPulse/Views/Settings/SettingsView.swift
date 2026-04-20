@@ -44,6 +44,7 @@ struct SettingsView: View {
     @State private var importProgressText = ""
     @State private var showingHowToAutoTracking = false
     @State private var showingTroubleshooting = false
+    @State private var showingCategoryManager = false
     
     private var appVersion: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -70,6 +71,15 @@ struct SettingsView: View {
                                     title: "Enabled currencies",
                                     value: "\(enabledCurrencyList.count)",
                                     action: { showingCurrencyManager = true }
+                                )
+                            }
+
+                            // CATEGORIES
+                            SettingsSection(title: "Categories") {
+                                SettingsValueRow(
+                                    title: "Manage categories",
+                                    value: "",
+                                    action: { showingCategoryManager = true }
                                 )
                             }
 
@@ -196,6 +206,10 @@ struct SettingsView: View {
         // How-to carousel
         .sheet(isPresented: $showingHowToAutoTracking) {
             HowToAutoTrackingView()
+        }
+        // Category manager
+        .sheet(isPresented: $showingCategoryManager) {
+            CategoryManagementView()
         }
         // Currency manager
         .sheet(isPresented: $showingCurrencyManager) {

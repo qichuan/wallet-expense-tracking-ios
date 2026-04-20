@@ -16,6 +16,7 @@ struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query private var cards: [Card]
+    @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
@@ -43,7 +44,12 @@ struct TransactionFormView: View {
         return enabled
     }
 
-    private let categories = MerchantUtils.defaultCategories
+    /// Names shown in the category picker — union of built-in names and user records.
+    /// Falls back to `MerchantUtils.defaultCategories` if the store hasn't seeded yet.
+    private var categoryNames: [String] {
+        let stored = categoryRecords.map { $0.name }
+        return stored.isEmpty ? MerchantUtils.defaultCategories : stored
+    }
 
     init(transaction: Transaction? = nil) {
         self.transactionToEdit = transaction
@@ -52,7 +58,7 @@ struct TransactionFormView: View {
             _amount = State(initialValue: String(format: "%.2f", Double(truncating: transaction.amount as NSDecimalNumber)))
             _currency = State(initialValue: transaction.currency)
             _selectedCard = State(initialValue: transaction.card)
-            _category = State(initialValue: MerchantUtils.normalizedCategory(for: transaction.category))
+            _category = State(initialValue: transaction.category ?? "Other")
             _note = State(initialValue: transaction.note ?? "")
             _transactionDate = State(initialValue: transaction.date)
         } else {
@@ -60,7 +66,7 @@ struct TransactionFormView: View {
             _amount = State(initialValue: "")
             _currency = State(initialValue: "")
             _selectedCard = State(initialValue: nil)
-            _category = State(initialValue: MerchantUtils.defaultCategories.first ?? "Other")
+            _category = State(initialValue: "Other")
             _note = State(initialValue: "")
             _transactionDate = State(initialValue: Date())
         }
@@ -222,14 +228,14 @@ struct TransactionFormView: View {
             Spacer()
             Menu {
                 Picker("", selection: $category) {
-                    ForEach(categories, id: \.self) { cat in
+                    ForEach(categoryNames, id: \.self) { cat in
                         Text(cat).tag(cat)
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(MerchantUtils.color(for: category))
+                        .fill(MerchantUtils.color(for: category, in: categoryRecords))
                         .frame(width: 8, height: 8)
                     Text(category)
                         .foregroundColor(AppColors.accent)
