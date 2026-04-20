@@ -30,11 +30,11 @@ struct ImportPreviewView: View {
                 if !missingCards.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Cards to be created")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .font(AppTypography.headline)
+                            .foregroundColor(AppColors.textPrimary)
                         ForEach(missingCards, id: \.self) { name in
                             Text(name)
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(AppColors.textSecondary)
                         }
                     }
                     .padding()
@@ -44,7 +44,7 @@ struct ImportPreviewView: View {
                 
                 VStack(spacing: 0) {
                     Text("Transactions to import: \(rows.count)")
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.bottom, 8)
 
@@ -55,8 +55,8 @@ struct ImportPreviewView: View {
                             }
                             if rows.count > 10 {
                                 Text("... and \(rows.count - 10) more transactions")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textSecondary)
                                     .padding(.top, 8)
                             }
                         }
@@ -76,7 +76,7 @@ struct ImportPreviewView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(AppColors.accent)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }

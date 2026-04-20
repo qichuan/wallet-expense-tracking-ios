@@ -156,9 +156,9 @@ struct TransactionFormView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(currency.isEmpty ? defaultCurrencyCode : currency)
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(AppTypography.pillBold)
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppTypography.chevronTinyBold)
                     }
                     .foregroundColor(AppColors.accent)
                     .padding(.horizontal, 12)
@@ -204,7 +204,7 @@ struct TransactionFormView: View {
                     Text(selectedCard?.name ?? "None")
                         .foregroundColor(AppColors.accent)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppTypography.chevronTiny)
                         .foregroundColor(AppColors.accent)
                 }
             }
@@ -234,7 +234,7 @@ struct TransactionFormView: View {
                     Text(category)
                         .foregroundColor(AppColors.accent)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppTypography.chevronTiny)
                         .foregroundColor(AppColors.accent)
                 }
             }
@@ -262,7 +262,7 @@ struct TransactionFormView: View {
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Save") { saveTransaction() }
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppTypography.navButton)
                 .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
                 .disabled(!isValid)
         }

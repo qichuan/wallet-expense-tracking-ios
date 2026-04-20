@@ -35,8 +35,8 @@ extension BrandHeader where Trailing == EmptyView {
         BrandHeader(title: "Home")
         BrandHeader(title: "Cards") {
             Image(systemName: "plus")
-                .font(.title3)
-                .foregroundColor(.white)
+                .font(AppTypography.iconRadio)
+                .foregroundColor(AppColors.onAccent)
         }
     }
     .frame(maxWidth: .infinity, alignment: .leading)

@@ -309,7 +309,7 @@ struct AnalysisView: View {
         HStack(spacing: 12) {
             Button(action: { step(-1) }) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppTypography.navChevron)
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: 32, height: 32)
             }
@@ -318,14 +318,14 @@ struct AnalysisView: View {
             Spacer()
 
             Text(centralDateLabel)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(AppTypography.navLabel)
                 .foregroundColor(AppColors.textPrimary)
 
             Spacer()
 
             Button(action: { step(1) }) {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppTypography.navChevron)
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: 32, height: 32)
             }
@@ -338,7 +338,7 @@ struct AnalysisView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionLabel(text: "Total Spend")
             Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(currentTotal, specifier: "%.2f")")
-                .font(AppTypography.amountLarge)
+                .font(AppTypography.amountHero)
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -375,11 +375,11 @@ struct AnalysisView: View {
                 .fill(slice.color)
                 .frame(width: 8, height: 8)
             Text(slice.category)
-                .font(.system(size: 13))
+                .font(AppTypography.bannerBody)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
             Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Double(truncating: slice.amount as NSDecimalNumber), specifier: "%.0f")")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(AppTypography.bannerCTA)
                 .foregroundColor(AppColors.textPrimary)
         }
     }
@@ -390,7 +390,7 @@ struct AnalysisView: View {
             SectionLabel(text: stackedTitle)
             if filteredTransactions.isEmpty {
                 Text("No transactions in this range")
-                    .font(.footnote)
+                    .font(AppTypography.footnote)
                     .foregroundColor(AppColors.textSecondary)
                     .padding(.vertical, 30)
                     .frame(maxWidth: .infinity)
@@ -433,7 +433,7 @@ struct AnalysisView: View {
             SectionLabel(text: "Transactions")
             if sortedFilteredTransactions.isEmpty {
                 Text("No transactions in this range")
-                    .font(.footnote)
+                    .font(AppTypography.footnote)
                     .foregroundColor(AppColors.textSecondary)
                     .padding(.vertical, 30)
                     .frame(maxWidth: .infinity)
@@ -455,7 +455,7 @@ struct AnalysisView: View {
     private func emptyCard(message: String) -> some View {
         VStack(spacing: 6) {
             Text(message)
-                .font(.footnote)
+                .font(AppTypography.footnote)
                 .foregroundColor(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)

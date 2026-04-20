@@ -406,11 +406,11 @@ struct SettingsValueRow: View {
                 Spacer()
                 if !value.isEmpty {
                     Text(value)
-                        .font(.system(size: 14))
+                        .font(AppTypography.rowValue)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppTypography.chevron)
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.horizontal, 16)
@@ -432,7 +432,7 @@ struct SettingsStaticRow: View {
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
             Text(value)
-                .font(.system(size: 14))
+                .font(AppTypography.rowValue)
                 .foregroundColor(AppColors.textSecondary)
         }
         .padding(.horizontal, 16)
@@ -471,12 +471,12 @@ struct ProgressOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.6)
+            AppColors.scrim
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
                 Text(title)
-                    .font(.headline)
+                    .font(AppTypography.headline)
                     .foregroundColor(AppColors.textPrimary)
 
                 if let progress = progress {
@@ -485,7 +485,7 @@ struct ProgressOverlay: View {
                         .frame(width: 200)
 
                     Text("\(Int(progress * 100))%")
-                        .font(.subheadline)
+                        .font(AppTypography.subheadline)
                         .foregroundColor(AppColors.textSecondary)
                 } else {
                     ProgressView()
@@ -494,7 +494,7 @@ struct ProgressOverlay: View {
                 }
 
                 Text(message)
-                    .font(.subheadline)
+                    .font(AppTypography.subheadline)
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -571,8 +571,8 @@ struct CurrencyManagerView: View {
                 }) {
                     if parsedCustomCurrencies.isEmpty {
                         Text("Tap + to add a custom currency")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.4))
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
                             .listRowBackground(AppColors.backgroundCard)
                     } else {
                         ForEach(parsedCustomCurrencies) { info in
@@ -619,12 +619,12 @@ struct CurrencyManagerView: View {
                 Text("Exchange Rates")
                 if isFetchingRates {
                     Text("Fetching latest rates...")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.textTertiary)
                 } else if let fetched = lastFetched {
                     Text("Updated \(fetched, style: .relative) ago")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
             Spacer()
@@ -634,7 +634,7 @@ struct CurrencyManagerView: View {
                 Button("Refresh") {
                     Task { await fetchRates() }
                 }
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundColor(AppColors.accent)
                 .buttonStyle(.plain)
             }
@@ -647,8 +647,8 @@ struct CurrencyManagerView: View {
     private func rateRow(_ info: CurrencyInfo) -> some View {
         HStack(spacing: 8) {
             Text("1 \(info.code) =")
-                .font(.subheadline)
-                .foregroundColor(.white)
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColors.textPrimary)
 
             TextField("0.0000", text: rateBinding(for: info.code))
                 .keyboardType(.decimalPad)
@@ -657,8 +657,8 @@ struct CurrencyManagerView: View {
                 .frame(maxWidth: 80)
 
             Text(defaultCurrencyCode)
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.7))
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColors.textSecondary)
         }
         .listRowBackground(AppColors.backgroundCard)
     }
@@ -694,11 +694,11 @@ struct CurrencyManagerView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.code)
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(AppTypography.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     Text("\(info.name)  \(info.symbol)")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
                 if isEnabled {
@@ -820,10 +820,10 @@ struct AddCurrencyView: View {
                 if duplicateError {
                     Section {
                         Text("\(code.uppercased()) already exists.")
-                            .foregroundColor(.red)
-                            .font(.caption)
+                            .foregroundColor(AppColors.destructive)
+                            .font(AppTypography.caption)
                     }
-                    .listRowBackground(Color.clear)
+                    .listRowBackground(AppColors.clear)
                 }
             }
             .scrollContentBackground(.hidden)

@@ -19,7 +19,7 @@ struct SpendingDeltaLabel: View {
         guard let d = delta else { return AppColors.textSecondary }
         // "Spent less" is green (good), "spent more" is red (bad).
         if d < 0 { return AppColors.statusHit }
-        if d > 0 { return Color(hex: 0xEF4444) }
+        if d > 0 { return AppColors.destructive }
         return AppColors.textSecondary
     }
 
@@ -42,10 +42,10 @@ struct SpendingDeltaLabel: View {
         HStack(spacing: 4) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(AppTypography.deltaIcon)
             }
             Text(text)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(AppTypography.deltaText)
         }
         .foregroundColor(color)
     }

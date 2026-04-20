@@ -41,6 +41,22 @@ enum AppColors {
 
     // Brand accent (for BrandMark gradient)
     static let brandGold            = Color(hex: 0xFFD166)
+
+    // On-accent — text / glyphs rendered on colored surfaces (pills, buttons, category circles)
+    static let onAccent             = Color.white
+
+    // High-contrast fill (used for selected filter chip)
+    static let surfaceHigh          = Color.white
+
+    // Destructive (delete actions, negative deltas)
+    static let destructive          = Color(hex: 0xEF4444)
+    static let destructiveSoft      = Color(hex: 0xEF4444).opacity(0.12)
+
+    // Modal / overlay scrim
+    static let scrim                = Color.black.opacity(0.6)
+
+    // Transparent / clear
+    static let clear                = Color.clear
 }
 
 extension Color {

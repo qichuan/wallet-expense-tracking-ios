@@ -78,7 +78,7 @@ struct CardsView: View {
                     BrandHeader(title: "Cards") {
                         Button(action: { showingAddGoal = true }) {
                             Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 26))
+                                .font(AppTypography.headerAction)
                                 .foregroundColor(AppColors.accent)
                         }
                     }
@@ -144,10 +144,10 @@ struct CardsView: View {
             Spacer()
             Text("No cards yet")
                 .foregroundColor(AppColors.textPrimary)
-                .font(.headline)
+                .font(AppTypography.headline)
             Text("Tap + to add your first card")
                 .foregroundColor(AppColors.textSecondary)
-                .font(.caption)
+                .font(AppTypography.caption)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

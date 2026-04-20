@@ -39,7 +39,7 @@ struct CurrencyOnboardingView: View {
                         .foregroundColor(AppColors.textPrimary)
 
                     Text("Select the default currency for your spending. You can add more currencies in Settings later.")
-                        .font(.subheadline)
+                        .font(AppTypography.subheadline)
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
@@ -60,18 +60,18 @@ struct CurrencyOnboardingView: View {
                                             .font(AppTypography.rowTitle)
                                             .foregroundColor(AppColors.textPrimary)
                                         Text("\(info.name)  \(info.symbol)")
-                                            .font(.caption)
+                                            .font(AppTypography.caption)
                                             .foregroundColor(AppColors.textSecondary)
                                     }
                                     Spacer()
                                     if selectedCode == info.code {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(AppColors.accent)
-                                            .font(.title3)
+                                            .font(AppTypography.iconRadio)
                                     } else {
                                         Image(systemName: "circle")
                                             .foregroundColor(AppColors.textTertiary)
-                                            .font(.title3)
+                                            .font(AppTypography.iconRadio)
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -108,7 +108,7 @@ struct CurrencyOnboardingView: View {
                     hasChosenDefaultCurrency = true
                 } label: {
                     Text("Get Started")
-                        .font(.headline)
+                        .font(AppTypography.headline)
                         .foregroundColor(selectedCode.isEmpty ? AppColors.textTertiary : .white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)

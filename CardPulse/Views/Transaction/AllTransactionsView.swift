@@ -83,7 +83,7 @@ struct AllTransactionsView: View {
                 Button(action: { showingFilterSheet = true }) {
                     Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                         .foregroundColor(hasActiveFilters ? AppColors.accent : AppColors.textTertiary)
-                        .font(.system(size: 20))
+                        .font(AppTypography.iconLarge)
                 }
             }
             .padding(.horizontal, 14)
@@ -95,13 +95,13 @@ struct AllTransactionsView: View {
             if filteredTransactions.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "creditcard")
-                        .font(.system(size: 40))
+                        .font(AppTypography.iconXXLarge)
                         .foregroundColor(AppColors.textTertiary)
                     Text("No transactions found")
-                        .font(.headline)
+                        .font(AppTypography.headline)
                         .foregroundColor(AppColors.textSecondary)
                     Text("Try adjusting your search or filter")
-                        .font(.subheadline)
+                        .font(AppTypography.subheadline)
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

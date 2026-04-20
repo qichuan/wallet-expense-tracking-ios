@@ -96,8 +96,8 @@ struct TransactionRow: View {
                 .frame(width: 40, height: 40)
                 .overlay(
                     Image(systemName: merchantIcon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .font(AppTypography.iconMedium)
+                        .foregroundColor(AppColors.onAccent)
                 )
 
             VStack(alignment: .leading, spacing: 3) {
@@ -107,13 +107,13 @@ struct TransactionRow: View {
                     .lineLimit(1)
 
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(AppTypography.rowMeta)
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
 
                 if let note = transaction.note, !note.isEmpty {
                     Text(note)
-                        .font(.system(size: 12))
+                        .font(AppTypography.rowMeta)
                         .foregroundColor(AppColors.textTertiary)
                         .italic()
                         .lineLimit(1)
@@ -124,11 +124,11 @@ struct TransactionRow: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(primaryAmountText)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(AppTypography.amountTransaction)
                     .foregroundColor(AppColors.textPrimary)
                 if let secondary = secondaryAmountText {
                     Text(secondary)
-                        .font(.system(size: 11))
+                        .font(AppTypography.amountTransactionAlt)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }

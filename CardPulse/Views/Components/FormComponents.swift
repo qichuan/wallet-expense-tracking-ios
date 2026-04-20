@@ -197,11 +197,11 @@ struct DestructiveButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(Color(hex: 0xEF4444))
+                .font(AppTypography.bannerTitle)
+                .foregroundColor(AppColors.destructive)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color(hex: 0xEF4444).opacity(0.12))
+                .background(AppColors.destructiveSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)

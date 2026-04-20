@@ -34,7 +34,7 @@ struct FilterChip: View {
             .padding(.vertical, 8)
             .background(
                 Capsule(style: .continuous)
-                    .fill(selected ? Color.white : AppColors.backgroundCard)
+                    .fill(selected ? AppColors.surfaceHigh : AppColors.backgroundCard)
             )
         }
         .buttonStyle(.plain)
