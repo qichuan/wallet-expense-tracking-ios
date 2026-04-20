@@ -15,6 +15,7 @@ struct MainTabView: View {
     @Query private var cards: [Card]
     @State private var selectedTab = 0
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     init() {
@@ -88,13 +89,18 @@ struct MainTabView: View {
         }
         .tint(AppColors.accent)
         .preferredColorScheme(.dark)
-        .fullScreenCover(isPresented: .constant(!hasChosenDefaultCurrency)) {
-            CurrencyOnboardingView()
+        .fullScreenCover(isPresented: .constant(!hasCompletedOnboarding)) {
+            OnboardingFlow()
                 .interactiveDismissDisabled(true)
         }
         .onAppear {
             writeWidgetData()
             CurrencyUtils.ensureDefaultCurrenciesEnabled()
+            // Returning users (pre-onboarding-flow) who already chose a currency
+            // should not be pushed through onboarding again.
+            if hasChosenDefaultCurrency && !hasCompletedOnboarding {
+                hasCompletedOnboarding = true
+            }
             refreshExchangeRatesIfNeeded()
         }
         .onChange(of: cards.count) { writeWidgetData() }
