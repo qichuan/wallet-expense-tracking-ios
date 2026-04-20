@@ -128,7 +128,7 @@ struct CardFormView: View {
             rewardType = type
         } label: {
             Text(title(for: type))
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppTypography.filterChip)
                 .foregroundColor(isSelected ? .white : AppColors.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
@@ -168,7 +168,7 @@ struct CardFormView: View {
                 statementDayRow
 
                 Text("Your minimum spending resets on this day each month. Reach the minimum before then to earn rewards from your card issuer.")
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
@@ -221,7 +221,7 @@ struct CardFormView: View {
                     Text("Day \(minimumSpendingByDayOfMonth)")
                         .foregroundColor(AppColors.accent)
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(AppTypography.chevronTiny)
                         .foregroundColor(AppColors.accent)
                 }
             }
@@ -238,7 +238,7 @@ struct CardFormView: View {
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Save") { saveCard() }
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppTypography.navButton)
                 .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
                 .disabled(!isValid)
         }

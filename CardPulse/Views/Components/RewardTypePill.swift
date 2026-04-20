@@ -29,7 +29,7 @@ struct RewardTypePill: View {
             Text(label)
                 .font(AppTypography.pill)
                 .tracking(0.8)
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.onAccent)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(color)

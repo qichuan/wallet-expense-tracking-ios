@@ -18,7 +18,7 @@ struct ShortcutsBanner: View {
                 HStack(alignment: .top, spacing: 14) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(hex: 0xEF4444).opacity(0.18))
+                            .fill(AppColors.destructive.opacity(0.18))
                         Image("shortcuts")
                             .resizable()
                             .scaledToFit()
@@ -29,14 +29,14 @@ struct ShortcutsBanner: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Set up an automation in Shortcuts app")
                             .foregroundColor(AppColors.textPrimary)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppTypography.bannerTitle)
                         Text("Auto-log tap-to-pay transactions.")
                             .foregroundColor(AppColors.textSecondary)
-                            .font(.system(size: 13))
+                            .font(AppTypography.bannerBody)
 
                         Button(action: { showingHowToAutoTracking = true }) {
                             Text("View Instructions")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppTypography.bannerCTA)
                                 .foregroundColor(AppColors.backgroundPrimary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 7)
@@ -53,7 +53,7 @@ struct ShortcutsBanner: View {
 
                 Button(action: { showingDismissBannerAlert = true }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppTypography.bannerClose)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 22, height: 22)
                         .background(AppColors.backgroundCardSoft)

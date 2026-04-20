@@ -19,11 +19,11 @@ struct MetricStat: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(AppTypography.metricLabel)
                 .tracking(1.1)
                 .foregroundColor(AppColors.textTertiary)
             Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(AppTypography.metricValue)
                 .foregroundColor(valueColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

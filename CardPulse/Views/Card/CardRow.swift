@@ -83,7 +83,7 @@ struct CardRow: View {
                         Text(card.spendingPeriodDisplay)
                     }
                 }
-                .font(.system(size: 13))
+                .font(AppTypography.bannerBody)
                 .foregroundColor(AppColors.textSecondary)
             }
 
@@ -102,14 +102,14 @@ struct CardRow: View {
                         .font(AppTypography.amount)
                         .foregroundColor(AppColors.textPrimary)
                     Text("/ \(targetAmount)")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppTypography.amountTarget)
                         .foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     StatusPill(status: resolvedStatus)
                     Text("\(card.daysRemaining)d left")
-                        .font(.system(size: 12))
+                        .font(AppTypography.rowMeta)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }

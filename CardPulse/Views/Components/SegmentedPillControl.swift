@@ -31,12 +31,12 @@ struct SegmentedPillControl<Option: Hashable>: View {
         } label: {
             Text(title(option))
                 .font(AppTypography.filterChip)
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.onAccent : AppColors.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(isSelected ? AppColors.accent : Color.clear)
+                        .fill(isSelected ? AppColors.accent : AppColors.clear)
                 )
         }
         .buttonStyle(.plain)

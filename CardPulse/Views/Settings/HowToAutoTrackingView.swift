@@ -39,7 +39,7 @@ struct HowToAutoTrackingView: View {
                 .background(AppColors.backgroundPrimary)
             }
             .padding()
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Set up Shortcut automation")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -70,7 +70,7 @@ private struct StepView: View {
                         .frame(height: 500)
                     VStack(spacing: 8) {
                         Image(systemName: "play.rectangle")
-                            .font(.system(size: 40))
+                            .font(AppTypography.iconXXLarge)
                             .foregroundColor(AppColors.textSecondary)
                         Text("Video not found")
                             .foregroundColor(AppColors.textSecondary)
@@ -79,12 +79,12 @@ private struct StepView: View {
             }
 
             Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
+                .font(AppTypography.headline)
+                .foregroundColor(AppColors.textPrimary)
 
             Text(description)
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)

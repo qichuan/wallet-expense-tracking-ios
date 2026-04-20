@@ -19,7 +19,7 @@ struct NotificationBanner: View {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(AppColors.brandGold.opacity(0.18))
                         Image(systemName: "bell.badge.fill")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppTypography.bannerIcon)
                             .foregroundColor(AppColors.brandGold)
                     }
                     .frame(width: 38, height: 38)
@@ -27,10 +27,10 @@ struct NotificationBanner: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Enable Notifications")
                             .foregroundColor(AppColors.textPrimary)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppTypography.bannerTitle)
                         Text("Get notified when tap‑to‑pay transactions are tracked")
                             .foregroundColor(AppColors.textSecondary)
-                            .font(.system(size: 13))
+                            .font(AppTypography.bannerBody)
 
                         Button(action: {
                             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
@@ -42,7 +42,7 @@ struct NotificationBanner: View {
                             }
                         }) {
                             Text("Enable")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppTypography.bannerCTA)
                                 .foregroundColor(AppColors.backgroundPrimary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 7)
@@ -63,7 +63,7 @@ struct NotificationBanner: View {
                     }
                 }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppTypography.bannerClose)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 22, height: 22)
                         .background(AppColors.backgroundCardSoft)

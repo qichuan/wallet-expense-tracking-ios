@@ -42,8 +42,8 @@ struct FilterSheetView: View {
                     // Card Filter Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Card Filter")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .font(AppTypography.headline)
+                            .foregroundColor(AppColors.textPrimary)
                         
                         Picker("Card", selection: $selectedCard) {
                             Text("All Cards").tag(nil as Card?)
@@ -62,8 +62,8 @@ struct FilterSheetView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("Date Range Filter")
-                                .font(.headline)
-                                .foregroundColor(.white)
+                                .font(AppTypography.headline)
+                                .foregroundColor(AppColors.textPrimary)
                             
                             Spacer()
                             
@@ -117,8 +117,8 @@ struct FilterSheetView: View {
                                 }
                             }
                             .padding()
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
+                            .background(AppColors.backgroundCard)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
                     
@@ -134,12 +134,12 @@ struct FilterSheetView: View {
                             localEndDate = Date()
                         }) {
                             Text("Clear All Filters")
-                                .font(.subheadline)
-                                .foregroundColor(.red)
+                                .font(AppTypography.subheadline)
+                                .foregroundColor(AppColors.destructive)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.red.opacity(0.1))
-                                .cornerRadius(12)
+                                .background(AppColors.destructiveSoft)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
                 }
@@ -153,7 +153,7 @@ struct FilterSheetView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.accent)
                 }
             }
         }

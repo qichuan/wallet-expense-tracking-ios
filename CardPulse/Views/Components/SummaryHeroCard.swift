@@ -19,7 +19,7 @@ struct SummaryHeroCard: View {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(totalAmount)
-                        .font(AppTypography.amountLarge)
+                        .font(AppTypography.amountHero)
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)

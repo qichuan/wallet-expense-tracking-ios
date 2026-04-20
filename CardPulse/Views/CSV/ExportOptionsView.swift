@@ -22,13 +22,13 @@ struct ExportOptionsView: View {
                 // Date Range Section
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Date Range")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(AppTypography.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     
                     VStack(spacing: 12) {
                         HStack {
                             Text("Start Date")
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(AppColors.textSecondary)
                             Spacer()
                             DatePicker("", selection: $startDate, displayedComponents: .date)
                                 .labelsHidden()
@@ -36,7 +36,7 @@ struct ExportOptionsView: View {
                         
                         HStack {
                             Text("End Date")
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(AppColors.textSecondary)
                             Spacer()
                             DatePicker("", selection: $endDate, displayedComponents: .date)
                                 .labelsHidden()
@@ -53,34 +53,34 @@ struct ExportOptionsView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         Text("Transactions to Export")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
+                            .font(AppTypography.headline)
+                            .foregroundColor(AppColors.textPrimary)
+
                         Spacer()
-                        
+
                         Text("\(transactions.count) transactions")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                    
+
                     if isLoading {
                         HStack {
                             ProgressView()
                                 .scaleEffect(0.8)
                             Text("Loading transactions...")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(AppTypography.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
                     } else if transactions.isEmpty {
                         VStack(spacing: 8) {
                             Image(systemName: "tray")
-                                .font(.system(size: 32))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(AppTypography.iconXLarge)
+                                .foregroundColor(AppColors.textTertiary)
                             Text("No transactions found in selected date range")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(AppTypography.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
                                 .multilineTextAlignment(.center)
                         }
                         .frame(maxWidth: .infinity)
@@ -93,8 +93,8 @@ struct ExportOptionsView: View {
                                 }
                                 if transactions.count > 10 {
                                     Text("... and \(transactions.count - 10) more transactions")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.7))
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textSecondary)
                                         .padding(.top, 8)
                                 }
                             }
@@ -106,7 +106,7 @@ struct ExportOptionsView: View {
                 HStack(spacing: 12) {
                     Button(action: { dismiss() }) {
                         Text("Cancel")
-                            .font(.headline)
+                            .font(AppTypography.headline)
                             .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -115,8 +115,8 @@ struct ExportOptionsView: View {
                     }
                     Button(action: { onExport() }) {
                         Text("Export")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .font(AppTypography.headline)
+                            .foregroundColor(AppColors.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(AppColors.accent)

@@ -100,7 +100,7 @@ struct HomeView: View {
                         BrandHeader(title: "Home") {
                             Button(action: { showingAddTransaction = true }) {
                                 Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 26))
+                                    .font(AppTypography.headerAction)
                                     .foregroundColor(AppColors.accent)
                             }
                         }
@@ -163,9 +163,9 @@ struct HomeView: View {
                 Button(action: { showingAllTransactions = true }) {
                     HStack(spacing: 4) {
                         Text("View all")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(AppTypography.bannerCTA)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppTypography.chevronSmall)
                     }
                     .foregroundColor(AppColors.accent)
                 }
@@ -189,10 +189,10 @@ struct HomeView: View {
         VStack(spacing: 8) {
             Text("No transactions yet")
                 .foregroundColor(AppColors.textPrimary)
-                .font(.headline)
+                .font(AppTypography.headline)
             Text("Tap + to add your first transaction")
                 .foregroundColor(AppColors.textSecondary)
-                .font(.caption)
+                .font(AppTypography.caption)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)

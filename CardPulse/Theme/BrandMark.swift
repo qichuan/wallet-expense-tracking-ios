@@ -28,7 +28,7 @@ struct BrandMark: View {
             HStack(spacing: size * 0.06) {
                 ForEach(0..<3, id: \.self) { i in
                     Capsule()
-                        .fill(Color.white)
+                        .fill(AppColors.onAccent)
                         .frame(width: size * 0.06, height: size * (0.14 + CGFloat(i) * 0.06))
                 }
             }
