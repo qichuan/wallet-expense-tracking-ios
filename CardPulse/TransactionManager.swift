@@ -67,6 +67,9 @@ class TransactionManager: ObservableObject {
         isLoading = true
         errorMessage = nil
 
+        for transaction in card.transactions {
+            transaction.card = nil
+        }
         modelContext.delete(card)
 
         do {

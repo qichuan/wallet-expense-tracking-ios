@@ -278,6 +278,9 @@ struct CardFormView: View {
 
     private func deleteCard() {
         guard let editing = cardToEdit else { return }
+        for transaction in editing.transactions {
+            transaction.card = nil
+        }
         modelContext.delete(editing)
         do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
         catch { print("Error deleting card: \(error)") }
