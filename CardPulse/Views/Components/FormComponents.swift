@@ -47,11 +47,15 @@ struct FormTextFieldRow: View {
             Text(title)
                 .font(AppTypography.rowTitle)
                 .foregroundColor(AppColors.textPrimary)
-                .frame(width: 96, alignment: .leading)
+                .frame(width: 72, alignment: .leading)
+            // Use leading alignment so trailing whitespace (e.g. typing a space
+            // between words) renders immediately. SwiftUI's TextField with
+            // `.multilineTextAlignment(.trailing)` defers trailing-space rendering
+            // until the next keystroke, which looks like the space was swallowed.
             TextField("", text: $text, prompt: Text(placeholder).foregroundColor(AppColors.textTertiary))
                 .keyboardType(keyboardType)
                 .foregroundColor(AppColors.textPrimary)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
                 .focused($isFocused)
                 .onChange(of: text) { _, newValue in
                     onChange?(newValue)

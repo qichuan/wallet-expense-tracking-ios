@@ -9,7 +9,6 @@ struct SummaryHeroCard: View {
     let periodLabel: String       // e.g. "TOTAL MIN-SPEND · NOVEMBER"
     let totalAmount: String       // formatted, e.g. "$11,020"
     let cardsHit: String          // e.g. "1/4"
-    let bonusEarned: String       // e.g. "$1,240"
     let nextDeadline: String      // e.g. "3d"
     let donutSlices: [DonutSlice]
 
@@ -27,7 +26,6 @@ struct SummaryHeroCard: View {
 
                     HStack(alignment: .top, spacing: 8) {
                         MetricStat(label: "Cards Hit", value: cardsHit)
-                        MetricStat(label: "Bonus Earned", value: bonusEarned, valueColor: AppColors.brandGold)
                         MetricStat(label: "Next Deadline", value: nextDeadline, valueColor: AppColors.accent)
                     }
                 }
@@ -47,7 +45,6 @@ struct SummaryHeroCard: View {
         periodLabel: "TOTAL MIN-SPEND · NOVEMBER",
         totalAmount: "$11,020",
         cardsHit: "1/4",
-        bonusEarned: "$1,240",
         nextDeadline: "3d",
         donutSlices: [
             DonutSlice(category: "A", amount: 700, color: AppColors.accent),
