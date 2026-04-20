@@ -11,6 +11,7 @@ struct SummaryHeroCard: View {
     let cardsHit: String          // e.g. "1/4"
     let nextDeadline: String      // e.g. "3d"
     let donutSlices: [DonutSlice]
+    let donutCenterLabel: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -31,8 +32,16 @@ struct SummaryHeroCard: View {
                 }
 
                 if !donutSlices.isEmpty {
-                    DonutChartView(slices: donutSlices, lineWidth: 14)
-                        .frame(width: 96, height: 96)
+                    ZStack {
+                        DonutChartView(slices: donutSlices, lineWidth: 14)
+                        Text(donutCenterLabel)
+                            .font(AppTypography.amountTarget)
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .padding(.horizontal, 18)
+                    }
+                    .frame(width: 96, height: 96)
                 }
             }
         }
@@ -49,7 +58,8 @@ struct SummaryHeroCard: View {
         donutSlices: [
             DonutSlice(category: "A", amount: 700, color: AppColors.accent),
             DonutSlice(category: "B", amount: 300, color: AppColors.brandGold)
-        ]
+        ],
+        donutCenterLabel: "$2,300"
     )
     .padding()
     .background(AppColors.backgroundPrimary)
