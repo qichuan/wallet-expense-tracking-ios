@@ -31,8 +31,6 @@ struct WelcomeStepView: View {
               icon: "car", tint: AppColors.categoryTravel, isMuted: false),
         .init(merchant: "Train", date: "29 Mar", amount: "40.00",
               icon: "tram", tint: AppColors.categoryTravel, isMuted: true),
-        .init(merchant: "Headphones", date: "28 Mar", amount: "120.00",
-              icon: "headphones", tint: AppColors.categoryShopping, isMuted: true)
     ]
 
     var body: some View {
@@ -118,7 +116,7 @@ struct WelcomeStepView: View {
 
             Spacer()
 
-            Text("\(tx.amount)$")
+            Text("$\(tx.amount)")
                 .font(AppTypography.amountTransaction)
                 .foregroundColor(AppColors.textPrimary)
         }
