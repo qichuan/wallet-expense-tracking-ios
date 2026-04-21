@@ -67,7 +67,7 @@ struct WelcomeStepView: View {
 
                 Spacer().frame(height: 28)
 
-                OnboardingPrimaryButton(title: "Get Started", enabled: true, action: onContinue)
+                OnboardingPrimaryButton(title: "Continue", enabled: true, action: onContinue)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 32)
             }

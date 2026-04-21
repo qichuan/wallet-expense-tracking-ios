@@ -35,6 +35,7 @@ struct AutomationStepView: View {
 
     @State private var selectedIndex = 0
     @State private var hasOpenedShortcuts = false
+    @State private var startedResources: Set<String> = []
     @Environment(\.scenePhase) private var scenePhase
     @State private var players = OnboardingVideoPlayers()
 
@@ -42,7 +43,7 @@ struct AutomationStepView: View {
         OnboardingScaffold(
             step: 4,
             totalSteps: totalSteps,
-            title: "Automate from Wallet",
+            title: "Set up Automation",
             description: "Let CardPulse log every Apple Wallet purchase automatically. It takes about a minute to set up.",
             primaryTitle: "Open Shortcuts",
             primaryEnabled: true,
@@ -80,10 +81,18 @@ struct AutomationStepView: View {
         .onAppear {
             players.configureAudioSession()
             players.load(resources: videoSteps.map { $0.resource })
-            players.play(index: selectedIndex)
+            // Intentionally do not autoplay — the user taps the play overlay
+            // on each video to start it.
         }
         .onChange(of: selectedIndex) { _, newValue in
-            players.play(index: newValue)
+            guard newValue >= 0, newValue < videoSteps.count else { return }
+            let resource = videoSteps[newValue].resource
+            // Pause every player; only resume the swiped-in video if it was
+            // previously started by the user.
+            players.pauseAll()
+            if startedResources.contains(resource) {
+                players.play(resource: resource)
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             // User left to Shortcuts and returned → complete onboarding.
@@ -99,8 +108,25 @@ struct AutomationStepView: View {
     @ViewBuilder
     private func playerView(for step: VideoStep) -> some View {
         if let player = players.player(for: step.resource) {
-            PiPPlayerView(player: player) { controller in
-                players.registerPiPController(controller, for: step.resource)
+            ZStack {
+                PiPPlayerView(player: player) { controller in
+                    players.registerPiPController(controller, for: step.resource)
+                }
+
+                if !startedResources.contains(step.resource) {
+                    Button {
+                        players.play(resource: step.resource)
+                        startedResources.insert(step.resource)
+                    } label: {
+                        ZStack {
+                            Color.black.opacity(0.35)
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 64, weight: .regular))
+                                .foregroundStyle(.white, .black.opacity(0.35))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         } else {
             ZStack {
@@ -119,12 +145,17 @@ struct AutomationStepView: View {
 
     private func openShortcuts() {
         hasOpenedShortcuts = true
-        // Start PiP for the visible video before backgrounding, so it floats
-        // on top of Shortcuts as the user sets up the automation.
-        players.startPiP(forResourceAt: selectedIndex)
+        let resource = videoSteps[selectedIndex].resource
+        let shouldPiP = startedResources.contains(resource)
 
-        // Give PiP a beat to start before we yield focus to Shortcuts.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        if shouldPiP {
+            // Start PiP for the visible video before backgrounding, so it
+            // floats on top of Shortcuts as the user sets up the automation.
+            players.startPiP(forResourceAt: selectedIndex)
+        }
+
+        let delay: TimeInterval = shouldPiP ? 0.2 : 0.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             if let url = URL(string: "shortcuts://"), UIApplication.shared.canOpenURL(url) {
                 UIApplication.shared.open(url)
             } else {
@@ -180,14 +211,23 @@ final class OnboardingVideoPlayers {
 
     func play(index: Int) {
         guard index >= 0, index < orderedResources.count else { return }
-        let active = orderedResources[index]
-        for (resource, player) in playersByResource {
-            if resource == active {
+        play(resource: orderedResources[index])
+    }
+
+    func play(resource: String) {
+        for (key, player) in playersByResource {
+            if key == resource {
                 player.seek(to: .zero)
                 player.play()
             } else {
                 player.pause()
             }
+        }
+    }
+
+    func pauseAll() {
+        for (_, player) in playersByResource {
+            player.pause()
         }
     }
 
