@@ -43,8 +43,35 @@ struct CardPulseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            RootView()
         }
         .modelContainer(sharedModelContainer)
+    }
+}
+
+private struct RootView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
+    #if DEBUG
+    @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
+    #endif
+
+    private var shouldShowOnboarding: Bool {
+        #if DEBUG
+        if debugAlwaysShowOnboarding { return true }
+        #endif
+        // Users who already picked a currency in the pre-onboarding-flow era
+        // shouldn't be pushed through onboarding again.
+        if hasChosenDefaultCurrency { return false }
+        return !hasCompletedOnboarding
+    }
+
+    var body: some View {
+        if shouldShowOnboarding {
+            OnboardingFlow()
+                .preferredColorScheme(.dark)
+        } else {
+            MainTabView()
+        }
     }
 }

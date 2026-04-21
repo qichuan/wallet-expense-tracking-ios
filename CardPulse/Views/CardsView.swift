@@ -145,12 +145,14 @@ struct CardsView: View {
             Text("No cards yet")
                 .foregroundColor(AppColors.textPrimary)
                 .font(AppTypography.headline)
-            Text("Tap + to add your first card")
+            Text("Set up automation and see your first card here, or tap + to manually add one.")
                 .foregroundColor(AppColors.textSecondary)
                 .font(AppTypography.caption)
+                .multilineTextAlignment(.center)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 32)
     }
 }
 

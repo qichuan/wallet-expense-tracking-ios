@@ -28,14 +28,16 @@ struct CurrencyStepView: View {
         return "USD"
     }
 
-    private var preselected: CurrencyInfo? {
-        CurrencyUtils.allCurrencies.first { $0.code == selectedCode }
-    }
-
-    private var otherCurrencies: [CurrencyInfo] {
-        CurrencyUtils.allCurrencies
-            .filter { $0.code != selectedCode }
-            .sorted { $0.name < $1.name }
+    private var currencies: [CurrencyInfo] {
+        let sorted = CurrencyUtils.allCurrencies.sorted { $0.name < $1.name }
+        let pinned = Self.localePreselectedCode()
+        guard let idx = sorted.firstIndex(where: { $0.code == pinned }) else {
+            return sorted
+        }
+        var reordered = sorted
+        let top = reordered.remove(at: idx)
+        reordered.insert(top, at: 0)
+        return reordered
     }
 
     var body: some View {
@@ -51,28 +53,22 @@ struct CurrencyStepView: View {
             onPrimary: save
         ) {
             ScrollView {
-                VStack(spacing: 14) {
-                    if let preselected {
-                        preselectedCard(preselected)
-                    }
+                VStack(spacing: 0) {
+                    ForEach(Array(currencies.enumerated()), id: \.element.id) { idx, info in
+                        Button { selectedCode = info.code } label: {
+                            currencyRow(info, selected: info.code == selectedCode)
+                        }
+                        .buttonStyle(.plain)
 
-                    VStack(spacing: 0) {
-                        ForEach(Array(otherCurrencies.enumerated()), id: \.element.id) { idx, info in
-                            Button { selectedCode = info.code } label: {
-                                currencyRow(info)
-                            }
-                            .buttonStyle(.plain)
-
-                            if idx != otherCurrencies.count - 1 {
-                                Divider()
-                                    .background(AppColors.divider)
-                                    .padding(.leading, 20)
-                            }
+                        if idx != currencies.count - 1 {
+                            Divider()
+                                .background(AppColors.divider)
+                                .padding(.leading, 20)
                         }
                     }
-                    .background(AppColors.backgroundCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
+                .background(AppColors.backgroundCard)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
             }
@@ -85,31 +81,7 @@ struct CurrencyStepView: View {
     }
 
     @ViewBuilder
-    private func preselectedCard(_ info: CurrencyInfo) -> some View {
-        HStack(spacing: 12) {
-            Text(info.code)
-                .font(AppTypography.rowTitle)
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 54, alignment: .leading)
-
-            Text(info.name)
-                .font(AppTypography.rowTitle)
-                .foregroundColor(AppColors.textPrimary)
-
-            Spacer()
-
-            Image(systemName: "checkmark")
-                .font(AppTypography.iconMedium)
-                .foregroundColor(AppColors.textPrimary)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func currencyRow(_ info: CurrencyInfo) -> some View {
+    private func currencyRow(_ info: CurrencyInfo, selected: Bool) -> some View {
         HStack(spacing: 12) {
             Text(info.code)
                 .font(AppTypography.rowTitle)
@@ -122,6 +94,12 @@ struct CurrencyStepView: View {
                 .lineLimit(1)
 
             Spacer()
+
+            if selected {
+                Image(systemName: "checkmark")
+                    .font(AppTypography.iconMedium)
+                    .foregroundColor(AppColors.textPrimary)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)

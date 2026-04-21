@@ -44,11 +44,19 @@ struct TransactionFormView: View {
         return enabled
     }
 
-    /// Names shown in the category picker — union of built-in names and user records.
-    /// Falls back to `MerchantUtils.defaultCategories` if the store hasn't seeded yet.
+    /// Names shown in the category picker.
+    /// Uses the @Query'd `SpendingCategory` list (falling back to `MerchantUtils.defaultCategories`
+    /// before the store has been seeded). If the currently-selected category is not in the
+    /// list (orphan — e.g. legacy "Dining Out" or a user-deleted custom), it's prepended so
+    /// the Picker can still render it.
     private var categoryNames: [String] {
         let stored = categoryRecords.map { $0.name }
-        return stored.isEmpty ? MerchantUtils.defaultCategories : stored
+        let base = stored.isEmpty ? MerchantUtils.defaultCategories : stored
+        if !category.isEmpty,
+           !base.contains(where: { $0.caseInsensitiveCompare(category) == .orderedSame }) {
+            return [category] + base
+        }
+        return base
     }
 
     init(transaction: Transaction? = nil) {
@@ -271,6 +279,17 @@ struct TransactionFormView: View {
                 .font(AppTypography.navButton)
                 .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
                 .disabled(!isValid)
+        }
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button {
+                merchantFocused = false
+                amountFocused = false
+                noteFocused = false
+            } label: {
+                Image(systemName: "keyboard.chevron.compact.down")
+                    .foregroundColor(AppColors.accent)
+            }
         }
     }
 

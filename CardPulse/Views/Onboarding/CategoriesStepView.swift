@@ -17,18 +17,6 @@ struct CategoriesStepView: View {
 
     @State private var showingAddSheet = false
 
-    /// Soft cap that matches the design copy ("Free plan: up to 7 categories").
-    /// Displayed but not enforced — built-ins count toward the total.
-    private let softCap = 7
-
-    private var customCount: Int {
-        categories.filter { !$0.isBuiltIn }.count
-    }
-
-    private var totalCount: Int {
-        categories.count
-    }
-
     var body: some View {
         OnboardingScaffold(
             step: 2,
@@ -43,19 +31,6 @@ struct CategoriesStepView: View {
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    HStack(spacing: 4) {
-                        Text("Free plan: up to \(softCap) categories.")
-                            .font(AppTypography.subheadline)
-                            .foregroundColor(AppColors.textPrimary)
-                        Text("Learn more.")
-                            .font(AppTypography.subheadline.weight(.semibold))
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-
-                    Text("\(totalCount) / \(softCap) categories used.")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-
                     Button {
                         showingAddSheet = true
                     } label: {

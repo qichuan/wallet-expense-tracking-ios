@@ -25,7 +25,7 @@ struct NotificationsStepView: View {
             step: 3,
             totalSteps: totalSteps,
             title: "Get notified",
-            description: "Get more out of CardPulse by enabling notifications. We'll send you daily reminders, insights and more. You can always change your notification settings later.",
+            description: "Get notified when tap-to-pay transactions are tracked.",
             primaryTitle: "Get Started",
             primaryEnabled: true,
             onBack: onBack,

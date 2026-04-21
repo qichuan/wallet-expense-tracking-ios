@@ -5,31 +5,38 @@
 
 import SwiftUI
 import UIKit
+import AVKit
+import AVFoundation
 
 struct AutomationStepView: View {
     let totalSteps: Int
     let onBack: () -> Void
     let onFinish: () -> Void
 
-    private struct AutomationStep: Identifiable {
+    private struct VideoStep: Identifiable {
         let id = UUID()
-        let index: Int
-        let icon: String
         let title: String
-        let detail: String
+        let description: String
+        let resource: String
     }
 
-    private let steps: [AutomationStep] = [
-        .init(index: 1, icon: "app.connected.to.app.below.fill",
-              title: "Open Shortcuts",
-              detail: "In the Shortcuts app, go to Automations and tap “New Automation”."),
-        .init(index: 2, icon: "wallet.pass",
-              title: "Pick Wallet as the trigger",
-              detail: "Select Wallet from the list, then choose “Run immediately”."),
-        .init(index: 3, icon: "sparkles",
-              title: "Run CardPulse on tap",
-              detail: "Add the “Log Wallet Transaction” action and connect Merchant, Amount, and Card to Shortcut Input.")
+    private let videoSteps: [VideoStep] = [
+        .init(
+            title: "Step 1",
+            description: "Open Shortcuts app > Go to 'Automations' > Tap 'New Automation' > Select 'Wallet' from the list > Scroll down and select 'Run immediately' > Tap 'Next'",
+            resource: "Step1"
+        ),
+        .init(
+            title: "Step 2",
+            description: "Select 'Create New Shortcut' > Search 'CardPulse' > Select 'Log Wallet Transaction' > Tap 'Merchant Name' > Select 'Shortcut Input' > Tap 'Shortcut Input' > Select 'Merchant' from the list > Repeat the same for 'Amount' and 'Card Name'",
+            resource: "Step2"
+        )
     ]
+
+    @State private var selectedIndex = 0
+    @State private var hasOpenedShortcuts = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var players = OnboardingVideoPlayers()
 
     var body: some View {
         OnboardingScaffold(
@@ -45,60 +52,211 @@ struct AutomationStepView: View {
             secondaryTitle: "I'll do it later",
             onSecondary: onFinish
         ) {
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(steps) { step in
-                        stepRow(step)
+            VStack(spacing: 12) {
+                TabView(selection: $selectedIndex) {
+                    ForEach(Array(videoSteps.enumerated()), id: \.element.id) { idx, step in
+                        VStack(alignment: .leading, spacing: 12) {
+                            playerView(for: step)
+                                .frame(maxHeight: .infinity)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                            Text(step.title)
+                                .font(AppTypography.headline)
+                                .foregroundColor(AppColors.textPrimary)
+
+                            Text(step.description)
+                                .font(AppTypography.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, 20)
+                        .tag(idx)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
             }
+        }
+        .onAppear {
+            players.configureAudioSession()
+            players.load(resources: videoSteps.map { $0.resource })
+            players.play(index: selectedIndex)
+        }
+        .onChange(of: selectedIndex) { _, newValue in
+            players.play(index: newValue)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // User left to Shortcuts and returned → complete onboarding.
+            if newPhase == .active, hasOpenedShortcuts {
+                onFinish()
+            }
+        }
+        .onDisappear {
+            players.teardown()
         }
     }
 
     @ViewBuilder
-    private func stepRow(_ step: AutomationStep) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+    private func playerView(for step: VideoStep) -> some View {
+        if let player = players.player(for: step.resource) {
+            PiPPlayerView(player: player) { controller in
+                players.registerPiPController(controller, for: step.resource)
+            }
+        } else {
             ZStack {
-                Circle().fill(AppColors.accentSoft)
-                Text("\(step.index)")
-                    .font(AppTypography.metricValue)
-                    .foregroundColor(AppColors.accent)
-            }
-            .frame(width: 36, height: 36)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Image(systemName: step.icon)
-                        .font(AppTypography.iconMedium)
-                        .foregroundColor(AppColors.accent)
-                    Text(step.title)
-                        .font(AppTypography.rowTitle)
-                        .foregroundColor(AppColors.textPrimary)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.backgroundCard)
+                VStack(spacing: 8) {
+                    Image(systemName: "play.rectangle")
+                        .font(AppTypography.iconXXLarge)
+                        .foregroundColor(AppColors.textSecondary)
+                    Text("Video not found")
+                        .foregroundColor(AppColors.textSecondary)
                 }
-                Text(step.detail)
-                    .font(AppTypography.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.backgroundCard)
-        )
     }
 
     private func openShortcuts() {
-        if let url = URL(string: "shortcuts://"), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
+        hasOpenedShortcuts = true
+        // Start PiP for the visible video before backgrounding, so it floats
+        // on top of Shortcuts as the user sets up the automation.
+        players.startPiP(forResourceAt: selectedIndex)
+
+        // Give PiP a beat to start before we yield focus to Shortcuts.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if let url = URL(string: "shortcuts://"), UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+            } else {
+                onFinish()
+            }
         }
-        // Completing onboarding regardless — user opens Shortcuts and returns to CardPulse already onboarded.
-        onFinish()
     }
+}
+
+// MARK: - Shared player bag
+
+@Observable
+final class OnboardingVideoPlayers {
+    @ObservationIgnored private var playersByResource: [String: AVPlayer] = [:]
+    @ObservationIgnored private var pipControllers: [String: AVPictureInPictureController] = [:]
+    @ObservationIgnored private var orderedResources: [String] = []
+    @ObservationIgnored private var loopObservers: [NSObjectProtocol] = []
+
+    func configureAudioSession() {
+        // `.playback` with mixWithOthers keeps PiP audio silent while letting
+        // the floating video keep rendering frames in the background.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
+
+    func load(resources: [String]) {
+        orderedResources = resources
+        for resource in resources where playersByResource[resource] == nil {
+            guard let url = Bundle.main.url(forResource: resource, withExtension: "mp4") else { continue }
+            let player = AVPlayer(url: url)
+            player.isMuted = true
+            player.actionAtItemEnd = .none
+            let observer = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: player.currentItem,
+                queue: .main
+            ) { [weak player] _ in
+                player?.seek(to: .zero)
+                player?.play()
+            }
+            loopObservers.append(observer)
+            playersByResource[resource] = player
+        }
+    }
+
+    func player(for resource: String) -> AVPlayer? {
+        playersByResource[resource]
+    }
+
+    func registerPiPController(_ controller: AVPictureInPictureController, for resource: String) {
+        pipControllers[resource] = controller
+    }
+
+    func play(index: Int) {
+        guard index >= 0, index < orderedResources.count else { return }
+        let active = orderedResources[index]
+        for (resource, player) in playersByResource {
+            if resource == active {
+                player.seek(to: .zero)
+                player.play()
+            } else {
+                player.pause()
+            }
+        }
+    }
+
+    func startPiP(forResourceAt index: Int) {
+        guard AVPictureInPictureController.isPictureInPictureSupported(),
+              index >= 0, index < orderedResources.count else { return }
+        let resource = orderedResources[index]
+        guard let controller = pipControllers[resource] else { return }
+        if controller.isPictureInPicturePossible {
+            controller.startPictureInPicture()
+        }
+    }
+
+    func teardown() {
+        for observer in loopObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        loopObservers.removeAll()
+        for (_, player) in playersByResource {
+            player.pause()
+        }
+        pipControllers.removeAll()
+        playersByResource.removeAll()
+        orderedResources.removeAll()
+    }
+}
+
+// MARK: - UIView-backed player with its own PiP controller
+
+struct PiPPlayerView: UIViewRepresentable {
+    let player: AVPlayer
+    let onControllerReady: (AVPictureInPictureController) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> PlayerContainerView {
+        let view = PlayerContainerView()
+        view.backgroundColor = .black
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
+
+        if AVPictureInPictureController.isPictureInPictureSupported() {
+            let pip = AVPictureInPictureController(playerLayer: view.playerLayer)
+            pip?.canStartPictureInPictureAutomaticallyFromInline = true
+            pip?.delegate = context.coordinator
+            context.coordinator.pipController = pip
+            if let pip {
+                onControllerReady(pip)
+            }
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerContainerView, context: Context) {
+        if uiView.playerLayer.player !== player {
+            uiView.playerLayer.player = player
+        }
+    }
+
+    final class Coordinator: NSObject, AVPictureInPictureControllerDelegate {
+        var pipController: AVPictureInPictureController?
+    }
+}
+
+final class PlayerContainerView: UIView {
+    override static var layerClass: AnyClass { AVPlayerLayer.self }
+    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
 }
 
 #Preview {

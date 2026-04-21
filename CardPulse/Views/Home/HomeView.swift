@@ -17,7 +17,6 @@ struct HomeView: View {
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     @State private var showingAddTransaction = false
-    @State private var showingHowToAutoTracking = false
     @State private var showingAllTransactions = false
     @State private var selectedTransaction: Transaction?
 
@@ -142,10 +141,6 @@ struct HomeView: View {
                             .padding(.horizontal, 20)
                         }
 
-                        ShortcutsBanner(showingHowToAutoTracking: $showingHowToAutoTracking)
-
-                        NotificationBanner()
-
                         if transactions.isEmpty {
                             emptyState
                         } else {
@@ -159,9 +154,6 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingAddTransaction) {
             TransactionFormView()
-        }
-        .sheet(isPresented: $showingHowToAutoTracking) {
-            HowToAutoTrackingView()
         }
         .sheet(isPresented: $showingAllTransactions) {
             NavigationStack {
@@ -216,12 +208,13 @@ struct HomeView: View {
             Text("No transactions yet")
                 .foregroundColor(AppColors.textPrimary)
                 .font(AppTypography.headline)
-            Text("Tap + to add your first transaction")
+            Text("Set up automation and see your first transaction here, or tap + to manually add one.")
                 .foregroundColor(AppColors.textSecondary)
                 .font(AppTypography.caption)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
         .padding(.top, 40)
     }
 }

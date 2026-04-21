@@ -39,8 +39,14 @@ struct WalletTransactionIntent: AppIntent {
             return .result()
         }
 
-        // Persist a new Transaction into SwiftData
-        let container = try ModelContainer(for: Card.self, Transaction.self)
+        // Persist a new Transaction into SwiftData. Must match the main app's
+        // schema + migration plan so the intent can open the same store on a
+        // user who has already migrated to V3.
+        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self])
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: CardPulseMigrationPlan.self
+        )
         let context = ModelContext(container)
 
         // Find card by name or create it if missing

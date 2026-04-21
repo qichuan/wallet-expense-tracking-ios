@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TransactionRow: View {
     let transaction: Transaction
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+    @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
 
     private static let dateFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -26,11 +28,11 @@ struct TransactionRow: View {
     }()
 
     private var merchantIcon: String {
-        MerchantUtils.icon(for: transaction.category)
+        MerchantUtils.icon(for: transaction.category, in: categoryRecords)
     }
 
     private var iconColor: Color {
-        MerchantUtils.color(for: transaction.category)
+        MerchantUtils.color(for: transaction.category, in: categoryRecords)
     }
 
     private var cachedRates: [String: Double] {
