@@ -89,10 +89,6 @@ struct MainTabView: View {
         }
         .tint(AppColors.accent)
         .preferredColorScheme(.dark)
-        .fullScreenCover(isPresented: .constant(!hasCompletedOnboarding)) {
-            OnboardingFlow()
-                .interactiveDismissDisabled(true)
-        }
         .onAppear {
             writeWidgetData()
             CurrencyUtils.ensureDefaultCurrenciesEnabled()

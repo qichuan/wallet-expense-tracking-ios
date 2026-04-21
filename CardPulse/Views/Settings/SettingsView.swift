@@ -45,6 +45,10 @@ struct SettingsView: View {
     @State private var showingHowToAutoTracking = false
     @State private var showingTroubleshooting = false
     @State private var showingCategoryManager = false
+
+    #if DEBUG
+    @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
+    #endif
     
     private var appVersion: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -120,6 +124,15 @@ struct SettingsView: View {
                                 )
                                 SettingsStaticRow(title: "Version", value: appVersion)
                             }
+
+                            #if DEBUG
+                            SettingsSection(title: "Debug") {
+                                SettingsToggleRow(
+                                    title: "Always show onboarding",
+                                    isOn: $debugAlwaysShowOnboarding
+                                )
+                            }
+                            #endif
                         }
                         .padding(.bottom, 40)
                     }
@@ -451,6 +464,25 @@ struct SettingsStaticRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+    }
+}
+
+struct SettingsToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(AppColors.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 }
 

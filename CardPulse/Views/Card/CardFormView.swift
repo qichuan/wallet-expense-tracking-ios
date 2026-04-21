@@ -242,6 +242,16 @@ struct CardFormView: View {
                 .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
                 .disabled(!isValid)
         }
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button {
+                nameFocused = false
+                amountFocused = false
+            } label: {
+                Image(systemName: "keyboard.chevron.compact.down")
+                    .foregroundColor(AppColors.accent)
+            }
+        }
     }
 
     // MARK: - Actions

@@ -13,6 +13,7 @@ struct AnalysisView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var transactions: [Transaction]
     @Query private var cards: [Card]
+    @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
@@ -119,16 +120,27 @@ struct AnalysisView: View {
 
     // MARK: - Donut data
 
-    private var donutSlices: [DonutSlice] {
-        let grouped = Dictionary(grouping: filteredTransactions) { tx in
-            MerchantUtils.normalizedCategory(for: tx.category)
+    /// Category string as it should appear in analytics groupings:
+    /// - matches a `SpendingCategory` record → use its stored name
+    /// - no match and raw is empty/nil → "Other"
+    /// - no match but raw is non-empty → raw (preserves legacy/orphan names)
+    private func groupingCategory(for tx: Transaction) -> String {
+        let raw = tx.category?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if raw.isEmpty { return "Other" }
+        if let match = categoryRecords.first(where: { $0.name.caseInsensitiveCompare(raw) == .orderedSame }) {
+            return match.name
         }
+        return raw
+    }
+
+    private var donutSlices: [DonutSlice] {
+        let grouped = Dictionary(grouping: filteredTransactions) { groupingCategory(for: $0) }
         return grouped.map { category, txns in
             let total = txns.reduce(0.0) { $0 + amountInDefault($1) }
             return DonutSlice(
                 category: category,
                 amount: Decimal(total),
-                color: MerchantUtils.color(for: category)
+                color: MerchantUtils.color(for: category, in: categoryRecords)
             )
         }
         .sorted { $0.amount > $1.amount }
@@ -201,9 +213,12 @@ struct AnalysisView: View {
             }
 
             let bucketTx = filteredTransactions.filter { $0.date >= bucketStart && $0.date < bucketEnd }
-            let byCategory = Dictionary(grouping: bucketTx) { MerchantUtils.normalizedCategory(for: $0.category) }
+            let byCategory = Dictionary(grouping: bucketTx) { groupingCategory(for: $0) }
 
-            for cat in MerchantUtils.defaultCategories {
+            let seriesCategories = categoryRecords.isEmpty
+                ? MerchantUtils.defaultCategories
+                : categoryRecords.map { $0.name }
+            for cat in seriesCategories {
                 let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
                 result.append(StackedItem(bucketLabel: label, category: cat, amount: total))
             }
@@ -407,7 +422,7 @@ struct AnalysisView: View {
                         x: .value("Bucket", item.bucketLabel),
                         y: .value("Amount", item.amount)
                     )
-                    .foregroundStyle(MerchantUtils.color(for: item.category))
+                    .foregroundStyle(MerchantUtils.color(for: item.category, in: categoryRecords))
                     .opacity(item.amount > 0 ? 1.0 : 0.0)
                 }
                 .chartLegend(.hidden)
