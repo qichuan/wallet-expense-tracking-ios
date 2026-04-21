@@ -55,23 +55,33 @@ private struct RootView: View {
     #if DEBUG
     @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
     #endif
+    @State private var didMigrate = false
 
     private var shouldShowOnboarding: Bool {
-        #if DEBUG
-        if debugAlwaysShowOnboarding { return true }
-        #endif
-        // Users who already picked a currency in the pre-onboarding-flow era
-        // shouldn't be pushed through onboarding again.
-        if hasChosenDefaultCurrency { return false }
+//        #if DEBUG
+//        if debugAlwaysShowOnboarding { return !hasCompletedCurrentOnboaringSession }
+//        #endif
         return !hasCompletedOnboarding
     }
 
     var body: some View {
-        if shouldShowOnboarding {
-            OnboardingFlow()
-                .preferredColorScheme(.dark)
-        } else {
-            MainTabView()
+        Group {
+            if shouldShowOnboarding {
+                OnboardingFlow()
+                    .preferredColorScheme(.dark)
+            } else {
+                MainTabView()
+            }
+        }
+        .task {
+            // One-shot migration for legacy users who picked a currency before
+            // the onboarding flow existed — mark their onboarding complete so
+            // they aren't pushed through it again.
+            guard !didMigrate else { return }
+            didMigrate = true
+            if hasChosenDefaultCurrency && !hasCompletedOnboarding {
+                hasCompletedOnboarding = true
+            }
         }
     }
 }

@@ -10,7 +10,6 @@ struct CategoriesStepView: View {
     let totalSteps: Int
     let onBack: () -> Void
     let onContinue: () -> Void
-    let onSkip: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SpendingCategory.sortOrder) private var categories: [SpendingCategory]
@@ -26,7 +25,7 @@ struct CategoriesStepView: View {
             primaryTitle: "Continue",
             primaryEnabled: true,
             onBack: onBack,
-            onSkip: onSkip,
+            onSkip: nil,
             onPrimary: onContinue
         ) {
             ScrollView {
@@ -251,8 +250,7 @@ struct AddCategorySheet: View {
     CategoriesStepView(
         totalSteps: 4,
         onBack: {},
-        onContinue: {},
-        onSkip: {}
+        onContinue: {}
     )
     .modelContainer(ModelContainer.createMockContainer())
 }

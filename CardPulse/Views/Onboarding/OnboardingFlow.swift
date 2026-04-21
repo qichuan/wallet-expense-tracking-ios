@@ -38,8 +38,7 @@ struct OnboardingFlow: View {
                         CategoriesStepView(
                             totalSteps: totalSteps,
                             onBack: { popLast() },
-                            onContinue: { path.append(.notifications) },
-                            onSkip: { path.append(.notifications) }
+                            onContinue: { path.append(.notifications) }
                         )
                     case .notifications:
                         NotificationsStepView(
