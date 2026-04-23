@@ -9,8 +9,7 @@ import AVKit
 import AVFoundation
 
 struct AutomationStepView: View {
-    let totalSteps: Int
-    let onBack: () -> Void
+    let onRegisterPrimaryAction: (@escaping () -> Void) -> Void
     let onFinish: () -> Void
 
     private struct VideoStep: Identifiable {
@@ -40,19 +39,23 @@ struct AutomationStepView: View {
     @State private var players = OnboardingVideoPlayers()
 
     var body: some View {
-        OnboardingScaffold(
-            step: 4,
-            totalSteps: totalSteps,
-            title: "Set up Automation",
-            description: "Let CardPulse log every Apple Wallet purchase automatically. It takes about a minute to set up.",
-            primaryTitle: "Open Shortcuts",
-            primaryEnabled: true,
-            onBack: onBack,
-            onSkip: nil,
-            onPrimary: openShortcuts,
-            secondaryTitle: "I'll do it later",
-            onSecondary: onFinish
-        ) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Set up Automation")
+                    .font(AppTypography.screenTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Let CardPulse log every Apple Wallet purchase automatically. It takes about a minute to set up.")
+                    .font(AppTypography.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
+
             VStack(spacing: 12) {
                 TabView(selection: $selectedIndex) {
                     ForEach(Array(videoSteps.enumerated()), id: \.element.id) { idx, step in
@@ -81,21 +84,17 @@ struct AutomationStepView: View {
         .onAppear {
             players.configureAudioSession()
             players.load(resources: videoSteps.map { $0.resource })
-            // Intentionally do not autoplay — the user taps the play overlay
-            // on each video to start it.
+            onRegisterPrimaryAction(openShortcuts)
         }
         .onChange(of: selectedIndex) { _, newValue in
             guard newValue >= 0, newValue < videoSteps.count else { return }
             let resource = videoSteps[newValue].resource
-            // Pause every player; only resume the swiped-in video if it was
-            // previously started by the user.
             players.pauseAll()
             if startedResources.contains(resource) {
                 players.play(resource: resource)
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
-            // User left to Shortcuts and returned → complete onboarding.
             if newPhase == .active, hasOpenedShortcuts {
                 onFinish()
             }
@@ -149,8 +148,6 @@ struct AutomationStepView: View {
         let shouldPiP = startedResources.contains(resource)
 
         if shouldPiP {
-            // Start PiP for the visible video before backgrounding, so it
-            // floats on top of Shortcuts as the user sets up the automation.
             players.startPiP(forResourceAt: selectedIndex)
         }
 
@@ -175,8 +172,6 @@ final class OnboardingVideoPlayers {
     @ObservationIgnored private var loopObservers: [NSObjectProtocol] = []
 
     func configureAudioSession() {
-        // `.playback` with mixWithOthers keeps PiP audio silent while letting
-        // the floating video keep rendering frames in the background.
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
     }
@@ -201,9 +196,7 @@ final class OnboardingVideoPlayers {
         }
     }
 
-    func player(for resource: String) -> AVPlayer? {
-        playersByResource[resource]
-    }
+    func player(for resource: String) -> AVPlayer? { playersByResource[resource] }
 
     func registerPiPController(_ controller: AVPictureInPictureController, for resource: String) {
         pipControllers[resource] = controller
@@ -216,54 +209,41 @@ final class OnboardingVideoPlayers {
 
     func play(resource: String) {
         for (key, player) in playersByResource {
-            if key == resource {
-                player.seek(to: .zero)
-                player.play()
-            } else {
-                player.pause()
-            }
+            if key == resource { player.seek(to: .zero); player.play() }
+            else { player.pause() }
         }
     }
 
     func pauseAll() {
-        for (_, player) in playersByResource {
-            player.pause()
-        }
+        playersByResource.values.forEach { $0.pause() }
     }
 
     func startPiP(forResourceAt index: Int) {
         guard AVPictureInPictureController.isPictureInPictureSupported(),
               index >= 0, index < orderedResources.count else { return }
         let resource = orderedResources[index]
-        guard let controller = pipControllers[resource] else { return }
-        if controller.isPictureInPicturePossible {
-            controller.startPictureInPicture()
-        }
+        guard let controller = pipControllers[resource],
+              controller.isPictureInPicturePossible else { return }
+        controller.startPictureInPicture()
     }
 
     func teardown() {
-        for observer in loopObservers {
-            NotificationCenter.default.removeObserver(observer)
-        }
+        loopObservers.forEach { NotificationCenter.default.removeObserver($0) }
         loopObservers.removeAll()
-        for (_, player) in playersByResource {
-            player.pause()
-        }
+        playersByResource.values.forEach { $0.pause() }
         pipControllers.removeAll()
         playersByResource.removeAll()
         orderedResources.removeAll()
     }
 }
 
-// MARK: - UIView-backed player with its own PiP controller
+// MARK: - UIView-backed player with PiP
 
 struct PiPPlayerView: UIViewRepresentable {
     let player: AVPlayer
     let onControllerReady: (AVPictureInPictureController) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> PlayerContainerView {
         let view = PlayerContainerView()
@@ -276,17 +256,13 @@ struct PiPPlayerView: UIViewRepresentable {
             pip?.canStartPictureInPictureAutomaticallyFromInline = true
             pip?.delegate = context.coordinator
             context.coordinator.pipController = pip
-            if let pip {
-                onControllerReady(pip)
-            }
+            if let pip { onControllerReady(pip) }
         }
         return view
     }
 
     func updateUIView(_ uiView: PlayerContainerView, context: Context) {
-        if uiView.playerLayer.player !== player {
-            uiView.playerLayer.player = player
-        }
+        if uiView.playerLayer.player !== player { uiView.playerLayer.player = player }
     }
 
     final class Coordinator: NSObject, AVPictureInPictureControllerDelegate {
@@ -300,5 +276,6 @@ final class PlayerContainerView: UIView {
 }
 
 #Preview {
-    AutomationStepView(totalSteps: 4, onBack: {}, onFinish: {})
+    AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})
+        .background(AppColors.backgroundPrimary)
 }

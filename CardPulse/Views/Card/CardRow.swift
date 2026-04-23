@@ -18,11 +18,6 @@ struct CardRow: View {
         CurrencyUtils.symbol(for: defaultCurrencyCode)
     }
 
-    private var issuer: String {
-        // First word of the card name = issuer (DBS Altitude Visa → DBS).
-        card.name.split(separator: " ").first.map(String.init) ?? ""
-    }
-
     private var resolvedStatus: CardStatus {
         status ?? CardStatus.derive(progress: card.progressPercentage)
     }
@@ -77,9 +72,7 @@ struct CardRow: View {
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    Text(issuer.isEmpty ? " " : issuer)
                     if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
-                        Text("·")
                         Text(card.spendingPeriodDisplay)
                     }
                 }

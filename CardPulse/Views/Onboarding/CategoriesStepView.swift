@@ -7,27 +7,29 @@ import SwiftUI
 import SwiftData
 
 struct CategoriesStepView: View {
-    let totalSteps: Int
-    let onBack: () -> Void
-    let onContinue: () -> Void
-
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SpendingCategory.sortOrder) private var categories: [SpendingCategory]
 
     @State private var showingAddSheet = false
 
     var body: some View {
-        OnboardingScaffold(
-            step: 2,
-            totalSteps: totalSteps,
-            title: "Add some categories",
-            description: "Go ahead and add some categories to get started or use the suggested ones. You can always add or edit them later.",
-            primaryTitle: "Continue",
-            primaryEnabled: true,
-            onBack: onBack,
-            onSkip: nil,
-            onPrimary: onContinue
-        ) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Add some categories")
+                    .font(AppTypography.screenTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Go ahead and add some categories to get started or use the suggested ones. You can always add or edit them later.")
+                    .font(AppTypography.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Button {
@@ -130,7 +132,6 @@ struct AddCategorySheet: View {
     @State private var icon = "tag"
     @State private var colorHex: Int = 0x2E6DFF
 
-    /// Curated icon pool (SF Symbols only — no custom assets).
     private let iconOptions: [String] = [
         "tag", "bag", "fork.knife", "cart", "airplane", "car",
         "tram", "house", "book", "gamecontroller", "music.note",
@@ -227,7 +228,6 @@ struct AddCategorySheet: View {
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        // Don't duplicate existing names (case-insensitive)
         if categories.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
             dismiss()
             return
@@ -247,10 +247,7 @@ struct AddCategorySheet: View {
 }
 
 #Preview {
-    CategoriesStepView(
-        totalSteps: 4,
-        onBack: {},
-        onContinue: {}
-    )
-    .modelContainer(ModelContainer.createMockContainer())
+    CategoriesStepView()
+        .background(AppColors.backgroundPrimary)
+        .modelContainer(ModelContainer.createMockContainer())
 }
