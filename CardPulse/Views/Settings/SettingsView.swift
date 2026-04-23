@@ -67,7 +67,7 @@ struct SettingsView: View {
                             // CURRENCY
                             SettingsSection(title: "Currency") {
                                 SettingsPickerRow(
-                                    title: "Default currency",
+                                    title: "Main currency",
                                     selection: $defaultCurrencyCode,
                                     options: enabledCurrencyList.map { $0.code }
                                 )

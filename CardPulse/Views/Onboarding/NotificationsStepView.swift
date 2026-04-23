@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 import UserNotifications
 
 struct NotificationsStepView: View {
@@ -70,16 +71,21 @@ struct NotificationsStepView: View {
     @ViewBuilder
     private var previewCard: some View {
         HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(AppColors.backgroundCardSoft)
-                BrandMark(size: 22)
+            Group {
+                if let icon = UIImage(named: "AppIcon") {
+                    Image(uiImage: icon)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    BrandMark(size: 22)
+                }
             }
             .frame(width: 40, height: 40)
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
-                    Text("Daily expense check-in!")
+                    Text("Transaction Added")
                         .font(AppTypography.bannerTitle)
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
@@ -87,7 +93,7 @@ struct NotificationsStepView: View {
                         .font(AppTypography.caption2)
                         .foregroundColor(AppColors.textTertiary)
                 }
-                Text("It's time to log today's expense")
+                Text("Starbucks: $4.50 on Visa Signature")
                     .font(AppTypography.bannerBody)
                     .foregroundColor(AppColors.textSecondary)
             }

@@ -118,8 +118,6 @@ struct OnboardingScaffold<Content: View>: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-            } else {
-                Color.clear.frame(width: 36, height: 36)
             }
 
             OnboardingProgressBar(step: step, total: totalSteps)
@@ -135,8 +133,6 @@ struct OnboardingScaffold<Content: View>: View {
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-            } else {
-                Color.clear.frame(width: 56, height: 36)
             }
         }
     }
