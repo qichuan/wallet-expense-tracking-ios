@@ -5,18 +5,16 @@
 
 import SwiftUI
 import AVKit
+import AVFoundation
+import Combine
 
 struct AutomationStepView: View {
     let onRegisterPrimaryAction: (@escaping () -> Void) -> Void
     let onFinish: () -> Void
 
-    @State private var selectedIndex = 0
+    @StateObject private var players = AutomationPlayers()
     @State private var hasOpenedShortcuts = false
     @Environment(\.scenePhase) private var scenePhase
-
-    private func makePlayer(for name: String) -> AVPlayer {
-        AVPlayer(url: Bundle.main.url(forResource: name, withExtension: "mp4")!)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -27,63 +25,92 @@ struct AutomationStepView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 16)
 
-            TabView(selection: $selectedIndex) {
-                videoPage(makePlayer(for: "Step1")).tag(0)
-                videoPage(makePlayer(for: "Step2")).tag(1)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            PiPPlayerView(player: players.step1)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             onRegisterPrimaryAction(openShortcuts)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                players.step1.seek(to: .zero)
+                players.step1.play()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active, hasOpenedShortcuts { onFinish() }
         }
     }
 
-    @ViewBuilder
-    private func videoPage(_ player: AVPlayer) -> some View {
-        ClearBackgroundPlayer(player: player)
-            .onAppear {
-                player.seek(to: .zero)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    player.play()
-                }
-            }
-            .onDisappear { player.pause() }
-    }
-
     private func openShortcuts() {
         hasOpenedShortcuts = true
-        if let url = URL(string: "shortcuts://"),
-           UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        } else {
+        #if os(iOS)
+        guard let url = URL(string: "shortcuts://"),
+              UIApplication.shared.canOpenURL(url) else {
             onFinish()
+            return
         }
+        // canStartPictureInPictureAutomaticallyFromInline triggers PiP automatically when
+        // the app backgrounds. isPictureInPicturePossible is always false in the foreground,
+        // so calling startPictureInPicture() here would be a no-op anyway.
+        UIApplication.shared.open(url)
+        #else
+        onFinish()
+        #endif
     }
 }
 
-// MARK: - AVPlayerViewController with clear background
+// MARK: - Stable player holder
 
-struct ClearBackgroundPlayer: UIViewControllerRepresentable {
+final class AutomationPlayers: ObservableObject {
+    let step1: AVPlayer
+
+    init() {
+        step1 = AVPlayer(url: Bundle.main.url(forResource: "Step1", withExtension: "mp4")!)
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: .mixWithOthers)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        #endif
+    }
+}
+
+// MARK: - Custom player view with AVPictureInPictureController
+
+#if os(iOS)
+struct PiPPlayerView: UIViewRepresentable {
     let player: AVPlayer
 
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let vc = AVPlayerViewController()
-        vc.player = player
-        vc.videoGravity = .resizeAspect
-        vc.view.backgroundColor = .clear
-        vc.view.subviews.forEach { $0.backgroundColor = .clear }
-        return vc
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> PlayerLayerView {
+        let view = PlayerLayerView()
+        view.backgroundColor = .clear
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
+
+        if AVPictureInPictureController.isPictureInPictureSupported(),
+           let pip = AVPictureInPictureController(playerLayer: view.playerLayer) {
+            pip.canStartPictureInPictureAutomaticallyFromInline = true
+            pip.delegate = context.coordinator
+            context.coordinator.pipController = pip
+        }
+        return view
     }
 
-    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {
-        if vc.player !== player { vc.player = player }
+    func updateUIView(_ uiView: PlayerLayerView, context: Context) {
+        if uiView.playerLayer.player !== player {
+            uiView.playerLayer.player = player
+        }
+    }
+
+    final class Coordinator: NSObject, AVPictureInPictureControllerDelegate {
+        var pipController: AVPictureInPictureController?
     }
 }
+
+final class PlayerLayerView: UIView {
+    override static var layerClass: AnyClass { AVPlayerLayer.self }
+    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+}
+#endif
 
 #Preview {
     AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})
