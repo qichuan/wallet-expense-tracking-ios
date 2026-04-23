@@ -7,51 +7,37 @@ import SwiftUI
 import SwiftData
 
 struct CurrencyStepView: View {
-    let totalSteps: Int
-    let onBack: () -> Void
-    let onContinue: () -> Void
-
-    @Environment(\.modelContext) private var modelContext
-    @AppStorage("defaultCurrency") private var defaultCurrencyCode = ""
-    @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = ""
-    @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
-
-    @State private var selectedCode: String = ""
-
-    /// Preselected currency derived from the device locale (e.g. "en_SG" → SGD).
-    /// Falls back to USD when the locale's currency is not in our built-in list.
-    private static func localePreselectedCode() -> String {
-        let all = Set(CurrencyUtils.allCurrencies.map { $0.code })
-        if let id = Locale.current.currency?.identifier, all.contains(id) {
-            return id
-        }
-        return "USD"
-    }
+    @Binding var selectedCode: String
 
     private var currencies: [CurrencyInfo] {
         let sorted = CurrencyUtils.allCurrencies.sorted { $0.name < $1.name }
-        let pinned = Self.localePreselectedCode()
-        guard let idx = sorted.firstIndex(where: { $0.code == pinned }) else {
-            return sorted
-        }
+        let pinned = Self.defaultLocaleCode()
+        guard let idx = sorted.firstIndex(where: { $0.code == pinned }) else { return sorted }
         var reordered = sorted
         let top = reordered.remove(at: idx)
         reordered.insert(top, at: 0)
         return reordered
     }
 
+    static func defaultLocaleCode() -> String {
+        let all = Set(CurrencyUtils.allCurrencies.map { $0.code })
+        if let id = Locale.current.currency?.identifier, all.contains(id) { return id }
+        return "USD"
+    }
+
     var body: some View {
-        OnboardingScaffold(
-            step: 1,
-            totalSteps: totalSteps,
-            title: "Select your main\ncurrency",
-            description: nil,
-            primaryTitle: "Continue",
-            primaryEnabled: !selectedCode.isEmpty,
-            onBack: onBack,
-            onSkip: nil,
-            onPrimary: save
-        ) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Select your main\ncurrency")
+                    .font(AppTypography.screenTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
+
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(Array(currencies.enumerated()), id: \.element.id) { idx, info in
@@ -74,9 +60,7 @@ struct CurrencyStepView: View {
             }
         }
         .onAppear {
-            if selectedCode.isEmpty {
-                selectedCode = Self.localePreselectedCode()
-            }
+            if selectedCode.isEmpty { selectedCode = Self.defaultLocaleCode() }
         }
     }
 
@@ -105,30 +89,11 @@ struct CurrencyStepView: View {
         .padding(.vertical, 14)
         .contentShape(Rectangle())
     }
-
-    private func backfillTransactions(currency: String) {
-        guard let transactions = try? modelContext.fetch(FetchDescriptor<Transaction>()) else { return }
-        for txn in transactions where txn.currency.isEmpty {
-            txn.currency = currency
-        }
-        try? modelContext.save()
-    }
-
-    private func save() {
-        guard !selectedCode.isEmpty else { return }
-        defaultCurrencyCode = selectedCode
-        var codes = CurrencyUtils.defaultEnabledCurrencies
-        if !codes.contains(selectedCode) {
-            codes.insert(selectedCode, at: 0)
-        }
-        enabledCurrenciesRaw = codes.joined(separator: ",")
-        backfillTransactions(currency: selectedCode)
-        hasChosenDefaultCurrency = true
-        onContinue()
-    }
 }
 
 #Preview {
-    CurrencyStepView(totalSteps: 4, onBack: {}, onContinue: {})
+    @Previewable @State var code = "USD"
+    CurrencyStepView(selectedCode: $code)
+        .background(AppColors.backgroundPrimary)
         .modelContainer(ModelContainer.createMockContainer())
 }

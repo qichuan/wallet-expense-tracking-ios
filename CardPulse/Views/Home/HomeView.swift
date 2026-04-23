@@ -176,7 +176,7 @@ struct HomeView: View {
     private var latestActivitySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionLabel(text: "Latest Activity")
+                SectionLabel(text: "Recent Transactions")
                 Spacer()
                 Button(action: { showingAllTransactions = true }) {
                     HStack(spacing: 4) {

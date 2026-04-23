@@ -8,31 +8,30 @@ import UIKit
 import UserNotifications
 
 struct NotificationsStepView: View {
-    let totalSteps: Int
-    let onBack: () -> Void
-    let onContinue: () -> Void
-
     @State private var requestState: RequestState = .idle
 
     enum RequestState: Equatable {
-        case idle
-        case requesting
-        case granted
-        case denied
+        case idle, requesting, granted, denied
     }
 
     var body: some View {
-        OnboardingScaffold(
-            step: 3,
-            totalSteps: totalSteps,
-            title: "Get notified",
-            description: "Get notified when tap-to-pay transactions are tracked.",
-            primaryTitle: "Get Started",
-            primaryEnabled: true,
-            onBack: onBack,
-            onSkip: nil,
-            onPrimary: onContinue
-        ) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Get notified")
+                    .font(AppTypography.screenTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Get notified when tap-to-pay transactions are tracked.")
+                    .font(AppTypography.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 20)
+
             VStack(alignment: .leading, spacing: 18) {
                 previewCard
 
@@ -63,8 +62,8 @@ struct NotificationsStepView: View {
     private var buttonLabel: String {
         switch requestState {
         case .idle, .denied: return "Enable notifications"
-        case .requesting: return "Requesting…"
-        case .granted: return "Notifications enabled"
+        case .requesting:    return "Requesting…"
+        case .granted:       return "Notifications enabled"
         }
     }
 
@@ -116,5 +115,6 @@ struct NotificationsStepView: View {
 }
 
 #Preview {
-    NotificationsStepView(totalSteps: 4, onBack: {}, onContinue: {})
+    NotificationsStepView()
+        .background(AppColors.backgroundPrimary)
 }

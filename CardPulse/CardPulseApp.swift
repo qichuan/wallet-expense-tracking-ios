@@ -51,16 +51,15 @@ struct CardPulseApp: App {
 
 private struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
+    
     #if DEBUG
     @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
     #endif
-    @State private var didMigrate = false
 
     private var shouldShowOnboarding: Bool {
-//        #if DEBUG
-//        if debugAlwaysShowOnboarding { return !hasCompletedCurrentOnboaringSession }
-//        #endif
+        #if DEBUG
+        if debugAlwaysShowOnboarding { return true }
+        #endif
         return !hasCompletedOnboarding
     }
 
@@ -71,16 +70,6 @@ private struct RootView: View {
                     .preferredColorScheme(.dark)
             } else {
                 MainTabView()
-            }
-        }
-        .task {
-            // One-shot migration for legacy users who picked a currency before
-            // the onboarding flow existed — mark their onboarding complete so
-            // they aren't pushed through it again.
-            guard !didMigrate else { return }
-            didMigrate = true
-            if hasChosenDefaultCurrency && !hasCompletedOnboarding {
-                hasCompletedOnboarding = true
             }
         }
     }
