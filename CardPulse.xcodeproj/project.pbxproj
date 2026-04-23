@@ -77,6 +77,13 @@
 			);
 			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;
 		};
+		2E2F9DED2F9A753A009323F8 /* Exceptions for "CardPulse" folder in "CardPulse" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2EBD3BF92EAF392700295A20 /* CardPulse */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -91,6 +98,7 @@
 		2EBD3BFC2EAF392700295A20 /* CardPulse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				2E2F9DED2F9A753A009323F8 /* Exceptions for "CardPulse" folder in "CardPulse" target */,
 				2E0783992F701AF400F4C526 /* Exceptions for "CardPulse" folder in "CardPulseWidgetExtension" target */,
 			);
 			path = CardPulse;
@@ -552,6 +560,7 @@
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CardPulse/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CardPulse;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -594,6 +603,7 @@
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CardPulse/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CardPulse;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
