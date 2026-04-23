@@ -83,8 +83,14 @@ struct AutomationStepView: View {
         }
         .onAppear {
             players.configureAudioSession()
-            players.load(resources: videoSteps.map { $0.resource })
+            let resources = videoSteps.map { $0.resource }
+            players.load(resources: resources)
             onRegisterPrimaryAction(openShortcuts)
+            // Autoplay first video
+            if let first = resources.first {
+                startedResources.insert(first)
+                players.play(resource: first)
+            }
         }
         .onChange(of: selectedIndex) { _, newValue in
             guard newValue >= 0, newValue < videoSteps.count else { return }

@@ -53,12 +53,12 @@ struct WelcomeStepView: View {
                 Spacer().frame(height: 20)
 
                 VStack(spacing: 12) {
-                    Text("Your Money.\nClear & Simple.")
+                    Text("Your Spending.\nClearly understood.")
                         .font(.system(size: 28, weight: .heavy, design: .default))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("CardPulse helps you track Apple Wallet purchases, organize them into categories, and keep an overview of your spending.")
+                    Text("CardPulse automatically tracks your Apple Wallet transactions and help you monitor credit card spending goals.")
                         .font(AppTypography.subheadline)
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -69,7 +69,6 @@ struct WelcomeStepView: View {
 
                 OnboardingPrimaryButton(title: "Continue", enabled: true, action: onContinue)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
             }
         }
         .navigationBarBackButtonHidden(true)
