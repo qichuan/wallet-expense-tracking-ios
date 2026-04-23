@@ -91,8 +91,7 @@ struct OnboardingFlow: View {
 
             // Fixed CTA — never transitions
             ctaSection
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
+                .padding(.horizontal, 20) 
         }
     }
 
@@ -105,22 +104,11 @@ struct OnboardingFlow: View {
                 enabled: currentPrimaryEnabled,
                 action: performPrimaryAction
             )
-            if stepIndex == 4 {
-                Button(action: complete) {
-                    Text("I'll do it later")
-                        .font(AppTypography.navButton)
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 
     private var currentPrimaryTitle: String {
         switch stepIndex {
-        case 3: return "Get Started"
         case 4: return "Open Shortcuts"
         default: return "Continue"
         }
