@@ -30,7 +30,7 @@ struct SettingsView: View {
 
     // Export preview states
     @State private var showingExportOptions = false
-    @State private var startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     @State private var endDate = Date()
     @State private var showingFilePicker = false
     @State private var csvToExport = ""

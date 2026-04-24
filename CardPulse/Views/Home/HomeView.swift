@@ -118,8 +118,8 @@ struct HomeView: View {
             ZStack {
                 AppColors.backgroundPrimary.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                if transactions.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
                         BrandHeader(title: "Home") {
                             Button(action: { showingAddTransaction = true }) {
                                 Image(systemName: "plus.circle.fill")
@@ -127,28 +127,39 @@ struct HomeView: View {
                                     .foregroundColor(AppColors.accent)
                             }
                         }
+                        Spacer()
+                        emptyState
+                        Spacer()
+                    }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            BrandHeader(title: "Home") {
+                                Button(action: { showingAddTransaction = true }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(AppTypography.headerAction)
+                                        .foregroundColor(AppColors.accent)
+                                }
+                            }
 
-                        if !cardsWithGoals.isEmpty {
-                            SummaryHeroCard(
-                                periodLabel: periodLabel,
-                                totalAmount: formattedTotalMinSpend,
-                                cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
-                                nextDeadline: nextDeadlineDisplay,
-                                donutSlices: heroDonutSlices,
-                                donutCenterLabel: remainingToSpendText,
-                                remainingAmountText: remainingToSpendText,
-                                allGoalsMet: allGoalsMet
-                            )
-                            .padding(.horizontal, 20)
-                        }
+                            if !cardsWithGoals.isEmpty {
+                                SummaryHeroCard(
+                                    periodLabel: periodLabel,
+                                    totalAmount: formattedTotalMinSpend,
+                                    cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
+                                    nextDeadline: nextDeadlineDisplay,
+                                    donutSlices: heroDonutSlices,
+                                    donutCenterLabel: remainingToSpendText,
+                                    remainingAmountText: remainingToSpendText,
+                                    allGoalsMet: allGoalsMet
+                                )
+                                .padding(.horizontal, 20)
+                            }
 
-                        if transactions.isEmpty {
-                            emptyState
-                        } else {
                             latestActivitySection
                         }
+                        .padding(.bottom, 32)
                     }
-                    .padding(.bottom, 32)
                 }
             }
             .navigationBarHidden(true)
@@ -216,7 +227,6 @@ struct HomeView: View {
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 32)
-        .padding(.top, 40)
     }
 }
 
