@@ -34,7 +34,7 @@ struct WalletTransactionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         // Parse currency and numeric value from the raw amount string
-        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
+        guard let (resolvedCurrency, decimalAmount) = await CurrencyUtils.parseCurrencyAndAmount(from: amount),
               decimalAmount != 0 else {
             return .result()
         }
@@ -91,7 +91,7 @@ struct WalletTransactionIntent: AppIntent {
         ])
         do {
             try context.save()
-            WidgetDataWriter.refresh(using: context)
+            await WidgetDataWriter.refresh(using: context)
         } catch {
             // Swallow — the intent should never surface save errors to the user
         }

@@ -34,7 +34,6 @@ struct CardsView: View {
     }
 
     private func cyclePacing(for card: Card) -> Double? {
-        let cal = Calendar.current
         let start = card.currentCycleStart
         let end = card.currentCycleEnd
         let totalSeconds = end.timeIntervalSince(start)
