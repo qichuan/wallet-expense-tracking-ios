@@ -131,14 +131,53 @@ struct AddCategorySheet: View {
     @State private var name = ""
     @State private var icon = "tag"
     @State private var colorHex: Int = 0x2E6DFF
+    @State private var iconSearch = ""
+
+    @FocusState private var nameFocused: Bool
+    @FocusState private var iconSearchFocused: Bool
 
     private let iconOptions: [String] = [
-        "tag", "bag", "fork.knife", "cart", "airplane", "car",
-        "tram", "house", "book", "gamecontroller", "music.note",
-        "heart", "cross", "pawprint", "dumbbell", "gift",
-        "cup.and.saucer", "scissors", "wrench.and.screwdriver",
-        "bolt", "drop", "leaf", "globe"
+        // Food & Drink
+        "fork.knife", "cup.and.saucer", "mug", "wineglass", "takeoutbag.and.cup.and.straw",
+        "birthday.cake", "carrot", "fish", "popcorn", "refrigerator",
+        // Shopping
+        "bag", "cart", "handbag", "tag", "gift", "creditcard",
+        "storefront", "building.2", "basket", "shippingbox",
+        // Transport
+        "car", "airplane", "tram", "bus", "bicycle", "scooter",
+        "ferry", "fuelpump", "parkingsign", "car.rear",
+        "airplane.departure", "train.side.front.car", "bolt.car", "figure.walk",
+        // Entertainment
+        "gamecontroller", "tv", "film", "ticket", "music.note",
+        "headphones", "guitar", "microphone", "theatermasks", "dice",
+        "sportscourt", "paintpalette", "camera", "photo",
+        // Health & Fitness
+        "heart", "cross", "pills", "bandage", "syringe",
+        "stethoscope", "dumbbell", "figure.run", "figure.cooldown",
+        "lungs", "brain.head.profile", "eye",
+        // Home & Bills
+        "house", "lightbulb", "drop", "bolt", "flame",
+        "wrench.and.screwdriver", "hammer", "screwdriver", "sofa", "washer",
+        "phone", "wifi", "tv.and.hifispeaker.fill", "shower",
+        // Finance
+        "dollarsign.circle", "building.columns", "chart.line.uptrend.xyaxis",
+        "banknote", "percent", "arrow.left.arrow.right",
+        // Education
+        "book", "graduationcap", "pencil", "ruler",
+        "backpack", "microscope", "globe", "magnifyingglass",
+        // Personal
+        "scissors", "tshirt", "shoe", "comb",
+        "umbrella", "sunglasses", "figure.dress.line.vertical.figure",
+        // Nature & Other
+        "leaf", "tree", "pawprint", "snowflake",
+        "sun.max", "moon", "cloud", "star",
+        "music.mic", "theatermasks.fill", "sparkles",
     ]
+
+    private var filteredIcons: [String] {
+        guard !iconSearch.isEmpty else { return iconOptions }
+        return iconOptions.filter { $0.localizedCaseInsensitiveContains(iconSearch) }
+    }
 
     private let colorOptions: [Int] = [
         0x2E6DFF, 0xEC4899, 0xF59E0B, 0xFACC15,
@@ -162,6 +201,7 @@ struct AddCategorySheet: View {
                             TextField("", text: $name, prompt: Text("Groceries").foregroundColor(AppColors.textTertiary))
                                 .font(AppTypography.rowTitle)
                                 .foregroundColor(AppColors.textPrimary)
+                                .focused($nameFocused)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                                 .background(AppColors.backgroundCard)
@@ -170,18 +210,57 @@ struct AddCategorySheet: View {
 
                         VStack(alignment: .leading, spacing: 10) {
                             SectionLabel(text: "Icon")
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 6), spacing: 10) {
-                                ForEach(iconOptions, id: \.self) { symbol in
-                                    Button { icon = symbol } label: {
-                                        Image(systemName: symbol)
-                                            .font(AppTypography.iconMedium)
-                                            .foregroundColor(symbol == icon ? AppColors.backgroundPrimary : AppColors.textPrimary)
-                                            .frame(width: 44, height: 44)
-                                            .background(symbol == icon ? AppColors.surfaceHigh : AppColors.backgroundCard)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                            HStack(spacing: 8) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                                TextField("", text: $iconSearch, prompt: Text("Search icons…").foregroundColor(AppColors.textTertiary))
+                                    .font(AppTypography.subheadline)
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .focused($iconSearchFocused)
+                                    .autocorrectionDisabled()
+                                if !iconSearch.isEmpty {
+                                    Button { iconSearch = "" } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(AppColors.textTertiary)
                                     }
                                     .buttonStyle(.plain)
                                 }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(AppColors.backgroundCard)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                            if filteredIcons.isEmpty {
+                                Text("No icons match \(iconSearch)")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 12)
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHGrid(
+                                        rows: Array(repeating: GridItem(.fixed(48), spacing: 10), count: 3),
+                                        spacing: 10
+                                    ) {
+                                        ForEach(filteredIcons, id: \.self) { symbol in
+                                            Button { icon = symbol } label: {
+                                                Image(systemName: symbol)
+                                                    .font(AppTypography.iconMedium)
+                                                    .foregroundColor(symbol == icon ? AppColors.backgroundPrimary : AppColors.textPrimary)
+                                                    .frame(width: 48, height: 48)
+                                                    .background(symbol == icon ? AppColors.surfaceHigh : AppColors.backgroundCard)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+                                .frame(height: 48 * 3 + 10 * 2)
+                                .padding(.horizontal, -20)
                             }
                         }
 
@@ -220,6 +299,16 @@ struct AddCategorySheet: View {
                         .foregroundColor(canSave ? AppColors.accent : AppColors.textTertiary)
                         .disabled(!canSave)
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button {
+                        nameFocused = false
+                        iconSearchFocused = false
+                    } label: {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                            .foregroundColor(AppColors.accent)
+                    }
+                }
             }
         }
         .preferredColorScheme(.dark)
@@ -251,3 +340,4 @@ struct AddCategorySheet: View {
         .background(AppColors.backgroundPrimary)
         .modelContainer(ModelContainer.createMockContainer())
 }
+
