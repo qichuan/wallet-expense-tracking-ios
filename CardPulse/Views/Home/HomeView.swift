@@ -45,6 +45,10 @@ struct HomeView: View {
         cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.count
     }
 
+    private var allGoalsMet: Bool {
+        !cardsWithGoals.isEmpty && cardsHitCount == cardsWithGoals.count
+    }
+
     private var nextDeadlineCard: Card? {
         cardsWithGoals.min { $0.daysRemaining < $1.daysRemaining }
     }
@@ -67,17 +71,12 @@ struct HomeView: View {
         let spentForProgress = min(cappedSpentTowardGoals, totalTarget)
         let remaining = max(0.0, totalTarget - spentForProgress)
 
+        if allGoalsMet {
+            return [DonutSlice(category: "Spent", amount: Decimal(spentForProgress), color: AppColors.statusHit)]
+        }
         return [
-            DonutSlice(
-                category: "Spent",
-                amount: Decimal(spentForProgress),
-                color: AppColors.accent
-            ),
-            DonutSlice(
-                category: "Remaining",
-                amount: Decimal(remaining),
-                color: AppColors.backgroundCardSoft
-            )
+            DonutSlice(category: "Spent", amount: Decimal(spentForProgress), color: AppColors.accent),
+            DonutSlice(category: "Remaining", amount: Decimal(remaining), color: AppColors.backgroundCardSoft)
         ]
     }
 
@@ -94,7 +93,7 @@ struct HomeView: View {
     private var periodLabel: String {
         let df = DateFormatter()
         df.dateFormat = "MMMM"
-        return "TOTAL MIN-SPEND · \(df.string(from: Date()).uppercased())"
+        return "MIN-SPEND TARGET · \(df.string(from: Date()).uppercased())"
     }
 
     private var formattedTotalMinSpend: String {
@@ -136,7 +135,9 @@ struct HomeView: View {
                                 cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
                                 nextDeadline: nextDeadlineDisplay,
                                 donutSlices: heroDonutSlices,
-                                donutCenterLabel: remainingToSpendText
+                                donutCenterLabel: remainingToSpendText,
+                                remainingAmountText: remainingToSpendText,
+                                allGoalsMet: allGoalsMet
                             )
                             .padding(.horizontal, 20)
                         }
