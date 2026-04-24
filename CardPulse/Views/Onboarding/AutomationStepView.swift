@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import AVKit
 import AVFoundation
 import Combine
 
@@ -25,8 +24,10 @@ struct AutomationStepView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 16)
 
+            #if os(iOS)
             PiPPlayerView(player: players.step1)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            #endif
         }
         .onAppear {
             onRegisterPrimaryAction(openShortcuts)
@@ -48,9 +49,6 @@ struct AutomationStepView: View {
             onFinish()
             return
         }
-        // canStartPictureInPictureAutomaticallyFromInline triggers PiP automatically when
-        // the app backgrounds. isPictureInPicturePossible is always false in the foreground,
-        // so calling startPictureInPicture() here would be a no-op anyway.
         UIApplication.shared.open(url)
         #else
         onFinish()
@@ -64,53 +62,13 @@ final class AutomationPlayers: ObservableObject {
     let step1: AVPlayer
 
     init() {
-        step1 = AVPlayer(url: Bundle.main.url(forResource: "Step1", withExtension: "mp4")!)
+        step1 = AVPlayer(url: Bundle.main.url(forResource: "Setup-Automation", withExtension: "mp4")!)
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: .mixWithOthers)
         try? AVAudioSession.sharedInstance().setActive(true)
         #endif
     }
 }
-
-// MARK: - Custom player view with AVPictureInPictureController
-
-#if os(iOS)
-struct PiPPlayerView: UIViewRepresentable {
-    let player: AVPlayer
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    func makeUIView(context: Context) -> PlayerLayerView {
-        let view = PlayerLayerView()
-        view.backgroundColor = .clear
-        view.playerLayer.player = player
-        view.playerLayer.videoGravity = .resizeAspect
-
-        if AVPictureInPictureController.isPictureInPictureSupported(),
-           let pip = AVPictureInPictureController(playerLayer: view.playerLayer) {
-            pip.canStartPictureInPictureAutomaticallyFromInline = true
-            pip.delegate = context.coordinator
-            context.coordinator.pipController = pip
-        }
-        return view
-    }
-
-    func updateUIView(_ uiView: PlayerLayerView, context: Context) {
-        if uiView.playerLayer.player !== player {
-            uiView.playerLayer.player = player
-        }
-    }
-
-    final class Coordinator: NSObject, AVPictureInPictureControllerDelegate {
-        var pipController: AVPictureInPictureController?
-    }
-}
-
-final class PlayerLayerView: UIView {
-    override static var layerClass: AnyClass { AVPlayerLayer.self }
-    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-}
-#endif
 
 #Preview {
     AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})

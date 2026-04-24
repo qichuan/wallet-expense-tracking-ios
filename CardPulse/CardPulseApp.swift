@@ -34,7 +34,7 @@ struct CardPulseApp: App {
         do {
             let container = try ModelContainer(for: schema, migrationPlan: CardPulseMigrationPlan.self, configurations: [modelConfiguration])
             // Safety seed: fresh installs on V3 don't run the V2→V3 stage, so seed here.
-            try? CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
+            try CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
@@ -58,7 +58,7 @@ private struct RootView: View {
 
     private var shouldShowOnboarding: Bool {
         #if DEBUG
-        if debugAlwaysShowOnboarding { return true }
+        if debugAlwaysShowOnboarding { return false }
         #endif
         return !hasCompletedOnboarding
     }
