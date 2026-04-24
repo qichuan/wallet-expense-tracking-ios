@@ -6,12 +6,14 @@
 import SwiftUI
 
 struct SummaryHeroCard: View {
-    let periodLabel: String       // e.g. "TOTAL MIN-SPEND · NOVEMBER"
-    let totalAmount: String       // formatted, e.g. "$11,020"
-    let cardsHit: String          // e.g. "1/4"
-    let nextDeadline: String      // e.g. "3d"
+    let periodLabel: String
+    let totalAmount: String
+    let cardsHit: String
+    let nextDeadline: String
     let donutSlices: [DonutSlice]
     let donutCenterLabel: String
+    let remainingAmountText: String
+    let allGoalsMet: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -29,17 +31,38 @@ struct SummaryHeroCard: View {
                         MetricStat(label: "Cards Hit", value: cardsHit)
                         MetricStat(label: "Next Deadline", value: nextDeadline, valueColor: AppColors.accent)
                     }
+
+                    if allGoalsMet {
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.statusHit)
+                            Text("All spending goals met!")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.statusHit)
+                        }
+                    } else {
+                        Text("\(remainingAmountText) left to hit target")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
                 }
 
                 if !donutSlices.isEmpty {
                     ZStack {
                         DonutChartView(slices: donutSlices, lineWidth: 14)
-                        Text(donutCenterLabel)
-                            .font(AppTypography.amountTarget)
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .padding(.horizontal, 18)
+                        if allGoalsMet {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(AppColors.statusHit)
+                        } else {
+                            Text(donutCenterLabel)
+                                .font(AppTypography.amountTarget)
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .padding(.horizontal, 18)
+                        }
                     }
                     .frame(width: 96, height: 96)
                 }
@@ -50,17 +73,34 @@ struct SummaryHeroCard: View {
 }
 
 #Preview {
-    SummaryHeroCard(
-        periodLabel: "TOTAL MIN-SPEND · NOVEMBER",
-        totalAmount: "$11,020",
-        cardsHit: "1/4",
-        nextDeadline: "3d",
-        donutSlices: [
-            DonutSlice(category: "A", amount: 700, color: AppColors.accent),
-            DonutSlice(category: "B", amount: 300, color: AppColors.brandGold)
-        ],
-        donutCenterLabel: "$2,300"
-    )
+    VStack(spacing: 20) {
+        SummaryHeroCard(
+            periodLabel: "MIN-SPEND TARGET · NOVEMBER",
+            totalAmount: "$11,020",
+            cardsHit: "1/4",
+            nextDeadline: "3d",
+            donutSlices: [
+                DonutSlice(category: "Spent", amount: 700, color: AppColors.accent),
+                DonutSlice(category: "Remaining", amount: 300, color: AppColors.backgroundCardSoft)
+            ],
+            donutCenterLabel: "$2,300",
+            remainingAmountText: "$2,300",
+            allGoalsMet: false
+        )
+
+        SummaryHeroCard(
+            periodLabel: "MIN-SPEND TARGET · NOVEMBER",
+            totalAmount: "$11,020",
+            cardsHit: "4/4",
+            nextDeadline: "3d",
+            donutSlices: [
+                DonutSlice(category: "Spent", amount: 1000, color: AppColors.statusHit)
+            ],
+            donutCenterLabel: "",
+            remainingAmountText: "",
+            allGoalsMet: true
+        )
+    }
     .padding()
     .background(AppColors.backgroundPrimary)
 }
