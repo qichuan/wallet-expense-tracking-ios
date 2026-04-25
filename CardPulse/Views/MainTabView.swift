@@ -100,6 +100,15 @@ struct MainTabView: View {
             refreshExchangeRatesIfNeeded()
         }
         .onChange(of: cards.count) { writeWidgetData() }
+        .onChange(of: selectedTab) { _, newTab in
+            switch newTab {
+            case 0: AnalyticsTracker.view("home")
+            case 1: AnalyticsTracker.view("analytics")
+            case 2: AnalyticsTracker.view("cards")
+            case 3: AnalyticsTracker.view("settings")
+            default: break
+            }
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 writeWidgetData()

@@ -116,8 +116,13 @@ struct CategoriesStepView: View {
 
     private func delete(_ cat: SpendingCategory) {
         guard !cat.isBuiltIn else { return }
+        let name = cat.name
         modelContext.delete(cat)
         try? modelContext.save()
+        AnalyticsTracker.log(AnalyticsTracker.Event.categoryDeleted, [
+            "name": name,
+            "source": "onboarding"
+        ])
     }
 }
 
@@ -331,6 +336,10 @@ struct AddCategorySheet: View {
         )
         modelContext.insert(category)
         try? modelContext.save()
+        AnalyticsTracker.log(AnalyticsTracker.Event.categoryAdded, [
+            "name": trimmed,
+            "icon": icon
+        ])
         dismiss()
     }
 }

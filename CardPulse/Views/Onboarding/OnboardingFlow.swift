@@ -144,6 +144,7 @@ struct OnboardingFlow: View {
 
     private func complete() {
         hasCompletedOnboarding = true
+        AnalyticsTracker.log(AnalyticsTracker.Event.onboardingCompleted)
     }
 
     private var contentTransition: AnyTransition {

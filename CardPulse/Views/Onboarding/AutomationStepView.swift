@@ -30,6 +30,7 @@ struct AutomationStepView: View {
             #endif
         }
         .onAppear {
+            AnalyticsTracker.view("automation_howto", ["source": "onboarding"])
             onRegisterPrimaryAction(openShortcuts)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 players.step1.seek(to: .zero)

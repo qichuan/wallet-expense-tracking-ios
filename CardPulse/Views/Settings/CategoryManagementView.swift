@@ -116,6 +116,7 @@ struct CategoryManagementView: View {
 
     private func delete(_ cat: SpendingCategory) {
         guard !cat.isBuiltIn else { return }
+        let name = cat.name
         // Clear the category string off any transactions that referenced it (fall back to "Other").
         if let txns = try? modelContext.fetch(FetchDescriptor<Transaction>()) {
             for txn in txns where txn.category == cat.name {
@@ -124,6 +125,10 @@ struct CategoryManagementView: View {
         }
         modelContext.delete(cat)
         try? modelContext.save()
+        AnalyticsTracker.log(AnalyticsTracker.Event.categoryDeleted, [
+            "name": name,
+            "source": "settings"
+        ])
     }
 }
 
@@ -285,6 +290,7 @@ struct EditCategorySheet: View {
 
     private func deleteCategory() {
         guard !category.isBuiltIn else { return }
+        let name = category.name
         if let txns = try? modelContext.fetch(FetchDescriptor<Transaction>()) {
             for txn in txns where txn.category == category.name {
                 txn.category = "Other"
@@ -292,6 +298,10 @@ struct EditCategorySheet: View {
         }
         modelContext.delete(category)
         try? modelContext.save()
+        AnalyticsTracker.log(AnalyticsTracker.Event.categoryDeleted, [
+            "name": name,
+            "source": "edit_sheet"
+        ])
         dismiss()
     }
 }

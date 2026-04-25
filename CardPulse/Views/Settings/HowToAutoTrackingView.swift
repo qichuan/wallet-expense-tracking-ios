@@ -15,7 +15,7 @@ struct HowToAutoTrackingView: View {
             VStack(spacing: 16) {
                 AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})
                 .background(AppColors.backgroundPrimary)
-                
+
                 OnboardingPrimaryButton(title: "Open Shortcut", enabled: true, action: {
 
                 guard let url = URL(string: "shortcuts://"),
@@ -26,11 +26,14 @@ struct HowToAutoTrackingView: View {
                 UIApplication.shared.open(url)
                 }).padding(.horizontal, 20)
             }
-            .background(AppColors.backgroundPrimary) 
+            .background(AppColors.backgroundPrimary)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Close") { dismiss() }
                 }
+            }
+            .onAppear {
+                AnalyticsTracker.view("automation_howto", ["source": "settings"])
             }
         }
     }
