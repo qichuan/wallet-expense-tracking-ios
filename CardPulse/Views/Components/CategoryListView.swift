@@ -20,7 +20,7 @@ private let categoryIconOptions: [String] = [
     "airplane.departure", "train.side.front.car", "bolt.car", "figure.walk",
     // Entertainment
     "gamecontroller", "tv", "film", "ticket", "music.note",
-    "headphones", "guitar", "microphone", "theatermasks", "dice",
+    "headphones", "microphone", "theatermasks", "dice",
     "sportscourt", "paintpalette", "camera", "photo",
     // Health & Fitness
     "heart", "cross", "pills", "bandage", "syringe",
@@ -35,7 +35,7 @@ private let categoryIconOptions: [String] = [
     "banknote", "percent", "arrow.left.arrow.right",
     // Education
     "book", "graduationcap", "pencil", "ruler",
-    "backpack", "microscope", "globe", "magnifyingglass",
+    "backpack", "globe", "magnifyingglass",
     // Personal
     "scissors", "tshirt", "shoe", "comb",
     "umbrella", "sunglasses", "figure.dress.line.vertical.figure",
