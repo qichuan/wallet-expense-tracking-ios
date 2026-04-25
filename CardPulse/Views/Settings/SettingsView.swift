@@ -73,7 +73,10 @@ struct SettingsView: View {
                                 SettingsValueRow(
                                     title: "Enabled currencies",
                                     value: "\(enabledCurrencyList.count)",
-                                    action: { showingCurrencyManager = true }
+                                    action: {
+                                        AnalyticsTracker.view("currency_manager")
+                                        showingCurrencyManager = true
+                                    }
                                 )
                             }
 
@@ -82,7 +85,10 @@ struct SettingsView: View {
                                 SettingsValueRow(
                                     title: "Manage categories",
                                     value: "",
-                                    action: { showingCategoryManager = true }
+                                    action: {
+                                        AnalyticsTracker.view("category_manager")
+                                        showingCategoryManager = true
+                                    }
                                 )
                             }
 
@@ -91,12 +97,17 @@ struct SettingsView: View {
                                 SettingsValueRow(
                                     title: "How to auto-track",
                                     value: "Setup",
-                                    action: { showingHowToAutoTracking = true }
+                                    action: {
+                                        showingHowToAutoTracking = true
+                                    }
                                 )
                                 SettingsValueRow(
                                     title: "Troubleshoot auto-tracking",
                                     value: "Help",
-                                    action: { showingTroubleshooting = true }
+                                    action: {
+                                        AnalyticsTracker.view("troubleshooting")
+                                        showingTroubleshooting = true
+                                    }
                                 )
                             }
 
@@ -105,12 +116,18 @@ struct SettingsView: View {
                                 SettingsValueRow(
                                     title: "Import CSV",
                                     value: "",
-                                    action: { showingImportPicker = true }
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.importStarted)
+                                        showingImportPicker = true
+                                    }
                                 )
                                 SettingsValueRow(
                                     title: "Export CSV",
                                     value: "",
-                                    action: { showingExportOptions = true }
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.exportStarted)
+                                        showingExportOptions = true
+                                    }
                                 )
                             }
 
@@ -119,7 +136,10 @@ struct SettingsView: View {
                                 SettingsValueRow(
                                     title: "Contact the Developer",
                                     value: "Email",
-                                    action: { openEmail() }
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.contactDeveloper)
+                                        openEmail()
+                                    }
                                 )
                                 SettingsStaticRow(title: "Version", value: appVersion)
                             }
@@ -203,10 +223,16 @@ struct SettingsView: View {
                 onComplete: { result in
                     switch result {
                     case .success:
+                        AnalyticsTracker.log(AnalyticsTracker.Event.exportCompleted, [
+                            "size_bytes": csvToExport.utf8.count
+                        ])
                         exportCompleteMessage = "CSV file exported successfully!"
                         showingExportCompleteAlert = true
                     case .failure(let error):
                         if (error as NSError).code != -2 { // -2 is user cancellation, don't show error
+                            AnalyticsTracker.log(AnalyticsTracker.Event.exportCompleted, [
+                                "size_bytes": csvToExport.utf8.count
+                            ])
                             exportCompleteMessage = "Export completed. File saved."
                             showingExportCompleteAlert = true
                         }
@@ -231,6 +257,7 @@ struct SettingsView: View {
             )
         }
         .onChange(of: defaultCurrencyCode) { _, newDefault in
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyDefaultSet, ["code": newDefault])
             // Rates are relative to the default currency — clear stale cache so views
             // immediately fall back to raw amounts, then re-fetch against the new default.
             exchangeRatesData = (try? JSONEncoder().encode([String: Double]())) ?? Data()
@@ -346,11 +373,21 @@ private extension SettingsView {
             }
             importMessage = "Imported " + summary.joined(separator: ", ") + "."
 
+            AnalyticsTracker.log(AnalyticsTracker.Event.importCompleted, [
+                "transactions": result.transactionsAdded,
+                "cards": result.cardsAdded,
+                "categories": result.categoriesAdded,
+                "currencies_enabled": importPlan.currenciesToEnable.count
+            ])
+
             try? await Task.sleep(nanoseconds: 500_000_000)
             isImporting = false
             showingImportAlert = true
         } catch {
             importMessage = "Error saving: \(error.localizedDescription)"
+            AnalyticsTracker.log(AnalyticsTracker.Event.importFailed, [
+                "error": error.localizedDescription
+            ])
             isImporting = false
             showingImportAlert = true
         }
@@ -768,6 +805,7 @@ struct CurrencyManagerView: View {
                     if let data = try? JSONEncoder().encode(rates) {
                         exchangeRatesData = data
                     }
+                    AnalyticsTracker.edit("exchange_rate", ["code": code])
                 }
             }
         )
@@ -806,8 +844,10 @@ struct CurrencyManagerView: View {
             guard codes.count > 1 else { return }
             codes.removeAll { $0 == code }
             if defaultCurrencyCode == code { defaultCurrencyCode = codes.first ?? "SGD" }
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyDisabled, ["code": code])
         } else {
             codes.append(code)
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyEnabled, ["code": code])
             // Fetch rate immediately if this currency has no cached rate yet
             if rates[code] == nil && code != defaultCurrencyCode {
                 Task { await fetchRateForCurrency(code) }
@@ -848,6 +888,10 @@ struct CurrencyManagerView: View {
             for (code, rate) in fetched { updated[code] = rate }
             saveRates(updated)
             lastFetched = Date()
+            AnalyticsTracker.log(AnalyticsTracker.Event.exchangeRateRefreshed, [
+                "count": fetched.count,
+                "base": defaultCurrencyCode
+            ])
         }
         isFetchingRates = false
     }
@@ -945,6 +989,7 @@ struct AddCurrencyView: View {
         var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         if !codes.contains(upperCode) { codes.append(upperCode) }
         enabledCurrenciesRaw = codes.joined(separator: ",")
+        AnalyticsTracker.log(AnalyticsTracker.Event.currencyCustomAdded, ["code": upperCode])
         onAdded(upperCode)
         dismiss()
     }

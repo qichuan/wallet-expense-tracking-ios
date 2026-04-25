@@ -265,8 +265,15 @@ struct CardFormView: View {
                 editing.minimumSpendingAmount = parsed
                 editing.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
             }
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving card: \(error)") }
+            do {
+                try modelContext.save()
+                AnalyticsTracker.edit("card", [
+                    "reward_type": String(describing: rewardType),
+                    "has_min_spend": hasMinimumSpending
+                ])
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving card: \(error)") }
         } else {
             let newMinimumSpendingAmount: Decimal = {
                 if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) { return parsed }
@@ -281,19 +288,34 @@ struct CardFormView: View {
                 minimumSpendingByDayOfMonth: stmtDay
             )
             modelContext.insert(card)
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving card: \(error)") }
+            do {
+                try modelContext.save()
+                AnalyticsTracker.log(AnalyticsTracker.Event.cardAdded, [
+                    "reward_type": String(describing: rewardType),
+                    "has_min_spend": hasMinimumSpending,
+                    "statement_day": stmtDay
+                ])
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving card: \(error)") }
         }
     }
 
     private func deleteCard() {
         guard let editing = cardToEdit else { return }
+        let rewardTypeString = String(describing: editing.rewardType)
         for transaction in editing.transactions {
             transaction.card = nil
         }
         modelContext.delete(editing)
-        do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-        catch { print("Error deleting card: \(error)") }
+        do {
+            try modelContext.save()
+            AnalyticsTracker.log(AnalyticsTracker.Event.cardDeleted, [
+                "reward_type": rewardTypeString
+            ])
+            WidgetDataWriter.refresh(using: modelContext)
+            dismiss()
+        } catch { print("Error deleting card: \(error)") }
     }
 }
 
