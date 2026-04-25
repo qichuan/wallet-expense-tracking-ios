@@ -319,7 +319,16 @@ private extension SettingsView {
                 codes.append(code)
             }
             enabledCurrenciesRaw = codes.joined(separator: ",")
-            _ = await CurrencyUtils.fetchRates(for: importPlan.currenciesToEnable, to: defaultCurrencyCode)
+
+            importProgressText = "Fetching exchange rates…"
+            if let fetched = await CurrencyUtils.fetchRates(for: importPlan.currenciesToEnable, to: defaultCurrencyCode) {
+                var updated = CurrencyUtils.cachedRates
+                for (code, rate) in fetched { updated[code] = rate }
+                CurrencyUtils.saveRates(updated, baseCurrency: defaultCurrencyCode)
+                if let data = try? JSONEncoder().encode(updated) {
+                    exchangeRatesData = data
+                }
+            }
         }
 
         // 3. Apply the plan: insert cards, categories, transactions
