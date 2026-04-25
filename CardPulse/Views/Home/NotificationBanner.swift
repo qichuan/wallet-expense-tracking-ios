@@ -14,23 +14,25 @@ struct NotificationBanner: View {
     var body: some View {
         if !hasDismissedNotificationBanner {
             ZStack(alignment: .topTrailing) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "bell.badge")
-                        .font(.system(size: 24))
-                        .foregroundColor(.yellow)
-                        .frame(width: 36, height: 36)
-                        .padding(.top, 2)
+                HStack(alignment: .top, spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(AppColors.brandGold.opacity(0.18))
+                        Image(systemName: "bell.badge.fill")
+                            .font(AppTypography.bannerIcon)
+                            .foregroundColor(AppColors.brandGold)
+                    }
+                    .frame(width: 38, height: 38)
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Enable Notifications")
-                            .foregroundColor(.white)
-                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+                            .font(AppTypography.bannerTitle)
                         Text("Get notified when tap‑to‑pay transactions are tracked")
-                            .foregroundColor(.white.opacity(0.8))
-                            .font(.subheadline)
+                            .foregroundColor(AppColors.textSecondary)
+                            .font(AppTypography.bannerBody)
 
                         Button(action: {
-                            // Request notification permission
                             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
                                 if granted {
                                     DispatchQueue.main.async {
@@ -40,39 +42,39 @@ struct NotificationBanner: View {
                             }
                         }) {
                             Text("Enable")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.yellow)
-                                .cornerRadius(8)
+                                .font(AppTypography.bannerCTA)
+                                .foregroundColor(AppColors.backgroundPrimary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(AppColors.brandGold)
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .padding(.top, 2)
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(12)
+                .padding(14)
                 .padding(.trailing, 32)
-                
+
                 Button(action: {
                     DispatchQueue.main.async {
                         hasDismissedNotificationBanner = true
                     }
                 }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 24, height: 24)
-                        .background(Color.white.opacity(0.1))
+                        .font(AppTypography.bannerClose)
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 22, height: 22)
+                        .background(AppColors.backgroundCardSoft)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .padding(12)
+                .padding(10)
             }
-            .background(Color.white.opacity(0.08))
-            .cornerRadius(12)
-            .padding(.horizontal)
+            .background(AppColors.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, 20)
         } else {
             EmptyView()
         }
@@ -81,6 +83,6 @@ struct NotificationBanner: View {
 
 #Preview {
     NotificationBanner()
-        .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .background(AppColors.backgroundPrimary)
 }
 

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct MainTabView: View {
     @Environment(\.modelContext) private var modelContext
@@ -14,7 +15,30 @@ struct MainTabView: View {
     @Query private var cards: [Card]
     @State private var selectedTab = 0
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+
+    init() {
+        configureTabBarAppearance()
+    }
+
+    private func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(AppColors.backgroundPrimary)
+        appearance.shadowColor = UIColor(AppColors.divider)
+
+        let unselected = UIColor(AppColors.textTertiary)
+        appearance.stackedLayoutAppearance.normal.iconColor = unselected
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+        appearance.inlineLayoutAppearance.normal.iconColor = unselected
+        appearance.inlineLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+        appearance.compactInlineLayoutAppearance.normal.iconColor = unselected
+        appearance.compactInlineLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: unselected]
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     private func writeWidgetData() {
         WidgetDataWriter.refresh(using: modelContext)
@@ -58,23 +82,33 @@ struct MainTabView: View {
             
             SettingsView()
                 .tabItem {
-                    Image(systemName: "gear")
+                    Image(systemName: "record.circle")
                     Text("Settings")
                 }
                 .tag(3)
         }
-        .accentColor(.teal)
+        .tint(AppColors.accent)
         .preferredColorScheme(.dark)
-        .fullScreenCover(isPresented: .constant(!hasChosenDefaultCurrency)) {
-            CurrencyOnboardingView()
-                .interactiveDismissDisabled(true)
-        }
         .onAppear {
             writeWidgetData()
             CurrencyUtils.ensureDefaultCurrenciesEnabled()
+            // Returning users (pre-onboarding-flow) who already chose a currency
+            // should not be pushed through onboarding again.
+            if hasChosenDefaultCurrency && !hasCompletedOnboarding {
+                hasCompletedOnboarding = true
+            }
             refreshExchangeRatesIfNeeded()
         }
         .onChange(of: cards.count) { writeWidgetData() }
+        .onChange(of: selectedTab) { _, newTab in
+            switch newTab {
+            case 0: AnalyticsTracker.view("home")
+            case 1: AnalyticsTracker.view("analytics")
+            case 2: AnalyticsTracker.view("cards")
+            case 3: AnalyticsTracker.view("settings")
+            default: break
+            }
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 writeWidgetData()
