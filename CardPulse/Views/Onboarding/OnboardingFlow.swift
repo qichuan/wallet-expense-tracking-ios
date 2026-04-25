@@ -104,12 +104,23 @@ struct OnboardingFlow: View {
                 enabled: currentPrimaryEnabled,
                 action: performPrimaryAction
             )
+
+            if stepIndex == 4 {
+                Button(action: complete) {
+                    Text("Skip for now")
+                        .font(AppTypography.navButton)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
     private var currentPrimaryTitle: String {
         switch stepIndex {
-        case 4: return "Open Shortcuts"
+        case 4: return "Open Shortcuts to set up"
         default: return "Continue"
         }
     }
