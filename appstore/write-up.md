@@ -20,7 +20,12 @@ CardPulse takes the mental load off.
 # What's New in This Version
 
 v2.0
-
+Fresh look - Full UI redesign across the app
+Multi-currency support - Track transactions in major currencies including SGD, MYR, HKD, USD, and EUR — plus add your own. Foreign spend gets auto-converted to your home currency so min-spend progress stays accurate. Exchange rates refresh automatically.
+Home page widget - See your min-spend progress and days left in the cycle right from your home page.
+Custom categories - Built-in categories ready out of the box, plus add, edit, or delete your own.
+New onboarding - First-time setup now walks you through currency, categories, notifications, and a quick video showing how to set up Apple Shortcuts for auto-tracking.
+Plus performance and stability improvements throughout.
 
 
 # Keywords
