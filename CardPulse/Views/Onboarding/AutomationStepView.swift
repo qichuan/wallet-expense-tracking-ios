@@ -17,7 +17,7 @@ struct AutomationStepView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Set up Automation")
+            Text("Set up Auto-track")
                 .font(AppTypography.screenTitle)
                 .foregroundColor(AppColors.textPrimary)
                 .padding(.horizontal, 20)
