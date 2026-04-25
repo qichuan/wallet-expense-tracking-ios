@@ -11,12 +11,12 @@ struct HowToAutoTrackingView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 16) {
                 AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})
                 .background(AppColors.backgroundPrimary)
 
-                OnboardingPrimaryButton(title: "Open Shortcut", enabled: true, action: {
+                OnboardingPrimaryButton(title: "Open Shortcuts to set up", enabled: true, action: {
 
                 guard let url = URL(string: "shortcuts://"),
                       UIApplication.shared.canOpenURL(url) else {
@@ -28,8 +28,8 @@ struct HowToAutoTrackingView: View {
             }
             .background(AppColors.backgroundPrimary)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") { dismiss() }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
                 }
             }
             .onAppear {

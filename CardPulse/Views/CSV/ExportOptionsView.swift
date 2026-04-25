@@ -17,7 +17,7 @@ struct ExportOptionsView: View {
     @State private var isLoading = true
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Date Range Section
                 VStack(alignment: .leading, spacing: 16) {
@@ -102,34 +102,22 @@ struct ExportOptionsView: View {
                         .frame(maxHeight: .infinity)
                     }
                 }
-                // Bottom action buttons
-                HStack(spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Text("Cancel")
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.textPrimary)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.backgroundCard)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    Button(action: { onExport() }) {
-                        Text("Export")
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.onAccent)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    .disabled(startDate > endDate)
-                }
             }
             .padding()
             .background(AppColors.backgroundPrimary)
             .navigationTitle("Export Options")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Export") { onExport() }
+                        .foregroundColor(startDate <= endDate ? AppColors.accent : AppColors.textTertiary)
+                        .disabled(startDate > endDate)
+                }
+            }
         }
         .onAppear { loadTransactions() }
         .onChange(of: startDate) { _, _ in loadTransactions() }
