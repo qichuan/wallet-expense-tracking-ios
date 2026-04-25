@@ -34,13 +34,19 @@ struct WalletTransactionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         // Parse currency and numeric value from the raw amount string
-        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
+        guard let (resolvedCurrency, decimalAmount) = await CurrencyUtils.parseCurrencyAndAmount(from: amount),
               decimalAmount != 0 else {
             return .result()
         }
 
-        // Persist a new Transaction into SwiftData
-        let container = try ModelContainer(for: Card.self, Transaction.self)
+        // Persist a new Transaction into SwiftData. Must match the main app's
+        // schema + migration plan so the intent can open the same store on a
+        // user who has already migrated to V3.
+        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self])
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: CardPulseMigrationPlan.self
+        )
         let context = ModelContext(container)
 
         // Find card by name or create it if missing
@@ -85,7 +91,7 @@ struct WalletTransactionIntent: AppIntent {
         ])
         do {
             try context.save()
-            WidgetDataWriter.refresh(using: context)
+            await WidgetDataWriter.refresh(using: context)
         } catch {
             // Swallow — the intent should never surface save errors to the user
         }

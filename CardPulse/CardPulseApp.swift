@@ -27,11 +27,15 @@ struct CardPulseApp: App {
         let schema = Schema([
             Card.self,
             Transaction.self,
+            SpendingCategory.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true)
 
         do {
-            return try ModelContainer(for: schema, migrationPlan: CardPulseMigrationPlan.self, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, migrationPlan: CardPulseMigrationPlan.self, configurations: [modelConfiguration])
+            // Safety seed: fresh installs on V3 don't run the V2→V3 stage, so seed here.
+            try CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -39,8 +43,34 @@ struct CardPulseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            RootView()
         }
         .modelContainer(sharedModelContainer)
+    }
+}
+
+private struct RootView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    
+    #if DEBUG
+    @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
+    #endif
+
+    private var shouldShowOnboarding: Bool {
+        #if DEBUG
+        if debugAlwaysShowOnboarding { return false }
+        #endif
+        return !hasCompletedOnboarding
+    }
+
+    var body: some View {
+        Group {
+            if shouldShowOnboarding {
+                OnboardingFlow()
+                    .preferredColorScheme(.dark)
+            } else {
+                MainTabView()
+            }
+        }
     }
 }

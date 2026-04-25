@@ -10,24 +10,25 @@ import SwiftData
 
 extension ModelContainer {
     static func createMockContainer() -> ModelContainer {
-        let schema = Schema([Card.self, Transaction.self])
+        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        
+
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            
+
             // Add mock data
             let mockCards = createMockCards()
             let mockTransactions = createMockTransactions(for: mockCards)
-            
+
             for card in mockCards {
                 container.mainContext.insert(card)
             }
-            
+
             for transaction in mockTransactions {
                 container.mainContext.insert(transaction)
             }
-            
+
+            try CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
             try container.mainContext.save()
             return container
         } catch {

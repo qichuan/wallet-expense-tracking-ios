@@ -25,12 +25,11 @@ struct SettingsView: View {
     // Import preview states
     @State private var showingImportPreview = false
     @State private var importCSVContent = ""
-    @State private var previewRows: [ImportPreviewRow] = []
-    @State private var missingCardNames: [String] = []
+    @State private var importPlan: ImportPlan = ImportPlan()
 
     // Export preview states
     @State private var showingExportOptions = false
-    @State private var startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     @State private var endDate = Date()
     @State private var showingFilePicker = false
     @State private var csvToExport = ""
@@ -44,136 +43,122 @@ struct SettingsView: View {
     @State private var importProgressText = ""
     @State private var showingHowToAutoTracking = false
     @State private var showingTroubleshooting = false
+    @State private var showingCategoryManager = false
+
+    #if DEBUG
+    @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
+    #endif
     
+    private var appVersion: String {
+        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        return short
+    }
+
     var body: some View {
         ZStack {
-            NavigationView {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        
-                        // CURRENCY Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("CURRENCY")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
+            NavigationStack {
+                ZStack {
+                    AppColors.backgroundPrimary.ignoresSafeArea()
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            BrandHeader(title: "Settings")
 
-                            VStack(spacing: 0) {
-                                // Default currency picker
-                                HStack(spacing: 12) {
-                                    Circle()
-                                        .stroke(Color.teal, lineWidth: 1)
-                                        .frame(width: 40, height: 40)
-                                        .overlay(
-                                            Image(systemName: "dollarsign.circle")
-                                                .font(.headline)
-                                                .foregroundColor(.white)
-                                        )
-
-                                    Text("Default Currency")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-
-                                    Spacer()
-
-                                    Picker("", selection: $defaultCurrencyCode) {
-                                        ForEach(enabledCurrencyList, id: \.code) { info in
-                                            Text(info.code).tag(info.code)
-                                        }
+                            // CURRENCY
+                            SettingsSection(title: "Currency") {
+                                SettingsPickerRow(
+                                    title: "Main currency",
+                                    selection: $defaultCurrencyCode,
+                                    options: enabledCurrencyList.map { $0.code }
+                                )
+                                SettingsValueRow(
+                                    title: "Enabled currencies",
+                                    value: "\(enabledCurrencyList.count)",
+                                    action: {
+                                        AnalyticsTracker.view("currency_manager")
+                                        showingCurrencyManager = true
                                     }
-                                    .pickerStyle(MenuPickerStyle())
-                                    .accentColor(.teal)
-                                }
-                                .padding()
-
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-
-                                SettingsRow(
-                                    icon: "list.bullet",
-                                    title: "Manage Currencies",
-                                    action: { showingCurrencyManager = true }
                                 )
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
 
-                        // DATA MANAGEMENT Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("DATA MANAGEMENT")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                SettingsRow(
-                                    icon: "square.and.arrow.up",
-                                    title: "Import from CSV",
-                                    action: { showingImportPicker = true }
-                                )
-                                
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-                                
-                                SettingsRow(
-                                    icon: "square.and.arrow.down",
-                                    title: "Export to CSV",
-                                    action: { showingExportOptions = true }
+                            // CATEGORIES
+                            SettingsSection(title: "Categories") {
+                                SettingsValueRow(
+                                    title: "Manage categories",
+                                    value: "",
+                                    action: {
+                                        AnalyticsTracker.view("category_manager")
+                                        showingCategoryManager = true
+                                    }
                                 )
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-                        
-                        
-                        // SUPPORT & ABOUT Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("SUPPORT")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 0) {
-                                SettingsRow(
-                                    icon: "questionmark.circle",
-                                    title: "How to set up an automation in Shortcuts app to track wallet transactions?",
-                                    action: { showingHowToAutoTracking = true }
+
+                            // AUTOMATION
+                            SettingsSection(title: "Automation") {
+                                SettingsValueRow(
+                                    title: "How to auto-track",
+                                    value: "Setup",
+                                    action: {
+                                        showingHowToAutoTracking = true
+                                    }
                                 )
-
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
-
-                                SettingsRow(
-                                    icon: "exclamationmark.triangle",
-                                    title: "Transactions not recording automatically?",
-                                    action: { showingTroubleshooting = true }
+                                SettingsValueRow(
+                                    title: "Troubleshoot auto-tracking",
+                                    value: "Help",
+                                    action: {
+                                        AnalyticsTracker.view("troubleshooting")
+                                        showingTroubleshooting = true
+                                    }
                                 )
+                            }
 
-                                Divider()
-                                    .background(Color.white.opacity(0.1))
+                            // DATA
+                            SettingsSection(title: "Data") {
+                                SettingsValueRow(
+                                    title: "Import CSV",
+                                    value: "",
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.importStarted)
+                                        showingImportPicker = true
+                                    }
+                                )
+                                SettingsValueRow(
+                                    title: "Export CSV",
+                                    value: "",
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.exportStarted)
+                                        showingExportOptions = true
+                                    }
+                                )
+                            }
 
-                                SettingsRow(
-                                    icon: "envelope",
+                            // ABOUT
+                            SettingsSection(title: "About") {
+                                SettingsValueRow(
                                     title: "Contact the Developer",
-                                    action: { openEmail() }
+                                    value: "Email",
+                                    action: {
+                                        AnalyticsTracker.log(AnalyticsTracker.Event.contactDeveloper)
+                                        openEmail()
+                                    }
+                                )
+                                SettingsStaticRow(title: "Version", value: appVersion)
+                            }
+
+                            #if DEBUG
+                            SettingsSection(title: "Debug") {
+                                SettingsToggleRow(
+                                    title: "Always show onboarding",
+                                    isOn: $debugAlwaysShowOnboarding
                                 )
                             }
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
+                            #endif
                         }
+                        .padding(.bottom, 40)
                     }
-                    .padding(.bottom, 100)
                 }
-                .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+                .navigationBarHidden(true)
             }
-            
+
             // Export progress overlay
             if isExporting {
                 ProgressOverlay(
@@ -185,7 +170,7 @@ struct SettingsView: View {
                 .zIndex(9999)
                 .allowsHitTesting(true)
             }
-            
+
             // Import progress overlay
             if isImporting {
                 ProgressOverlay(
@@ -209,8 +194,7 @@ struct SettingsView: View {
         // Import preview
         .sheet(isPresented: $showingImportPreview) {
             ImportPreviewView(
-                rows: previewRows,
-                missingCards: missingCardNames,
+                plan: importPlan,
                 onConfirm: {
                     Task {
                         await performImport()
@@ -239,10 +223,16 @@ struct SettingsView: View {
                 onComplete: { result in
                     switch result {
                     case .success:
+                        AnalyticsTracker.log(AnalyticsTracker.Event.exportCompleted, [
+                            "size_bytes": csvToExport.utf8.count
+                        ])
                         exportCompleteMessage = "CSV file exported successfully!"
                         showingExportCompleteAlert = true
                     case .failure(let error):
                         if (error as NSError).code != -2 { // -2 is user cancellation, don't show error
+                            AnalyticsTracker.log(AnalyticsTracker.Event.exportCompleted, [
+                                "size_bytes": csvToExport.utf8.count
+                            ])
                             exportCompleteMessage = "Export completed. File saved."
                             showingExportCompleteAlert = true
                         }
@@ -254,6 +244,10 @@ struct SettingsView: View {
         .sheet(isPresented: $showingHowToAutoTracking) {
             HowToAutoTrackingView()
         }
+        // Category manager
+        .sheet(isPresented: $showingCategoryManager) {
+            CategoryManagementView()
+        }
         // Currency manager
         .sheet(isPresented: $showingCurrencyManager) {
             CurrencyManagerView(
@@ -263,6 +257,7 @@ struct SettingsView: View {
             )
         }
         .onChange(of: defaultCurrencyCode) { _, newDefault in
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyDefaultSet, ["code": newDefault])
             // Rates are relative to the default currency — clear stale cache so views
             // immediately fall back to raw amounts, then re-fetch against the new default.
             exchangeRatesData = (try? JSONEncoder().encode([String: Double]())) ?? Data()
@@ -327,23 +322,72 @@ private extension SettingsView {
     func performImport() async {
         isImporting = true
         importProgressText = "Starting import..."
-        
+
         // Close the preview sheet
         showingImportPreview = false
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
-        // Build a cache of cards by name via Utils (prefetch existing and pre-create missing)
-        let nameToCard: [String: Card] = ImportExportUtils.precreateAndMapCards(missingCardNames: missingCardNames, modelContext: modelContext)
-        
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        // 1. Add custom currencies first so they're known when transactions reference them
+        if !importPlan.customCurrenciesToAdd.isEmpty {
+            importProgressText = "Adding custom currencies…"
+            var existing = CurrencyUtils.parseCustomCurrencies(fromRaw: customCurrenciesRaw)
+            let existingCodes = Set(existing.map { $0.code })
+            for c in importPlan.customCurrenciesToAdd where !existingCodes.contains(c.code) {
+                existing.append(CurrencyInfo(code: c.code, name: c.name, symbol: c.symbol))
+            }
+            customCurrenciesRaw = existing.map { "\($0.code)|\($0.name)|\($0.symbol)" }.joined(separator: ",")
+        }
+
+        // 2. Enable new currencies and fetch exchange rates
+        if !importPlan.currenciesToEnable.isEmpty {
+            importProgressText = "Enabling currencies…"
+            var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+            for code in importPlan.currenciesToEnable where !codes.contains(code) {
+                codes.append(code)
+            }
+            enabledCurrenciesRaw = codes.joined(separator: ",")
+
+            importProgressText = "Fetching exchange rates…"
+            if let fetched = await CurrencyUtils.fetchRates(for: importPlan.currenciesToEnable, to: defaultCurrencyCode) {
+                var updated = CurrencyUtils.cachedRates
+                for (code, rate) in fetched { updated[code] = rate }
+                CurrencyUtils.saveRates(updated, baseCurrency: defaultCurrencyCode)
+                if let data = try? JSONEncoder().encode(updated) {
+                    exchangeRatesData = data
+                }
+            }
+        }
+
+        // 3. Apply the plan: insert cards, categories, transactions
         do {
-            let processedCount = try ImportExportUtils.importCSV(content: importCSVContent, nameToCard: nameToCard, modelContext: modelContext)
+            importProgressText = "Importing data…"
+            let result = try ImportExportUtils.applyImportPlan(importPlan, modelContext: modelContext)
             importProgressText = "Import completed!"
-            importMessage = "Successfully imported \(processedCount) transactions."
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+            var summary: [String] = []
+            summary.append("\(result.transactionsAdded) transactions")
+            if result.cardsAdded > 0 { summary.append("\(result.cardsAdded) cards") }
+            if result.categoriesAdded > 0 { summary.append("\(result.categoriesAdded) categories") }
+            if !importPlan.currenciesToEnable.isEmpty {
+                summary.append("\(importPlan.currenciesToEnable.count) currencies enabled")
+            }
+            importMessage = "Imported " + summary.joined(separator: ", ") + "."
+
+            AnalyticsTracker.log(AnalyticsTracker.Event.importCompleted, [
+                "transactions": result.transactionsAdded,
+                "cards": result.cardsAdded,
+                "categories": result.categoriesAdded,
+                "currencies_enabled": importPlan.currenciesToEnable.count
+            ])
+
+            try? await Task.sleep(nanoseconds: 500_000_000)
             isImporting = false
             showingImportAlert = true
         } catch {
             importMessage = "Error saving: \(error.localizedDescription)"
+            AnalyticsTracker.log(AnalyticsTracker.Event.importFailed, [
+                "error": error.localizedDescription
+            ])
             isImporting = false
             showingImportAlert = true
         }
@@ -365,16 +409,23 @@ private extension SettingsView {
         // Small delay to ensure overlay is visible
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
         
-        // Generate CSV
-        csvToExport = ImportExportUtils.exportCSV(modelContext: modelContext, from: startDate, to: endDate)
-        exportFilename = "transactions_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
-        
+        // Generate CSV (full backup: cards, categories, currencies, transactions)
+        csvToExport = ImportExportUtils.exportBackupCSV(
+            modelContext: modelContext,
+            from: startDate,
+            to: endDate,
+            defaultCurrency: defaultCurrencyCode,
+            enabledCurrencyCodes: enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty },
+            customCurrenciesRaw: customCurrenciesRaw
+        )
+        exportFilename = "cardpulse_backup_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
+
         // Verify CSV was generated
         guard !csvToExport.isEmpty else {
             withAnimation {
                 isExporting = false
             }
-            importMessage = "No transactions found to export."
+            importMessage = "Nothing to export."
             showingImportAlert = true
             return
         }
@@ -411,9 +462,7 @@ private extension SettingsView {
                     showingImportAlert = true
                     return
                 }
-                let preview = ImportExportUtils.buildImportPreview(from: csvContent, modelContext: modelContext)
-                previewRows = preview.rows
-                missingCardNames = preview.missingCards
+                importPlan = ImportExportUtils.buildImportPlan(from: csvContent, modelContext: modelContext)
                 importCSVContent = csvContent
                 showingImportPreview = true
             } catch {
@@ -427,37 +476,116 @@ private extension SettingsView {
     }
 }
 
-struct SettingsRow: View {
-    let icon: String
+// MARK: - Settings rows
+
+struct SettingsSection<Content: View>: View {
     let title: String
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionLabel(text: title)
+                .padding(.horizontal, 20)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(AppColors.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, 20)
+        }
+    }
+}
+
+struct SettingsValueRow: View {
+    let title: String
+    let value: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Circle()
-                    .stroke(Color.teal, lineWidth: 1)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: icon)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    )
-                
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.leading)
                 Spacer()
-                
+                if !value.isEmpty {
+                    Text(value)
+                        .font(AppTypography.rowValue)
+                        .foregroundColor(AppColors.textSecondary)
+                }
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(AppTypography.chevron)
+                    .foregroundColor(AppColors.textTertiary)
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
+    }
+}
+
+struct SettingsStaticRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Text(value)
+                .font(AppTypography.rowValue)
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+    }
+}
+
+struct SettingsToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(AppColors.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+}
+
+struct SettingsPickerRow: View {
+    let title: String
+    @Binding var selection: String
+    let options: [String]
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Picker("", selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(AppColors.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 }
 
@@ -465,39 +593,39 @@ struct ProgressOverlay: View {
     let title: String
     let message: String
     let progress: Double?
-    
+
     var body: some View {
         ZStack {
-            Color.black.opacity(0.6)
+            AppColors.scrim
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 20) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
+                    .font(AppTypography.headline)
+                    .foregroundColor(AppColors.textPrimary)
+
                 if let progress = progress {
                     ProgressView(value: progress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: .teal))
+                        .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accent))
                         .frame(width: 200)
-                    
+
                     Text("\(Int(progress * 100))%")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(AppTypography.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
                 } else {
                     ProgressView()
                         .scaleEffect(1.2)
-                        .tint(.teal)
+                        .tint(AppColors.accent)
                 }
-                
+
                 Text(message)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(AppTypography.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
             .padding(24)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundCard)
             .cornerRadius(16)
             .shadow(radius: 10)
         }
@@ -562,15 +690,15 @@ struct CurrencyManagerView: View {
                         showingAddCurrency = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.teal)
+                            .foregroundColor(AppColors.accent)
                     }
                     .buttonStyle(.plain)
                 }) {
                     if parsedCustomCurrencies.isEmpty {
                         Text("Tap + to add a custom currency")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.4))
-                            .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .listRowBackground(AppColors.backgroundCard)
                     } else {
                         ForEach(parsedCustomCurrencies) { info in
                             currencyRow(info)
@@ -581,7 +709,7 @@ struct CurrencyManagerView: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Manage Currencies")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -616,12 +744,12 @@ struct CurrencyManagerView: View {
                 Text("Exchange Rates")
                 if isFetchingRates {
                     Text("Fetching latest rates...")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.textTertiary)
                 } else if let fetched = lastFetched {
                     Text("Updated \(fetched, style: .relative) ago")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
             Spacer()
@@ -631,8 +759,8 @@ struct CurrencyManagerView: View {
                 Button("Refresh") {
                     Task { await fetchRates() }
                 }
-                .font(.caption)
-                .foregroundColor(.teal)
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.accent)
                 .buttonStyle(.plain)
             }
         }
@@ -644,20 +772,20 @@ struct CurrencyManagerView: View {
     private func rateRow(_ info: CurrencyInfo) -> some View {
         HStack(spacing: 8) {
             Text("1 \(info.code) =")
-                .font(.subheadline)
-                .foregroundColor(.white)
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColors.textPrimary)
 
             TextField("0.0000", text: rateBinding(for: info.code))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .foregroundColor(.teal)
+                .foregroundColor(AppColors.accent)
                 .frame(maxWidth: 80)
 
             Text(defaultCurrencyCode)
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.7))
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColors.textSecondary)
         }
-        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .listRowBackground(AppColors.backgroundCard)
     }
 
     private func rateBinding(for code: String) -> Binding<String> {
@@ -677,6 +805,7 @@ struct CurrencyManagerView: View {
                     if let data = try? JSONEncoder().encode(rates) {
                         exchangeRatesData = data
                     }
+                    AnalyticsTracker.edit("exchange_rate", ["code": code])
                 }
             }
         )
@@ -691,20 +820,20 @@ struct CurrencyManagerView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.code)
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(AppTypography.headline)
+                        .foregroundColor(AppColors.textPrimary)
                     Text("\(info.name)  \(info.symbol)")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textSecondary)
                 }
                 Spacer()
                 if isEnabled {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.teal)
+                        .foregroundColor(AppColors.accent)
                 }
             }
         }
-        .listRowBackground(Color(red: 0.05, green: 0.1, blue: 0.2))
+        .listRowBackground(AppColors.backgroundCard)
     }
 
     // MARK: - Actions
@@ -715,8 +844,10 @@ struct CurrencyManagerView: View {
             guard codes.count > 1 else { return }
             codes.removeAll { $0 == code }
             if defaultCurrencyCode == code { defaultCurrencyCode = codes.first ?? "SGD" }
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyDisabled, ["code": code])
         } else {
             codes.append(code)
+            AnalyticsTracker.log(AnalyticsTracker.Event.currencyEnabled, ["code": code])
             // Fetch rate immediately if this currency has no cached rate yet
             if rates[code] == nil && code != defaultCurrencyCode {
                 Task { await fetchRateForCurrency(code) }
@@ -757,6 +888,10 @@ struct CurrencyManagerView: View {
             for (code, rate) in fetched { updated[code] = rate }
             saveRates(updated)
             lastFetched = Date()
+            AnalyticsTracker.log(AnalyticsTracker.Event.exchangeRateRefreshed, [
+                "count": fetched.count,
+                "base": defaultCurrencyCode
+            ])
         }
         isFetchingRates = false
     }
@@ -817,14 +952,14 @@ struct AddCurrencyView: View {
                 if duplicateError {
                     Section {
                         Text("\(code.uppercased()) already exists.")
-                            .foregroundColor(.red)
-                            .font(.caption)
+                            .foregroundColor(AppColors.destructive)
+                            .font(AppTypography.caption)
                     }
-                    .listRowBackground(Color.clear)
+                    .listRowBackground(AppColors.clear)
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Add Currency")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -854,6 +989,7 @@ struct AddCurrencyView: View {
         var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
         if !codes.contains(upperCode) { codes.append(upperCode) }
         enabledCurrenciesRaw = codes.joined(separator: ",")
+        AnalyticsTracker.log(AnalyticsTracker.Event.currencyCustomAdded, ["code": upperCode])
         onAdded(upperCode)
         dismiss()
     }

@@ -18,73 +18,163 @@ struct ImportPreviewRow: Identifiable {
 }
 
 struct ImportPreviewView: View {
-    let rows: [ImportPreviewRow]
-    let missingCards: [String]
+    let plan: ImportPlan
     let onConfirm: () -> Void
     let onCancel: () -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
-            VStack(spacing: 16) {
-                if !missingCards.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Cards to be created")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        ForEach(missingCards, id: \.self) { name in
-                            Text(name)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                    }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(12)
-                }
-                
-                VStack(spacing: 0) {
-                    Text("Transactions to import: \(rows.count)")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 8)
+            ScrollView {
+                VStack(spacing: 16) {
+                    summaryCard
 
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(rows.prefix(10)) { row in
-                                TransactionRow(transaction: makePreviewTransaction(from: row))
-                            }
-                            if rows.count > 10 {
-                                Text("... and \(rows.count - 10) more transactions")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .padding(.top, 8)
+                    if !plan.cardsToCreate.isEmpty {
+                        section(title: "Cards to be created", icon: "creditcard.fill", color: AppColors.accent) {
+                            ForEach(plan.cardsToCreate, id: \.self) { name in
+                                row(name)
                             }
                         }
                     }
-                    .frame(maxHeight: .infinity)
-                    
-                }
-                
-                HStack {
-                    Button("Cancel") { onCancel(); dismiss() }
-                        .frame(maxWidth: .infinity)
+
+                    if !plan.categoriesToCreate.isEmpty {
+                        section(title: "Categories to be created", icon: "tag.fill", color: AppColors.accent) {
+                            ForEach(plan.categoriesToCreate, id: \.self) { name in
+                                row(name)
+                            }
+                        }
+                    }
+
+                    if !plan.currenciesToEnable.isEmpty {
+                        section(title: "Currencies to be enabled", icon: "dollarsign.circle.fill", color: AppColors.statusHit) {
+                            HStack(spacing: 6) {
+                                ForEach(plan.currenciesToEnable, id: \.self) { code in
+                                    Text(code)
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.onAccent)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(AppColors.accent)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            Text("Latest exchange rates will be fetched automatically.")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+
+                    if !plan.transactionRows.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Transactions to import")
+                                    .font(AppTypography.headline)
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                Text("\(plan.transactionRows.count)")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+
+                            LazyVStack(spacing: 8) {
+                                ForEach(plan.transactionRows.prefix(10)) { row in
+                                    TransactionRow(transaction: makePreviewTransaction(from: row))
+                                }
+                                if plan.transactionRows.count > 10 {
+                                    Text("... and \(plan.transactionRows.count - 10) more")
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .padding(.top, 4)
+                                }
+                            }
+                        }
                         .padding()
-                        .background(Color.gray.opacity(0.3))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                    Button("Import") { onConfirm(); dismiss() }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.teal)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .background(AppColors.backgroundCard)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    HStack {
+                        Button("Cancel") { onCancel(); dismiss() }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(AppColors.backgroundCard)
+                            .foregroundColor(AppColors.textPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Button("Import") { onConfirm(); dismiss() }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(AppColors.accent)
+                            .foregroundColor(AppColors.onAccent)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .padding(.top, 4)
                 }
+                .padding()
             }
-            .padding()
-            .background(Color(red: 0.05, green: 0.1, blue: 0.2))
+            .background(AppColors.backgroundPrimary)
             .navigationTitle("Import Preview")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    @ViewBuilder
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Backup Summary")
+                .font(AppTypography.headline)
+                .foregroundColor(AppColors.textPrimary)
+            HStack(spacing: 16) {
+                stat("Transactions", plan.transactionRows.count)
+                stat("Cards", plan.cards.count)
+                stat("Categories", plan.categories.count)
+                stat("Currencies", plan.currencies.count)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func stat(_ label: String, _ count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(count)")
+                .font(AppTypography.amountTarget)
+                .foregroundColor(AppColors.textPrimary)
+            Text(label)
+                .font(AppTypography.caption2)
+                .foregroundColor(AppColors.textSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(
+        title: String,
+        icon: String,
+        color: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).foregroundColor(color)
+                Text(title)
+                    .font(AppTypography.headline)
+                    .foregroundColor(AppColors.textPrimary)
+            }
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func row(_ text: String) -> some View {
+        Text(text)
+            .font(AppTypography.subheadline)
+            .foregroundColor(AppColors.textSecondary)
     }
 }
 
@@ -99,7 +189,7 @@ private extension ImportPreviewView {
             minimumSpendingByDayOfMonth: 1
         )
     }
-    
+
     func makePreviewTransaction(from row: ImportPreviewRow) -> Transaction {
         let amount = Decimal(string: row.amount) ?? 0
         let df = DateFormatter()
@@ -117,5 +207,3 @@ private extension ImportPreviewView {
         )
     }
 }
-
-

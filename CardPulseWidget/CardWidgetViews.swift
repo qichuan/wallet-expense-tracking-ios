@@ -8,12 +8,8 @@ import WidgetKit
 
 // MARK: - Design tokens
 
-private let teal = Color.teal
-
 private func progressTint(_ pct: Double) -> Color {
-    if pct >= 1.0 { return .green }
-    if pct >= 0.65 { return .teal }
-    return .orange
+    CardStatus.derive(progress: pct).color
 }
 
 // MARK: - Medium widget (up to 3 cards)
@@ -31,7 +27,7 @@ struct MediumCardWidgetView: View {
                     CardRowWidgetView(card: card)
                     if card.id != visible.last?.id {
                         Divider()
-                            .background(Color.white.opacity(0.08))
+                            .background(AppColors.divider)
                             .padding(.vertical, 5)
                     }
                 }
@@ -47,6 +43,10 @@ struct MediumCardWidgetView: View {
 private struct CardRowWidgetView: View {
     let card: CardSpendData
 
+    private var status: CardStatus {
+        CardStatus.derive(progress: card.progressPercentage)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
@@ -61,7 +61,7 @@ private struct CardRowWidgetView: View {
                     .foregroundColor(.white.opacity(0.75))
             }
             ProgressView(value: card.progressPercentage)
-                .progressViewStyle(LinearProgressViewStyle(tint: progressTint(card.progressPercentage)))
+                .progressViewStyle(LinearProgressViewStyle(tint: status.color))
                 .scaleEffect(x: 1, y: 1.2, anchor: .center)
 
             Text("\(card.daysRemaining)d left · \(card.spendingPeriodDisplay)")
@@ -87,6 +87,7 @@ struct AccessoryCircularWidgetView: View {
                     .font(.caption2)
             }
             .gaugeStyle(.accessoryCircular)
+            .tint(AppColors.accent)
         } else {
             Image(systemName: "creditcard.fill")
         }
@@ -100,7 +101,7 @@ struct EmptyWidgetView: View {
         VStack(spacing: 6) {
             Image(systemName: "creditcard")
                 .font(.title3)
-                .foregroundColor(teal)
+                .foregroundColor(AppColors.accent)
             Text("No cards\nselected")
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.6))
