@@ -25,8 +25,7 @@ struct SettingsView: View {
     // Import preview states
     @State private var showingImportPreview = false
     @State private var importCSVContent = ""
-    @State private var previewRows: [ImportPreviewRow] = []
-    @State private var missingCardNames: [String] = []
+    @State private var importPlan: ImportPlan = ImportPlan()
 
     // Export preview states
     @State private var showingExportOptions = false
@@ -175,8 +174,7 @@ struct SettingsView: View {
         // Import preview
         .sheet(isPresented: $showingImportPreview) {
             ImportPreviewView(
-                rows: previewRows,
-                missingCards: missingCardNames,
+                plan: importPlan,
                 onConfirm: {
                     Task {
                         await performImport()
@@ -297,19 +295,49 @@ private extension SettingsView {
     func performImport() async {
         isImporting = true
         importProgressText = "Starting import..."
-        
+
         // Close the preview sheet
         showingImportPreview = false
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
-        // Build a cache of cards by name via Utils (prefetch existing and pre-create missing)
-        let nameToCard: [String: Card] = ImportExportUtils.precreateAndMapCards(missingCardNames: missingCardNames, modelContext: modelContext)
-        
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        // 1. Add custom currencies first so they're known when transactions reference them
+        if !importPlan.customCurrenciesToAdd.isEmpty {
+            importProgressText = "Adding custom currencies…"
+            var existing = CurrencyUtils.parseCustomCurrencies(fromRaw: customCurrenciesRaw)
+            let existingCodes = Set(existing.map { $0.code })
+            for c in importPlan.customCurrenciesToAdd where !existingCodes.contains(c.code) {
+                existing.append(CurrencyInfo(code: c.code, name: c.name, symbol: c.symbol))
+            }
+            customCurrenciesRaw = existing.map { "\($0.code)|\($0.name)|\($0.symbol)" }.joined(separator: ",")
+        }
+
+        // 2. Enable new currencies and fetch exchange rates
+        if !importPlan.currenciesToEnable.isEmpty {
+            importProgressText = "Enabling currencies…"
+            var codes = enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty }
+            for code in importPlan.currenciesToEnable where !codes.contains(code) {
+                codes.append(code)
+            }
+            enabledCurrenciesRaw = codes.joined(separator: ",")
+            _ = await CurrencyUtils.fetchRates(for: importPlan.currenciesToEnable, to: defaultCurrencyCode)
+        }
+
+        // 3. Apply the plan: insert cards, categories, transactions
         do {
-            let processedCount = try ImportExportUtils.importCSV(content: importCSVContent, nameToCard: nameToCard, modelContext: modelContext)
+            importProgressText = "Importing data…"
+            let result = try ImportExportUtils.applyImportPlan(importPlan, modelContext: modelContext)
             importProgressText = "Import completed!"
-            importMessage = "Successfully imported \(processedCount) transactions."
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+            var summary: [String] = []
+            summary.append("\(result.transactionsAdded) transactions")
+            if result.cardsAdded > 0 { summary.append("\(result.cardsAdded) cards") }
+            if result.categoriesAdded > 0 { summary.append("\(result.categoriesAdded) categories") }
+            if !importPlan.currenciesToEnable.isEmpty {
+                summary.append("\(importPlan.currenciesToEnable.count) currencies enabled")
+            }
+            importMessage = "Imported " + summary.joined(separator: ", ") + "."
+
+            try? await Task.sleep(nanoseconds: 500_000_000)
             isImporting = false
             showingImportAlert = true
         } catch {
@@ -335,16 +363,23 @@ private extension SettingsView {
         // Small delay to ensure overlay is visible
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
         
-        // Generate CSV
-        csvToExport = ImportExportUtils.exportCSV(modelContext: modelContext, from: startDate, to: endDate)
-        exportFilename = "transactions_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
-        
+        // Generate CSV (full backup: cards, categories, currencies, transactions)
+        csvToExport = ImportExportUtils.exportBackupCSV(
+            modelContext: modelContext,
+            from: startDate,
+            to: endDate,
+            defaultCurrency: defaultCurrencyCode,
+            enabledCurrencyCodes: enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty },
+            customCurrenciesRaw: customCurrenciesRaw
+        )
+        exportFilename = "cardpulse_backup_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
+
         // Verify CSV was generated
         guard !csvToExport.isEmpty else {
             withAnimation {
                 isExporting = false
             }
-            importMessage = "No transactions found to export."
+            importMessage = "Nothing to export."
             showingImportAlert = true
             return
         }
@@ -381,9 +416,7 @@ private extension SettingsView {
                     showingImportAlert = true
                     return
                 }
-                let preview = ImportExportUtils.buildImportPreview(from: csvContent, modelContext: modelContext)
-                previewRows = preview.rows
-                missingCardNames = preview.missingCards
+                importPlan = ImportExportUtils.buildImportPlan(from: csvContent, modelContext: modelContext)
                 importCSVContent = csvContent
                 showingImportPreview = true
             } catch {
