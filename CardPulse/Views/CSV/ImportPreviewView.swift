@@ -24,7 +24,7 @@ struct ImportPreviewView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     summaryCard
@@ -93,27 +93,22 @@ struct ImportPreviewView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
 
-                    HStack {
-                        Button("Cancel") { onCancel(); dismiss() }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.backgroundCard)
-                            .foregroundColor(AppColors.textPrimary)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        Button("Import") { onConfirm(); dismiss() }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(AppColors.accent)
-                            .foregroundColor(AppColors.onAccent)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .padding(.top, 4)
                 }
                 .padding()
             }
             .background(AppColors.backgroundPrimary)
             .navigationTitle("Import Preview")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { onCancel(); dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Import") { onConfirm(); dismiss() }
+                        .foregroundColor(AppColors.accent)
+                }
+            }
         }
     }
 
