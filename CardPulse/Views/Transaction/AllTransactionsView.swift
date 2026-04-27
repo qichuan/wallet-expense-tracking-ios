@@ -107,14 +107,10 @@ struct AllTransactionsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(filteredTransactions) { transaction in
-                            Button(action: { selectedTransaction = transaction }) {
-                                TransactionRow(transaction: transaction)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
+                    GroupedTransactionList(
+                        transactions: filteredTransactions,
+                        onTap: { selectedTransaction = $0 }
+                    )
                 }
             }
         }

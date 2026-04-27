@@ -202,14 +202,10 @@ struct HomeView: View {
             }
             .padding(.horizontal, 20)
 
-            VStack(spacing: 8) {
-                ForEach(latestTransactions) { tx in
-                    Button(action: { selectedTransaction = tx }) {
-                        TransactionRow(transaction: tx)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            GroupedTransactionList(
+                transactions: latestTransactions,
+                onTap: { selectedTransaction = $0 }
+            )
             .padding(.horizontal, 20)
         }
     }
