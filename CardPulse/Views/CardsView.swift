@@ -113,7 +113,12 @@ struct CardsView: View {
             CardFormView()
         }
         .sheet(item: $selectedCard) { card in
-            CardFormView(card: card)
+            CardDetailView(card: card)
+        }
+        .onChange(of: cards) {
+            if let sel = selectedCard, !cards.contains(where: { $0.id == sel.id }) {
+                selectedCard = nil
+            }
         }
     }
 
