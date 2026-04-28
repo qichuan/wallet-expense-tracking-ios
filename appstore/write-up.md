@@ -27,6 +27,9 @@ Custom categories - Built-in categories ready out of the box, plus add, edit, or
 New onboarding - First-time setup now walks you through currency, categories, notifications, and a quick video showing how to set up Apple Shortcuts for auto-tracking.
 Plus performance and stability improvements throughout.
 
+v2.1
+- Card detail view — Tap any card to see its spending progress and every transaction that counts toward your min-spend this cycle.
+- Transactions by date — Your transaction lists now group by day with a daily total.
 
 # Keywords
 
