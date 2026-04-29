@@ -10,6 +10,7 @@ import Combine
 struct AutomationStepView: View {
     let onRegisterPrimaryAction: (@escaping () -> Void) -> Void
     let onFinish: () -> Void
+    var showTitle: Bool = true
 
     @StateObject private var players = AutomationPlayers()
     @State private var hasOpenedShortcuts = false
@@ -17,12 +18,14 @@ struct AutomationStepView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Set up Auto-track")
-                .font(AppTypography.screenTitle)
-                .foregroundColor(AppColors.textPrimary)
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, 16)
+            if showTitle {
+                Text("Set up Auto-track")
+                    .font(AppTypography.screenTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, 16)
+            }
 
             #if os(iOS)
             PiPPlayerView(player: players.step1)
