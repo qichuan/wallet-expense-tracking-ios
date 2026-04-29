@@ -13,7 +13,7 @@ struct HowToAutoTrackingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {})
+                AutomationStepView(onRegisterPrimaryAction: { _ in }, onFinish: {}, showTitle: false)
                 .background(AppColors.backgroundPrimary)
 
                 OnboardingPrimaryButton(title: "Open Shortcuts to set up", enabled: true, action: {
@@ -27,6 +27,8 @@ struct HowToAutoTrackingView: View {
                 }).padding(.horizontal, 20)
             }
             .background(AppColors.backgroundPrimary)
+            .navigationTitle("Set up Auto-track")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
