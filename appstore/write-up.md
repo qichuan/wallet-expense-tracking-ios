@@ -5,7 +5,7 @@ Auto-track tap-to-pay spending
 
 For credit card experts who refuse to miss a reward.
 
-If you're juggling a few cards at once, you know the pain — every card has its own min-spend, its own deadline, and missing one means kissing the rewards goodbye.
+If you're juggling a few cards at once, you know the pain. Every card has its own min-spend, its own deadline, and missing one means kissing the rewards goodbye.
 
 CardPulse takes the mental load off.
 

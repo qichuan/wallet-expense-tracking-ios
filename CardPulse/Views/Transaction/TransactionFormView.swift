@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import FirebaseAnalytics
 
 struct TransactionFormView: View {
     let transactionToEdit: Transaction?
@@ -329,7 +328,7 @@ struct TransactionFormView: View {
                 currency: currency
             )
             modelContext.insert(transaction)
-            Analytics.logEvent("add_wallet_transaction", parameters: [
+            AnalyticsTracker.log("add_wallet_transaction", [
                 "type": "manual",
                 "merchant": merchant,
                 "amount": amount,

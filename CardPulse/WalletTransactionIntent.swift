@@ -10,7 +10,6 @@ import AppIntents
 import SwiftData
 import UserNotifications
 import NaturalLanguage
-import FirebaseAnalytics
 import WidgetKit
 
 @available(iOS 16.0, *)
@@ -34,7 +33,7 @@ struct WalletTransactionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         // Parse currency and numeric value from the raw amount string
-        guard let (resolvedCurrency, decimalAmount) = await CurrencyUtils.parseCurrencyAndAmount(from: amount),
+        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
               decimalAmount != 0 else {
             return .result()
         }
@@ -83,11 +82,11 @@ struct WalletTransactionIntent: AppIntent {
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation
-        Analytics.logEvent("add_wallet_transaction", parameters: [
+        AnalyticsTracker.log("add_wallet_transaction", [
             "type": "ttp",
             "merchant": merchantName,
             "currency": resolvedCurrency,
-            "amount": amount,
+            "amount": amount
         ])
         do {
             try context.save()
@@ -97,7 +96,12 @@ struct WalletTransactionIntent: AppIntent {
         }
 
         // Notify user about the new transaction
-        await notifyUserAboutNewTransaction(merchant: merchantName, amount: decimalAmount, cardName: matchedCard?.name)
+        await notifyUserAboutNewTransaction(
+            merchant: merchantName,
+            amount: decimalAmount,
+            currencyCode: resolvedCurrency,
+            cardName: matchedCard?.name
+        )
 
         return .result()
     }
@@ -172,7 +176,7 @@ struct WalletTransactionIntent: AppIntent {
         }
         return "Other"
     }
-    private func notifyUserAboutNewTransaction(merchant: String, amount: Decimal, cardName: String?) async {
+    private func notifyUserAboutNewTransaction(merchant: String, amount: Decimal, currencyCode: String, cardName: String?) async {
         let center = UNUserNotificationCenter.current()
         // Request authorization if not already granted
         do {
@@ -198,6 +202,7 @@ struct WalletTransactionIntent: AppIntent {
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
         let amountString = formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
         let title = "Transaction Added"
         let cardSuffix = (cardName?.isEmpty == false) ? " on \(cardName!)" : ""

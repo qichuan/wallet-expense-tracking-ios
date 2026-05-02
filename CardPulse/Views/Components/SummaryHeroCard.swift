@@ -74,23 +74,26 @@ struct SummaryHeroCard: View {
 
 #Preview {
     VStack(spacing: 20) {
+        let code = CurrencyUtils.defaultCurrencyCode
+        let symbol = CurrencyUtils.symbol(for: code)
+
         SummaryHeroCard(
             periodLabel: "MIN-SPEND TARGET · NOVEMBER",
-            totalAmount: "$11,020",
+            totalAmount: "\(symbol)11,020",
             cardsHit: "1/4",
             nextDeadline: "3d",
             donutSlices: [
                 DonutSlice(category: "Spent", amount: 700, color: AppColors.accent),
                 DonutSlice(category: "Remaining", amount: 300, color: AppColors.backgroundCardSoft)
             ],
-            donutCenterLabel: "$2,300",
-            remainingAmountText: "$2,300",
+            donutCenterLabel: "\(symbol)2,300",
+            remainingAmountText: "\(symbol)2,300",
             allGoalsMet: false
         )
 
         SummaryHeroCard(
             periodLabel: "MIN-SPEND TARGET · NOVEMBER",
-            totalAmount: "$11,020",
+            totalAmount: "\(symbol)11,020",
             cardsHit: "4/4",
             nextDeadline: "3d",
             donutSlices: [
