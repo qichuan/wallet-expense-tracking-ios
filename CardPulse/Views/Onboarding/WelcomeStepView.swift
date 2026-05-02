@@ -115,7 +115,7 @@ struct WelcomeStepView: View {
 
             Spacer()
 
-            Text("$\(tx.amount)")
+            Text("\(CurrencyUtils.symbol(for: CurrencyUtils.defaultCurrencyCode))\(tx.amount)")
                 .font(AppTypography.amountTransaction)
                 .foregroundColor(AppColors.textPrimary)
         }
