@@ -46,12 +46,41 @@ struct ImportPlan {
     var currenciesToEnable: [String] = []
     var customCurrenciesToAdd: [ParsedCurrencyEntry] = []
     var suggestedDefaultCurrency: String? = nil
+
+    /// Rows from the source CSV that match an already-stored transaction
+    /// (same merchant + amount + date + currency + card) and will be skipped
+    /// during import. Surfaced in the preview so users know what's being
+    /// dropped.
+    var duplicateRowsSkipped: Int = 0
 }
 
 struct ImportResult {
     let transactionsAdded: Int
     let cardsAdded: Int
     let categoriesAdded: Int
+    let transactionsSkippedAsDuplicates: Int
+}
+
+/// Stable signature for transaction de-duplication. Two transactions hash to
+/// the same key when they are functionally identical from the user's POV —
+/// regardless of insertion order or `id`.
+private struct TransactionSignature: Hashable {
+    let merchant: String      // trimmed, lowercased
+    let amountCents: Int64    // amount × 100 to avoid Decimal hashing surprises
+    let date: Date
+    let currency: String      // uppercased
+    let cardName: String      // trimmed, lowercased; "" when no card
+
+    static func make(merchant: String, amount: Decimal, date: Date, currency: String, cardName: String?) -> TransactionSignature {
+        let cents = NSDecimalNumber(decimal: amount * 100).int64Value
+        return TransactionSignature(
+            merchant: merchant.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+            amountCents: cents,
+            date: date,
+            currency: currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
+            cardName: (cardName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        )
+    }
 }
 
 struct ImportExportUtils {
@@ -313,6 +342,48 @@ struct ImportExportUtils {
             $0.isCustom && !builtInCodes.contains($0.code) && !existingCustomCodes.contains($0.code)
         }
 
+        // Diff: drop transaction rows that already exist in the store. Done
+        // here (not in `applyImportPlan`) so the preview's row count and
+        // "duplicates skipped" stat match what will actually be imported.
+        let existingTxns = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
+        let existingSignatures = Set(existingTxns.map {
+            TransactionSignature.make(
+                merchant: $0.merchant,
+                amount: $0.amount,
+                date: $0.date,
+                currency: $0.resolvedCurrency,
+                cardName: $0.card?.name
+            )
+        })
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let defaultCurrency = CurrencyUtils.defaultCurrencyCode
+        var deduped: [ImportPreviewRow] = []
+        var seenInBatch: Set<TransactionSignature> = []
+        var skipped = 0
+        for row in plan.transactionRows {
+            guard let amount = Decimal(string: row.amount),
+                  let date = dateFormatter.date(from: row.date) else {
+                deduped.append(row) // malformed rows fall through; applyImportPlan will skip them
+                continue
+            }
+            let sig = TransactionSignature.make(
+                merchant: row.merchant,
+                amount: amount,
+                date: date,
+                currency: row.currency.isEmpty ? defaultCurrency : row.currency,
+                cardName: row.card.isEmpty ? nil : row.card
+            )
+            if existingSignatures.contains(sig) || seenInBatch.contains(sig) {
+                skipped += 1
+                continue
+            }
+            seenInBatch.insert(sig)
+            deduped.append(row)
+        }
+        plan.transactionRows = deduped
+        plan.duplicateRowsSkipped = skipped
+
         return plan
     }
 
@@ -397,7 +468,12 @@ struct ImportExportUtils {
         }
 
         try modelContext.save()
-        return ImportResult(transactionsAdded: txnAdded, cardsAdded: cardsAdded, categoriesAdded: categoriesAdded)
+        return ImportResult(
+            transactionsAdded: txnAdded,
+            cardsAdded: cardsAdded,
+            categoriesAdded: categoriesAdded,
+            transactionsSkippedAsDuplicates: plan.duplicateRowsSkipped
+        )
     }
 
     // MARK: - Export

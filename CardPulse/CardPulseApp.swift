@@ -35,6 +35,8 @@ struct CardPulseApp: App {
             let container = try ModelContainer(for: schema, migrationPlan: CardPulseMigrationPlan.self, configurations: [modelConfiguration])
             // Safety seed: fresh installs on V3 don't run the V2→V3 stage, so seed here.
             try CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
+            RecurringMaterializer.materialize(in: container.mainContext)
+            WidgetDataWriter.refresh(using: container.mainContext)
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
