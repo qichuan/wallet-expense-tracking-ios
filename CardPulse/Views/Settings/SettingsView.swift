@@ -371,13 +371,18 @@ private extension SettingsView {
             if !importPlan.currenciesToEnable.isEmpty {
                 summary.append("\(importPlan.currenciesToEnable.count) currencies enabled")
             }
-            importMessage = "Imported " + summary.joined(separator: ", ") + "."
+            var message = "Imported " + summary.joined(separator: ", ") + "."
+            if result.transactionsSkippedAsDuplicates > 0 {
+                message += " Skipped \(result.transactionsSkippedAsDuplicates) duplicate \(result.transactionsSkippedAsDuplicates == 1 ? "transaction" : "transactions")."
+            }
+            importMessage = message
 
             AnalyticsTracker.log(AnalyticsTracker.Event.importCompleted, [
                 "transactions": result.transactionsAdded,
                 "cards": result.cardsAdded,
                 "categories": result.categoriesAdded,
-                "currencies_enabled": importPlan.currenciesToEnable.count
+                "currencies_enabled": importPlan.currenciesToEnable.count,
+                "duplicates_skipped": result.transactionsSkippedAsDuplicates
             ])
 
             try? await Task.sleep(nanoseconds: 500_000_000)

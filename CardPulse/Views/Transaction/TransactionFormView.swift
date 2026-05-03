@@ -16,10 +16,15 @@ struct TransactionFormView: View {
 
     @Query private var cards: [Card]
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
+    /// Mirrors the user-defined card order persisted by `CardsView`. Cards
+    /// not present in the saved list keep their `@Query` relative order at
+    /// the end.
+    @AppStorage("cardOrder") private var cardOrderRaw: String = "[]"
 
     @State private var merchant: String
     @State private var amount: String
@@ -28,11 +33,30 @@ struct TransactionFormView: View {
     @State private var category: String
     @State private var note: String
     @State private var transactionDate: Date
+    @State private var isRecurring: Bool
     @State private var showingDeleteAlert = false
 
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var noteFocused: Bool
+
+    /// Cards sorted by the user's saved order from `CardsView`.
+    private var orderedCards: [Card] {
+        let order: [UUID] = {
+            guard let data = cardOrderRaw.data(using: .utf8),
+                  let strings = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+            return strings.compactMap { UUID(uuidString: $0) }
+        }()
+        let indexByID: [UUID: Int] = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        return cards.sorted { lhs, rhs in
+            switch (indexByID[lhs.id], indexByID[rhs.id]) {
+            case let (l?, r?): return l < r
+            case (_?, nil):    return true
+            case (nil, _?):    return false
+            case (nil, nil):   return false
+            }
+        }
+    }
 
     private var enabledCurrencies: [CurrencyInfo] {
         let enabled = CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
@@ -68,6 +92,7 @@ struct TransactionFormView: View {
             _category = State(initialValue: transaction.category ?? "Other")
             _note = State(initialValue: transaction.note ?? "")
             _transactionDate = State(initialValue: transaction.date)
+            _isRecurring = State(initialValue: transaction.isRecurring)
         } else {
             _merchant = State(initialValue: "")
             _amount = State(initialValue: "")
@@ -76,12 +101,72 @@ struct TransactionFormView: View {
             _category = State(initialValue: "Other")
             _note = State(initialValue: "")
             _transactionDate = State(initialValue: Date())
+            _isRecurring = State(initialValue: false)
         }
     }
 
     private var isValid: Bool {
         !merchant.trimmingCharacters(in: .whitespaces).isEmpty
         && !amount.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    // MARK: - Merchant autocomplete
+
+    private struct MerchantSuggestion: Identifiable, Hashable {
+        let id = UUID()
+        let name: String
+        let category: String?
+    }
+
+    /// Distinct past merchants in most-recent-first order. Each entry carries
+    /// the category from its most recent appearance, so picking a merchant can
+    /// auto-fill the category. Dedup is case-insensitive on the trimmed name.
+    private var distinctMerchants: [MerchantSuggestion] {
+        var seen = Set<String>()
+        var ordered: [MerchantSuggestion] = []
+        for tx in allTransactions {
+            let trimmed = tx.merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = trimmed.lowercased()
+            if !seen.insert(key).inserted { continue }
+            ordered.append(MerchantSuggestion(name: trimmed, category: tx.category))
+        }
+        return ordered
+    }
+
+    /// Up to 5 matches for the current merchant input. Suggestions appear
+    /// only when adding (not editing) and the user has typed at least 3
+    /// characters. An exact match is filtered out — there's nothing to
+    /// suggest if the user has already typed the full name.
+    private var merchantSuggestions: [MerchantSuggestion] {
+        guard transactionToEdit == nil, merchantFocused else { return [] }
+        let query = merchant.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard query.count >= 3 else { return [] }
+        let matches = distinctMerchants.filter {
+            let n = $0.name.lowercased()
+            return n.contains(query) && n != query
+        }
+        return Array(matches.prefix(5))
+    }
+
+    private func applyMerchantSuggestion(_ s: MerchantSuggestion) {
+        let queryLength = merchant.trimmingCharacters(in: .whitespacesAndNewlines).count
+        let suggestionRank = merchantSuggestions.firstIndex(of: s) ?? -1
+        let suggestionCount = merchantSuggestions.count
+        let categoryAutoFilled = (s.category?.isEmpty == false)
+
+        merchant = s.name
+        if let cat = s.category, !cat.isEmpty { category = cat }
+        merchantFocused = false
+
+        AnalyticsTracker.log(AnalyticsTracker.Event.merchantSuggestionSelected, [
+            "query_length": queryLength,
+            "suggestion_rank": suggestionRank,
+            "suggestion_count": suggestionCount,
+            "category_auto_filled": categoryAutoFilled,
+            "suggested_merchant": merchant,
+            "suggested_category": s.category ?? "n/a"
+        ])
     }
 
     var body: some View {
@@ -94,6 +179,7 @@ struct TransactionFormView: View {
                         merchantSection
                         amountSection
                         detailsSection
+                        recurringSection
                         noteSection
 
                         if transactionToEdit != nil {
@@ -137,6 +223,43 @@ struct TransactionFormView: View {
                 text: $merchant,
                 isFocused: $merchantFocused
             )
+            if !merchantSuggestions.isEmpty {
+                FormDivider()
+                ForEach(merchantSuggestions) { suggestion in
+                    Button {
+                        applyMerchantSuggestion(suggestion)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppTypography.rowMeta)
+                                .foregroundColor(AppColors.textSecondary)
+                            Text(suggestion.name)
+                                .font(AppTypography.rowTitle)
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(1)
+                            Spacer()
+                            if let cat = suggestion.category, !cat.isEmpty {
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(MerchantUtils.color(for: cat, in: categoryRecords))
+                                        .frame(width: 6, height: 6)
+                                    Text(cat)
+                                        .font(AppTypography.rowMeta)
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if suggestion != merchantSuggestions.last {
+                        FormDivider()
+                    }
+                }
+            }
         }
     }
 
@@ -205,11 +328,27 @@ struct TransactionFormView: View {
                 .font(AppTypography.rowTitle)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
+            // Button-based items (instead of `Picker`) avoid the ~1s
+            // selection-binding delay that `Picker` introduces inside `Menu`.
             Menu {
-                Picker("", selection: $selectedCard) {
-                    Text("None").tag(nil as Card?)
-                    ForEach(cards) { card in
-                        Text(card.name).tag(card as Card?)
+                Button {
+                    selectedCard = nil
+                } label: {
+                    if selectedCard == nil {
+                        Label("None", systemImage: "checkmark")
+                    } else {
+                        Text("None")
+                    }
+                }
+                ForEach(orderedCards) { card in
+                    Button {
+                        selectedCard = card
+                    } label: {
+                        if selectedCard?.id == card.id {
+                            Label(card.name, systemImage: "checkmark")
+                        } else {
+                            Text(card.name)
+                        }
                     }
                 }
             } label: {
@@ -234,16 +373,18 @@ struct TransactionFormView: View {
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
             Menu {
-                Picker("", selection: $category) {
-                    ForEach(categoryNames, id: \.self) { cat in
-                        Text(cat).tag(cat)
+                ForEach(categoryNames, id: \.self) { cat in
+                    Button {
+                        category = cat
+                    } label: {
+                        Label(cat, systemImage: MerchantUtils.icon(for: cat, in: categoryRecords))
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(MerchantUtils.color(for: category, in: categoryRecords))
-                        .frame(width: 8, height: 8)
+                    Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
                     Text(category)
                         .foregroundColor(AppColors.accent)
                     Image(systemName: "chevron.up.chevron.down")
@@ -254,6 +395,36 @@ struct TransactionFormView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var recurringSection: some View {
+        FormSection("Recurring") {
+            FormToggleRow(title: "Repeat monthly", isOn: $isRecurring)
+            if isRecurring {
+                Text(recurringHelpText)
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var recurringHelpText: String {
+        let day = Calendar.current.component(.day, from: transactionDate)
+        let ordinal = Self.ordinalDay(day)
+        if day >= 29 {
+            return "Repeats on the \(ordinal) each month (or the last day in shorter months). Turn off to stop the chain."
+        }
+        return "Repeats on the \(ordinal) each month. Turn off to stop the chain."
+    }
+
+    private static func ordinalDay(_ day: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        return formatter.string(from: NSNumber(value: day)) ?? "\(day)"
     }
 
     @ViewBuilder
@@ -315,8 +486,15 @@ struct TransactionFormView: View {
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving transaction: \(error)") }
+            editing.isRecurring = isRecurring
+            do {
+                try modelContext.save()
+                if isRecurring {
+                    RecurringMaterializer.materialize(in: modelContext)
+                }
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving transaction: \(error)") }
         } else {
             let transaction = Transaction(
                 merchant: merchant,
@@ -325,7 +503,8 @@ struct TransactionFormView: View {
                 category: category.isEmpty ? nil : category,
                 note: note.isEmpty ? nil : note,
                 card: selectedCard,
-                currency: currency
+                currency: currency,
+                isRecurring: isRecurring
             )
             modelContext.insert(transaction)
             AnalyticsTracker.log("add_wallet_transaction", [
@@ -334,8 +513,14 @@ struct TransactionFormView: View {
                 "amount": amount,
                 "currency": currency
             ])
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving transaction: \(error)") }
+            do {
+                try modelContext.save()
+                if isRecurring {
+                    RecurringMaterializer.materialize(in: modelContext)
+                }
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving transaction: \(error)") }
         }
     }
 

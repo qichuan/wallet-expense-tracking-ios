@@ -64,6 +64,21 @@ struct ImportPreviewView: View {
                         }
                     }
 
+                    if plan.duplicateRowsSkipped > 0 {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(AppColors.textSecondary)
+                            Text("\(plan.duplicateRowsSkipped) duplicate \(plan.duplicateRowsSkipped == 1 ? "transaction" : "transactions") will be skipped")
+                                .font(AppTypography.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(AppColors.backgroundCard)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
                     if !plan.transactionRows.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {

@@ -103,10 +103,18 @@ struct TransactionRow: View {
                 )
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(transaction.merchant)
-                    .font(AppTypography.rowTitle)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(transaction.merchant)
+                        .font(AppTypography.rowTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                    if transaction.isRecurring {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(AppColors.textSecondary)
+                            .accessibilityLabel("Recurring monthly")
+                    }
+                }
 
                 Text(subtitle)
                     .font(AppTypography.rowMeta)
