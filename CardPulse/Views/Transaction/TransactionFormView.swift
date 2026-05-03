@@ -16,6 +16,7 @@ struct TransactionFormView: View {
 
     @Query private var cards: [Card]
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
+    @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
@@ -87,6 +88,65 @@ struct TransactionFormView: View {
         && !amount.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    // MARK: - Merchant autocomplete
+
+    private struct MerchantSuggestion: Identifiable, Hashable {
+        let id = UUID()
+        let name: String
+        let category: String?
+    }
+
+    /// Distinct past merchants in most-recent-first order. Each entry carries
+    /// the category from its most recent appearance, so picking a merchant can
+    /// auto-fill the category. Dedup is case-insensitive on the trimmed name.
+    private var distinctMerchants: [MerchantSuggestion] {
+        var seen = Set<String>()
+        var ordered: [MerchantSuggestion] = []
+        for tx in allTransactions {
+            let trimmed = tx.merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = trimmed.lowercased()
+            if !seen.insert(key).inserted { continue }
+            ordered.append(MerchantSuggestion(name: trimmed, category: tx.category))
+        }
+        return ordered
+    }
+
+    /// Up to 5 matches for the current merchant input. Suggestions appear
+    /// only when adding (not editing) and the user has typed at least 3
+    /// characters. An exact match is filtered out — there's nothing to
+    /// suggest if the user has already typed the full name.
+    private var merchantSuggestions: [MerchantSuggestion] {
+        guard transactionToEdit == nil, merchantFocused else { return [] }
+        let query = merchant.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard query.count >= 3 else { return [] }
+        let matches = distinctMerchants.filter {
+            let n = $0.name.lowercased()
+            return n.contains(query) && n != query
+        }
+        return Array(matches.prefix(5))
+    }
+
+    private func applyMerchantSuggestion(_ s: MerchantSuggestion) {
+        let queryLength = merchant.trimmingCharacters(in: .whitespacesAndNewlines).count
+        let suggestionRank = merchantSuggestions.firstIndex(of: s) ?? -1
+        let suggestionCount = merchantSuggestions.count
+        let categoryAutoFilled = (s.category?.isEmpty == false)
+
+        merchant = s.name
+        if let cat = s.category, !cat.isEmpty { category = cat }
+        merchantFocused = false
+
+        AnalyticsTracker.log(AnalyticsTracker.Event.merchantSuggestionSelected, [
+            "query_length": queryLength,
+            "suggestion_rank": suggestionRank,
+            "suggestion_count": suggestionCount,
+            "category_auto_filled": categoryAutoFilled,
+            "suggested_merchant": merchant,
+            "suggested_category": s.category ?? "n/a"
+        ])
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -141,6 +201,43 @@ struct TransactionFormView: View {
                 text: $merchant,
                 isFocused: $merchantFocused
             )
+            if !merchantSuggestions.isEmpty {
+                FormDivider()
+                ForEach(merchantSuggestions) { suggestion in
+                    Button {
+                        applyMerchantSuggestion(suggestion)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppTypography.rowMeta)
+                                .foregroundColor(AppColors.textSecondary)
+                            Text(suggestion.name)
+                                .font(AppTypography.rowTitle)
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(1)
+                            Spacer()
+                            if let cat = suggestion.category, !cat.isEmpty {
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(MerchantUtils.color(for: cat, in: categoryRecords))
+                                        .frame(width: 6, height: 6)
+                                    Text(cat)
+                                        .font(AppTypography.rowMeta)
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if suggestion != merchantSuggestions.last {
+                        FormDivider()
+                    }
+                }
+            }
         }
     }
 
