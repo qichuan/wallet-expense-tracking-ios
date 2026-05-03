@@ -350,8 +350,14 @@ struct TransactionFormView: View {
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
             editing.isRecurring = isRecurring
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving transaction: \(error)") }
+            do {
+                try modelContext.save()
+                if isRecurring {
+                    RecurringMaterializer.materialize(in: modelContext)
+                }
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving transaction: \(error)") }
         } else {
             let transaction = Transaction(
                 merchant: merchant,
@@ -370,8 +376,14 @@ struct TransactionFormView: View {
                 "amount": amount,
                 "currency": currency
             ])
-            do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
-            catch { print("Error saving transaction: \(error)") }
+            do {
+                try modelContext.save()
+                if isRecurring {
+                    RecurringMaterializer.materialize(in: modelContext)
+                }
+                WidgetDataWriter.refresh(using: modelContext)
+                dismiss()
+            } catch { print("Error saving transaction: \(error)") }
         }
     }
 

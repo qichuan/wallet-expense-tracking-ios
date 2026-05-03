@@ -6,17 +6,27 @@
 import Foundation
 import SwiftData
 
-/// Materializes monthly recurring transactions on app launch.
+/// Materializes monthly recurring transactions.
 ///
-/// A "series" is a `(merchant, card, currency)` group. The latest transaction
-/// in a series is the live template — when its `isRecurring` flag is true,
-/// new monthly instances are created up to today. Toggling the flag off on
-/// the latest instance stops the chain.
+/// A "series" is a `(merchant, card, currency)` group. The chain marker is a
+/// single `isRecurring = true` flag carried by the **most recent** member of
+/// the series — every older member must have `isRecurring = false`. Toggling
+/// the flag off on the latest instance stops the chain.
 ///
-/// The recurrence anchor day is the day-of-month of the *earliest* recurring
-/// transaction in the series. When the target month doesn't contain that day
-/// (e.g. anchor 31 in February), the materializer clamps to the month's last day.
-/// This preserves "always the 31st" semantics across short months.
+/// `materialize` is invoked at app launch and after the user saves a
+/// transaction with `isRecurring = true`. It performs two passes per series:
+///
+/// 1. **Backfill.** Walks monthly anchor dates from the most recent recurring
+///    transaction up to today and inserts a copy for every missing month —
+///    so toggling `isRecurring` on a past transaction (say 1 Jan) immediately
+///    creates 1 Feb, 1 Mar, 1 Apr, 1 May entries.
+/// 2. **Normalize.** Sets `isRecurring = true` on the (post-backfill) most
+///    recent member and clears the flag on every other member of the series.
+///
+/// The recurrence anchor day is the day-of-month of the most recent recurring
+/// transaction. When the target month doesn't contain that day (e.g. anchor 31
+/// in February), the materializer clamps to the month's last day, preserving
+/// "always the 31st" semantics across short months.
 enum RecurringMaterializer {
 
     /// Group key — merchant comparison is case- and whitespace-insensitive so
@@ -27,8 +37,9 @@ enum RecurringMaterializer {
         let currency: String
     }
 
-    /// Scans the store and creates any missing monthly recurrences whose due
-    /// date is on or before `now`. Saves the context if anything was inserted.
+    /// Backfills missing monthly recurrences and enforces the
+    /// "only-latest-is-recurring" invariant across every series. Saves the
+    /// context if anything changed.
     static func materialize(in context: ModelContext, now: Date = Date()) {
         let descriptor = FetchDescriptor<Transaction>(sortBy: [SortDescriptor(\.date)])
         guard let all = try? context.fetch(descriptor) else { return }
@@ -46,33 +57,57 @@ enum RecurringMaterializer {
             groups[key, default: []].append(txn)
         }
 
-        var didInsert = false
+        var didChange = false
         for (_, txns) in groups {
-            let sorted = txns.sorted { $0.date < $1.date }
-            guard let latest = sorted.last, latest.isRecurring else { continue }
-            guard let anchor = sorted.first(where: { $0.isRecurring }) else { continue }
+            var members = txns.sorted { $0.date < $1.date }
+
+            // Anchor / template: the most recent recurring transaction in the
+            // series. On a normal launch this is the chain marker carried
+            // forward from the prior run; right after the user toggles a past
+            // transaction it's the seed they just saved.
+            guard let anchor = members.last(where: { $0.isRecurring }) else { continue }
             let anchorDay = calendar.component(.day, from: anchor.date)
 
-            var cursor = latest.date
+            // Backfill: walk forward from the anchor, inserting a copy for
+            // every missing monthly slot up to today. The exists-check guards
+            // against creating a duplicate when an unrelated transaction
+            // already lives on that calendar day.
+            var cursor = anchor.date
             while let next = nextOccurrence(after: cursor, anchorDay: anchorDay, calendar: calendar),
                   calendar.startOfDay(for: next) <= today {
-                let copy = Transaction(
-                    merchant: latest.merchant,
-                    amount: latest.amount,
-                    date: next,
-                    category: latest.category,
-                    note: latest.note,
-                    card: latest.card,
-                    currency: latest.currency,
-                    isRecurring: true
-                )
-                context.insert(copy)
                 cursor = next
-                didInsert = true
+                let alreadyExists = members.contains { calendar.isDate($0.date, inSameDayAs: next) }
+                if !alreadyExists {
+                    let copy = Transaction(
+                        merchant: anchor.merchant,
+                        amount: anchor.amount,
+                        date: next,
+                        category: anchor.category,
+                        note: anchor.note,
+                        card: anchor.card,
+                        currency: anchor.currency,
+                        isRecurring: false
+                    )
+                    context.insert(copy)
+                    members.append(copy)
+                    didChange = true
+                }
+            }
+
+            // Normalize: only the most recent member keeps the flag.
+            members.sort { $0.date < $1.date }
+            guard let newLatest = members.last else { continue }
+            for txn in members where txn !== newLatest && txn.isRecurring {
+                txn.isRecurring = false
+                didChange = true
+            }
+            if !newLatest.isRecurring {
+                newLatest.isRecurring = true
+                didChange = true
             }
         }
 
-        guard didInsert else { return }
+        guard didChange else { return }
         do {
             try context.save()
         } catch {
