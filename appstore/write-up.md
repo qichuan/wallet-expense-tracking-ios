@@ -18,6 +18,16 @@ CardPulse takes the mental load off.
 
 
 # What's New in This Version
+v2.2
+- Recurring transactions — Mark a transaction as recurring and it continues every month automatically 
+- Re-arrange your cards — Drag cards into the order you want on the Cards screen.
+- Merchant name auto-complete — Start typing and pick from your past merchants. 
+- Smart category suggestions — CardPulse remembers the category you used for each merchant and fills it in for you next time.
+- Some performace improvments and bug fixes
+
+v2.1
+- Card detail view — Tap any card to see its spending progress and every transaction that counts toward your min-spend this cycle.
+- Transactions by date — Your transaction lists now group by day with a daily total.
 
 v2.0
 Fresh look - Full UI redesign across the app
@@ -26,10 +36,6 @@ Home page widget - See your min-spend progress and days left in the cycle right 
 Custom categories - Built-in categories ready out of the box, plus add, edit, or delete your own.
 New onboarding - First-time setup now walks you through currency, categories, notifications, and a quick video showing how to set up Apple Shortcuts for auto-tracking.
 Plus performance and stability improvements throughout.
-
-v2.1
-- Card detail view — Tap any card to see its spending progress and every transaction that counts toward your min-spend this cycle.
-- Transactions by date — Your transaction lists now group by day with a daily total.
 
 # Keywords
 
