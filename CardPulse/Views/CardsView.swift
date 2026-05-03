@@ -16,6 +16,10 @@ struct CardsView: View {
     @State private var selectedCard: Card?
     @State private var filter: Filter = .all
 
+    /// Persisted card display order as a JSON array of UUID strings.
+    /// Stored outside SwiftData so the data model stays untouched.
+    @AppStorage("cardOrder") private var cardOrderRaw: String = "[]"
+
     enum Filter: String, CaseIterable {
         case all, hit, onTrack, behind
 
@@ -59,13 +63,51 @@ struct CardsView: View {
         return (goalCards.count, hit, onTrack, behind)
     }
 
+    /// `cards` sorted by the user's saved order. Cards missing from the saved
+    /// order list (e.g. newly created) keep their `cards` relative position
+    /// and land at the end.
+    private var orderedCards: [Card] {
+        let order = decodedOrder()
+        let indexByID: [UUID: Int] = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        return cards.sorted { lhs, rhs in
+            switch (indexByID[lhs.id], indexByID[rhs.id]) {
+            case let (l?, r?): return l < r
+            case (_?, nil):    return true
+            case (nil, _?):    return false
+            case (nil, nil):   return false // stable — preserves @Query order
+            }
+        }
+    }
+
     private var filteredCards: [Card] {
         switch filter {
-        case .all:      return cards
-        case .hit:      return goalCards.filter { status(for: $0) == .hit }
-        case .onTrack:  return goalCards.filter { status(for: $0) == .onTrack }
-        case .behind:   return goalCards.filter { status(for: $0) == .behind }
+        case .all:      return orderedCards
+        case .hit:      return orderedCards.filter { goalCards.contains($0) && status(for: $0) == .hit }
+        case .onTrack:  return orderedCards.filter { goalCards.contains($0) && status(for: $0) == .onTrack }
+        case .behind:   return orderedCards.filter { goalCards.contains($0) && status(for: $0) == .behind }
         }
+    }
+
+    private func decodedOrder() -> [UUID] {
+        guard let data = cardOrderRaw.data(using: .utf8),
+              let strings = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+        return strings.compactMap { UUID(uuidString: $0) }
+    }
+
+    private func saveOrder(_ ids: [UUID]) {
+        let strings = ids.map { $0.uuidString }
+        guard let data = try? JSONEncoder().encode(strings),
+              let raw = String(data: data, encoding: .utf8) else { return }
+        cardOrderRaw = raw
+    }
+
+    /// Applies a `List` move to `orderedCards` and persists the result.
+    /// Only valid when the viewer is showing the unfiltered list — reorder
+    /// in a filtered subset would produce ambiguous results.
+    private func moveCards(from source: IndexSet, to destination: Int) {
+        var working = orderedCards
+        working.move(fromOffsets: source, toOffset: destination)
+        saveOrder(working.map { $0.id })
     }
 
     var body: some View {
@@ -91,19 +133,27 @@ struct CardsView: View {
                     if cards.isEmpty {
                         emptyState
                     } else {
-                        ScrollView {
-                            LazyVStack(spacing: 14) {
-                                ForEach(filteredCards) { card in
-                                    Button(action: { selectedCard = card }) {
-                                        CardRow(card: card, status: status(for: card))
-                                    }
-                                    .buttonStyle(.plain)
+                        List {
+                            ForEach(filteredCards) { card in
+                                Button(action: { selectedCard = card }) {
+                                    CardRow(card: card, status: status(for: card))
                                 }
+                                .buttonStyle(.plain)
+                                .listRowBackground(AppColors.backgroundPrimary)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 7, leading: 20, bottom: 7, trailing: 20))
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 4)
-                            .padding(.bottom, 40)
+                            // Reorder is only meaningful when viewing the full
+                            // list — applying a move to a filtered subset
+                            // would produce ambiguous indices in `cards`.
+                            .onMove { source, destination in
+                                guard filter == .all else { return }
+                                moveCards(from: source, to: destination)
+                            }
                         }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .background(AppColors.backgroundPrimary)
                     }
                 }
             }
