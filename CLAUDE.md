@@ -11,14 +11,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All development is done via Xcode. There is no CLI build system (no Makefile, SPM package, or fastlane).
 
 ```bash
-# Build from command line (scheme name is "TapTrack")
-xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS Simulator,name=iPhone 16' build
+# Build and run on the connected iPhone 12 device (scheme name is "TapTrack")
+xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS,name=iPhone 12' build
 
-# Run tests
-xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS Simulator,name=iPhone 16' test
+# Run tests on the iPhone 12 device
+xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS,name=iPhone 12' test
 
 # Run a single test class
-xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:CardPulseTests/MyTestClass test
+xcodebuild -project CardPulse.xcodeproj -scheme TapTrack -destination 'platform=iOS,name=iPhone 12' -only-testing:CardPulseTests/MyTestClass test
 ```
 
 For day-to-day development, open `CardPulse.xcodeproj` in Xcode and run/test from there.
