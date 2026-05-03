@@ -1,5 +1,5 @@
 # Promotional Text
-Auto-track tap-to-pay spending
+Never miss credit card rewards
 
 # Description
 
