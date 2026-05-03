@@ -59,16 +59,58 @@ enum SchemaV1: VersionedSchema {
 }
 
 // MARK: - V2 Schema (Transaction gains `currency` field)
+//
+// Reuses `SchemaV3.Transaction` as the frozen shape — V2 and V3 have the same
+// `Transaction` columns (V3's only additions are the `SpendingCategory` model
+// and seeding logic, not Transaction-shape changes).
 
 enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
-    static var models: [any PersistentModel.Type] { [Card.self, Transaction.self] }
+    static var models: [any PersistentModel.Type] { [Card.self, SchemaV3.Transaction.self] }
 }
 
-// MARK: - V3 Schema (current — adds `SpendingCategory` model)
+// MARK: - V3 Schema (adds `SpendingCategory` model — frozen pre-`isRecurring` shape)
+//
+// `Transaction` here uses a frozen snapshot so V3's checksum differs from V4's.
+// SwiftData hashes the live `@Model` types into a per-stage checksum; if V3 and V4
+// both pointed at the same live `Transaction`, the migration plan would crash with
+// "Duplicate version checksums across stages detected."
 
 enum SchemaV3: VersionedSchema {
     static var versionIdentifier = Schema.Version(3, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Card.self, SchemaV3.Transaction.self, SpendingCategory.self]
+    }
+
+    @Model final class Transaction {
+        var id: UUID
+        var merchant: String
+        var amount: Decimal
+        var currency: String = ""
+        var date: Date
+        var category: String?
+        var note: String?
+        var card: Card?
+
+        init(merchant: String, amount: Decimal, date: Date,
+             category: String? = nil, note: String? = nil, card: Card? = nil,
+             currency: String = "") {
+            self.id = UUID()
+            self.merchant = merchant
+            self.amount = amount
+            self.currency = currency
+            self.date = date
+            self.category = category
+            self.note = note
+            self.card = card
+        }
+    }
+}
+
+// MARK: - V4 Schema (current — Transaction gains `isRecurring` flag, uses live types)
+
+enum SchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(4, 0, 0)
     static var models: [any PersistentModel.Type] {
         [Card.self, Transaction.self, SpendingCategory.self]
     }
@@ -78,10 +120,10 @@ enum SchemaV3: VersionedSchema {
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
     }
 
-    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     /// Skipped when the user has not yet chosen a default currency — the onboarding
@@ -96,7 +138,7 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
                   !defaultCurrency.isEmpty
             else { return }
 
-            let transactions = try context.fetch(FetchDescriptor<Transaction>())
+            let transactions = try context.fetch(FetchDescriptor<SchemaV3.Transaction>())
             for txn in transactions where txn.currency.isEmpty {
                 txn.currency = defaultCurrency
             }
@@ -113,6 +155,13 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
         didMigrate: { context in
             try CategorySeeding.seedBuiltInsIfNeeded(in: context)
         }
+    )
+
+    /// V3 → V4: add `isRecurring` to `Transaction`. Default `false` is supplied by the
+    /// model declaration, so SwiftData handles this as a lightweight migration.
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: SchemaV3.self,
+        toVersion: SchemaV4.self
     )
 }
 

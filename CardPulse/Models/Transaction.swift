@@ -19,13 +19,17 @@ final class Transaction {
     var category: String?
     var note: String?
     var card: Card?
+    /// When true, this transaction is part of a monthly recurring series. The materializer
+    /// uses the latest recurring transaction in a `(merchant, card, currency)` group as the
+    /// template for next month's instance. Toggling off on the latest instance stops the chain.
+    var isRecurring: Bool = false
 
     /// Resolved currency: falls back to the user's default when the stored value is empty.
     var resolvedCurrency: String {
         currency.isEmpty ? CurrencyUtils.defaultCurrencyCode : currency
     }
 
-    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, note: String? = nil, card: Card? = nil, currency: String = "") {
+    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, note: String? = nil, card: Card? = nil, currency: String = "", isRecurring: Bool = false) {
         self.id = UUID()
         self.merchant = merchant
         self.amount = amount
@@ -34,5 +38,6 @@ final class Transaction {
         self.category = category
         self.note = note
         self.card = card
+        self.isRecurring = isRecurring
     }
 }

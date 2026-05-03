@@ -28,6 +28,7 @@ struct TransactionFormView: View {
     @State private var category: String
     @State private var note: String
     @State private var transactionDate: Date
+    @State private var isRecurring: Bool
     @State private var showingDeleteAlert = false
 
     @FocusState private var merchantFocused: Bool
@@ -68,6 +69,7 @@ struct TransactionFormView: View {
             _category = State(initialValue: transaction.category ?? "Other")
             _note = State(initialValue: transaction.note ?? "")
             _transactionDate = State(initialValue: transaction.date)
+            _isRecurring = State(initialValue: transaction.isRecurring)
         } else {
             _merchant = State(initialValue: "")
             _amount = State(initialValue: "")
@@ -76,6 +78,7 @@ struct TransactionFormView: View {
             _category = State(initialValue: "Other")
             _note = State(initialValue: "")
             _transactionDate = State(initialValue: Date())
+            _isRecurring = State(initialValue: false)
         }
     }
 
@@ -94,6 +97,7 @@ struct TransactionFormView: View {
                         merchantSection
                         amountSection
                         detailsSection
+                        recurringSection
                         noteSection
 
                         if transactionToEdit != nil {
@@ -257,6 +261,36 @@ struct TransactionFormView: View {
     }
 
     @ViewBuilder
+    private var recurringSection: some View {
+        FormSection("Recurring") {
+            FormToggleRow(title: "Repeat monthly", isOn: $isRecurring)
+            if isRecurring {
+                Text(recurringHelpText)
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var recurringHelpText: String {
+        let day = Calendar.current.component(.day, from: transactionDate)
+        let ordinal = Self.ordinalDay(day)
+        if day >= 29 {
+            return "Repeats on the \(ordinal) each month (or the last day in shorter months). Turn off to stop the chain."
+        }
+        return "Repeats on the \(ordinal) each month. Turn off to stop the chain."
+    }
+
+    private static func ordinalDay(_ day: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        return formatter.string(from: NSNumber(value: day)) ?? "\(day)"
+    }
+
+    @ViewBuilder
     private var noteSection: some View {
         FormSection("Note") {
             FormNoteEditor(
@@ -315,6 +349,7 @@ struct TransactionFormView: View {
             editing.category = category.isEmpty ? nil : category
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
+            editing.isRecurring = isRecurring
             do { try modelContext.save(); WidgetDataWriter.refresh(using: modelContext); dismiss() }
             catch { print("Error saving transaction: \(error)") }
         } else {
@@ -325,7 +360,8 @@ struct TransactionFormView: View {
                 category: category.isEmpty ? nil : category,
                 note: note.isEmpty ? nil : note,
                 card: selectedCard,
-                currency: currency
+                currency: currency,
+                isRecurring: isRecurring
             )
             modelContext.insert(transaction)
             AnalyticsTracker.log("add_wallet_transaction", [
