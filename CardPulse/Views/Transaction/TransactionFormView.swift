@@ -352,12 +352,23 @@ struct TransactionFormView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Text(selectedCard?.name ?? "None")
-                        .foregroundColor(AppColors.accent)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(AppTypography.chevronTiny)
-                        .foregroundColor(AppColors.accent)
+                ZStack {
+                    ForEach(orderedCards, id: \.self) { card in
+                        HStack {
+                            Text(card.name)
+                            Image(systemName: "chevron.up.chevron.down")
+                        }
+                    }
+                }
+                .hidden()
+                .overlay(alignment: .trailing) {
+                    HStack(spacing: 4) {
+                        Text(selectedCard?.name ?? "None")
+                            .foregroundColor(AppColors.accent)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(AppTypography.chevronTiny)
+                            .foregroundColor(AppColors.accent)
+                    }
                 }
             }
         }
@@ -381,15 +392,32 @@ struct TransactionFormView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
-                        .font(AppTypography.rowMeta)
-                        .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
-                    Text(category)
-                        .foregroundColor(AppColors.accent)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(AppTypography.chevronTiny)
-                        .foregroundColor(AppColors.accent)
+                ZStack {
+                    ForEach(categoryNames, id: \.self) { cat in
+                        HStack(spacing: 6) {
+                            Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
+                                .font(AppTypography.rowMeta)
+                                .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
+                            Text(cat)
+                                .foregroundColor(AppColors.accent)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(AppTypography.chevronTiny)
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
+                }
+                .hidden()
+                .overlay(alignment: .trailing) {
+                    HStack(spacing: 6) {
+                        Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
+                            .font(AppTypography.rowMeta)
+                            .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
+                        Text(category)
+                            .foregroundColor(AppColors.accent)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(AppTypography.chevronTiny)
+                            .foregroundColor(AppColors.accent)
+                    }
                 }
             }
         }
