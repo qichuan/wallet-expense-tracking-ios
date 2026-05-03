@@ -21,6 +21,10 @@ struct TransactionFormView: View {
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
+    /// Mirrors the user-defined card order persisted by `CardsView`. Cards
+    /// not present in the saved list keep their `@Query` relative order at
+    /// the end.
+    @AppStorage("cardOrder") private var cardOrderRaw: String = "[]"
 
     @State private var merchant: String
     @State private var amount: String
@@ -35,6 +39,24 @@ struct TransactionFormView: View {
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var noteFocused: Bool
+
+    /// Cards sorted by the user's saved order from `CardsView`.
+    private var orderedCards: [Card] {
+        let order: [UUID] = {
+            guard let data = cardOrderRaw.data(using: .utf8),
+                  let strings = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+            return strings.compactMap { UUID(uuidString: $0) }
+        }()
+        let indexByID: [UUID: Int] = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        return cards.sorted { lhs, rhs in
+            switch (indexByID[lhs.id], indexByID[rhs.id]) {
+            case let (l?, r?): return l < r
+            case (_?, nil):    return true
+            case (nil, _?):    return false
+            case (nil, nil):   return false
+            }
+        }
+    }
 
     private var enabledCurrencies: [CurrencyInfo] {
         let enabled = CurrencyUtils.enabledCurrencies(fromRaw: enabledCurrenciesRaw, customRaw: customCurrenciesRaw)
@@ -306,11 +328,27 @@ struct TransactionFormView: View {
                 .font(AppTypography.rowTitle)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
+            // Button-based items (instead of `Picker`) avoid the ~1s
+            // selection-binding delay that `Picker` introduces inside `Menu`.
             Menu {
-                Picker("", selection: $selectedCard) {
-                    Text("None").tag(nil as Card?)
-                    ForEach(cards) { card in
-                        Text(card.name).tag(card as Card?)
+                Button {
+                    selectedCard = nil
+                } label: {
+                    if selectedCard == nil {
+                        Label("None", systemImage: "checkmark")
+                    } else {
+                        Text("None")
+                    }
+                }
+                ForEach(orderedCards) { card in
+                    Button {
+                        selectedCard = card
+                    } label: {
+                        if selectedCard?.id == card.id {
+                            Label(card.name, systemImage: "checkmark")
+                        } else {
+                            Text(card.name)
+                        }
                     }
                 }
             } label: {
@@ -335,16 +373,18 @@ struct TransactionFormView: View {
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
             Menu {
-                Picker("", selection: $category) {
-                    ForEach(categoryNames, id: \.self) { cat in
-                        Text(cat).tag(cat)
+                ForEach(categoryNames, id: \.self) { cat in
+                    Button {
+                        category = cat
+                    } label: {
+                        Label(cat, systemImage: MerchantUtils.icon(for: cat, in: categoryRecords))
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(MerchantUtils.color(for: category, in: categoryRecords))
-                        .frame(width: 8, height: 8)
+                    Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
                     Text(category)
                         .foregroundColor(AppColors.accent)
                     Image(systemName: "chevron.up.chevron.down")
