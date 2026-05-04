@@ -40,6 +40,7 @@ enum AnalyticsTracker {
 
     /// Logs an event with optional sanitised parameters.
     /// Firebase Analytics restricts parameter values to 100 chars; we trim defensively.
+    /// Debug builds skip the network call entirely so dev sessions don't pollute prod analytics.
     static func log(_ name: String, _ parameters: [String: Any] = [:]) {
         var sanitised: [String: Any] = [:]
         for (key, value) in parameters {
@@ -49,7 +50,11 @@ enum AnalyticsTracker {
                 sanitised[key] = value
             }
         }
+        #if DEBUG
+        print("[Analytics:DEBUG-skipped] \(name) \(sanitised)")
+        #else
         Analytics.logEvent(name, parameters: sanitised.isEmpty ? nil : sanitised)
+        #endif
     }
 
     /// Logs a "view" action — use when the user opens or navigates to a screen/sheet.
