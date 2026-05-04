@@ -8,15 +8,21 @@
 import SwiftUI
 import SwiftData
 import Charts
+import StoreKit
 
 struct AnalysisView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
     @Query private var transactions: [Transaction]
     @Query private var cards: [Card]
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+    /// Set once we've asked for an App Store review so we never re-prompt.
+    /// (iOS itself rate-limits to 3 prompts / 365 days, but we want to ask
+    /// at most once from this trigger.)
+    @AppStorage("hasRequestedReview") private var hasRequestedReview = false
 
     private var cachedRates: [String: Double] {
         (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
@@ -273,6 +279,20 @@ struct AnalysisView: View {
         return df.string(from: selectedDate)
     }
 
+    // MARK: - Review prompt
+
+    /// Trigger the system review prompt the first time the user lands on
+    /// Analysis with at least 10 logged transactions — by that point they've
+    /// gotten enough value out of the app for the ask to feel earned.
+    private func maybeRequestReview() {
+        guard !hasRequestedReview, transactions.count >= 10 else { return }
+        hasRequestedReview = true
+        // Defer slightly so the prompt doesn't cover the just-rendered chart.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            requestReview()
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -317,6 +337,7 @@ struct AnalysisView: View {
                 if let latest = transactions.map({ cal.startOfDay(for: $0.date) }).max() {
                     selectedDate = latest
                 }
+                maybeRequestReview()
             }
             .sheet(item: $selectedTransaction) { transaction in
                 TransactionFormView(transaction: transaction)
