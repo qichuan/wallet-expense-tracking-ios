@@ -19,6 +19,7 @@ extension ModelContainer {
             // Add mock data
             let mockCards = createMockCards()
             let mockTransactions = createMockTransactions(for: mockCards)
+            let mockRules = sampleRules(for: mockCards)
 
             for card in mockCards {
                 container.mainContext.insert(card)
@@ -26,6 +27,10 @@ extension ModelContainer {
 
             for transaction in mockTransactions {
                 container.mainContext.insert(transaction)
+            }
+
+            for rule in mockRules {
+                container.mainContext.insert(rule)
             }
 
             try CategorySeeding.seedBuiltInsIfNeeded(in: container.mainContext)
@@ -42,27 +47,47 @@ extension ModelContainer {
                 name: "Apple Card",
                 minimumSpendingAmount: 1000,
                 hasMinimumSpending: true,
-                rewardType: .cashback
+                rewardType: .cashback,
+                baseRewardRate: 1.6,
+                roundingBlock: 1
             ),
             Card(
                 name: "Chase Sapphire Preferred",
                 minimumSpendingAmount: 1500,
                 hasMinimumSpending: true,
-                rewardType: .miles
+                rewardType: .miles,
+                baseRewardRate: 1.4,
+                roundingBlock: 5
             ),
             Card(
                 name: "Amex Gold Card",
                 minimumSpendingAmount: 2000,
                 hasMinimumSpending: true,
-                rewardType: .miles
+                rewardType: .miles,
+                baseRewardRate: 2.0,
+                roundingBlock: 1
             ),
             Card(
                 name: "Citi Double Cash",
                 minimumSpendingAmount: 2000,
                 hasMinimumSpending: true,
-                rewardType: .miles
+                rewardType: .cashback,
+                baseRewardRate: 2.0,
+                roundingBlock: 1
             )
         ]
+    }
+
+    private static func sampleRules(for cards: [Card]) -> [CardRewardRule] {
+        var rules: [CardRewardRule] = []
+        if let first = cards.first(where: { $0.rewardType == .cashback }) {
+            rules.append(CardRewardRule(card: first, categoryName: "Food & Drinks", rate: 4))
+            rules.append(CardRewardRule(card: first, categoryName: "Travel", rate: 3))
+        }
+        if let miles = cards.first(where: { $0.rewardType == .miles }) {
+            rules.append(CardRewardRule(card: miles, categoryName: "Travel", rate: 4))
+        }
+        return rules
     }
     
     private static func createMockTransactions(for cards: [Card]) -> [Transaction] {

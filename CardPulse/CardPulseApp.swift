@@ -30,6 +30,7 @@ struct CardPulseApp: App {
             Card.self,
             Transaction.self,
             SpendingCategory.self,
+            CardRewardRule.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true)
 

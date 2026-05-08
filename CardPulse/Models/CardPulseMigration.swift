@@ -62,24 +62,19 @@ enum SchemaV1: VersionedSchema {
 //
 // Reuses `SchemaV3.Transaction` as the frozen shape — V2 and V3 have the same
 // `Transaction` columns (V3's only additions are the `SpendingCategory` model
-// and seeding logic, not Transaction-shape changes).
+// and seeding logic, not Transaction-shape changes). Card is shared with V3/V4.
 
 enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
-    static var models: [any PersistentModel.Type] { [Card.self, SchemaV3.Transaction.self] }
+    static var models: [any PersistentModel.Type] { [SchemaV4.Card.self, SchemaV3.Transaction.self] }
 }
 
 // MARK: - V3 Schema (adds `SpendingCategory` model — frozen pre-`isRecurring` shape)
-//
-// `Transaction` here uses a frozen snapshot so V3's checksum differs from V4's.
-// SwiftData hashes the live `@Model` types into a per-stage checksum; if V3 and V4
-// both pointed at the same live `Transaction`, the migration plan would crash with
-// "Duplicate version checksums across stages detected."
 
 enum SchemaV3: VersionedSchema {
     static var versionIdentifier = Schema.Version(3, 0, 0)
     static var models: [any PersistentModel.Type] {
-        [Card.self, SchemaV3.Transaction.self, SpendingCategory.self]
+        [SchemaV4.Card.self, SchemaV3.Transaction.self, SpendingCategory.self]
     }
 
     @Model final class Transaction {
@@ -90,10 +85,10 @@ enum SchemaV3: VersionedSchema {
         var date: Date
         var category: String?
         var note: String?
-        var card: Card?
+        var card: SchemaV4.Card?
 
         init(merchant: String, amount: Decimal, date: Date,
-             category: String? = nil, note: String? = nil, card: Card? = nil,
+             category: String? = nil, note: String? = nil, card: SchemaV4.Card? = nil,
              currency: String = "") {
             self.id = UUID()
             self.merchant = merchant
@@ -107,12 +102,75 @@ enum SchemaV3: VersionedSchema {
     }
 }
 
-// MARK: - V4 Schema (current — Transaction gains `isRecurring` flag, uses live types)
+// MARK: - V4 Schema (Transaction gains `isRecurring` flag — frozen pre-rewards shape)
+//
+// V4 freezes `Card` and `Transaction` so V5's additions to live `Card` (reward fields,
+// `rewardRules` relationship to the new `CardRewardRule` model) don't change V4's
+// per-stage SwiftData checksum.
 
 enum SchemaV4: VersionedSchema {
     static var versionIdentifier = Schema.Version(4, 0, 0)
     static var models: [any PersistentModel.Type] {
-        [Card.self, Transaction.self, SpendingCategory.self]
+        [SchemaV4.Card.self, SchemaV4.Transaction.self, SpendingCategory.self]
+    }
+
+    @Model final class Card {
+        var id: UUID
+        var name: String
+        var minimumSpendingAmount: Decimal
+        var hasMinimumSpending: Bool
+        var rewardType: RewardType
+        var createdAt: Date
+        var minimumSpendingByDayOfMonth: Int
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV4.Transaction.card)
+        var transactions: [SchemaV4.Transaction] = []
+
+        init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false,
+             rewardType: RewardType = .none, minimumSpendingByDayOfMonth: Int = 1) {
+            self.id = UUID()
+            self.name = name
+            self.minimumSpendingAmount = minimumSpendingAmount
+            self.hasMinimumSpending = hasMinimumSpending
+            self.rewardType = rewardType
+            self.createdAt = Date()
+            self.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
+        }
+    }
+
+    @Model final class Transaction {
+        var id: UUID
+        var merchant: String
+        var amount: Decimal
+        var currency: String = ""
+        var date: Date
+        var category: String?
+        var note: String?
+        var card: SchemaV4.Card?
+        var isRecurring: Bool = false
+
+        init(merchant: String, amount: Decimal, date: Date,
+             category: String? = nil, note: String? = nil, card: SchemaV4.Card? = nil,
+             currency: String = "", isRecurring: Bool = false) {
+            self.id = UUID()
+            self.merchant = merchant
+            self.amount = amount
+            self.currency = currency
+            self.date = date
+            self.category = category
+            self.note = note
+            self.card = card
+            self.isRecurring = isRecurring
+        }
+    }
+}
+
+// MARK: - V5 Schema (current — adds reward-rate fields to Card and the CardRewardRule model)
+
+enum SchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(5, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self]
     }
 }
 
@@ -120,10 +178,10 @@ enum SchemaV4: VersionedSchema {
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self]
     }
 
-    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     /// Skipped when the user has not yet chosen a default currency — the onboarding
@@ -162,6 +220,14 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static let migrateV3toV4 = MigrationStage.lightweight(
         fromVersion: SchemaV3.self,
         toVersion: SchemaV4.self
+    )
+
+    /// V4 → V5: add `baseRewardRate` and `roundingBlock` to `Card` and introduce the
+    /// `CardRewardRule` model. Defaults are supplied by the model declarations
+    /// (rate `0`, block `1`), so SwiftData handles this as a lightweight migration.
+    static let migrateV4toV5 = MigrationStage.lightweight(
+        fromVersion: SchemaV4.self,
+        toVersion: SchemaV5.self
     )
 }
 

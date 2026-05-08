@@ -118,7 +118,7 @@ struct AllTransactionsView: View {
         .padding(.top, 12)
         .background(AppColors.backgroundPrimary)
         .sheet(item: $selectedTransaction) { transaction in
-            TransactionFormView(transaction: transaction)
+            TransactionDetailView(transaction: transaction)
         }
         .sheet(isPresented: $showingFilterSheet) {
             FilterSheetView(
