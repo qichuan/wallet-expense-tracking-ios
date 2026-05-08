@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADD] - Prompt user for app review
 
 ## 2.2 - May 3 2026
 - [ADDED] - Support recurring transaction
