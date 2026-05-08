@@ -57,6 +57,10 @@ struct CardDetailView: View {
                             spendingCard
                                 .padding(.horizontal, 20)
                         }
+                        if card.rewardType != .none {
+                            rewardsCard
+                                .padding(.horizontal, 20)
+                        }
                         cycleSection
                     }
                     .padding(.top, 20)
@@ -81,7 +85,7 @@ struct CardDetailView: View {
             CardFormView(card: card)
         }
         .sheet(item: $selectedTransaction) { tx in
-            TransactionFormView(transaction: tx)
+            TransactionDetailView(transaction: tx)
         }
     }
 
@@ -151,6 +155,62 @@ struct CardDetailView: View {
         .padding(20)
         .background(AppColors.backgroundCard)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var rewardsCard: some View {
+        let earned = RewardCalculator.cycleReward(for: card)
+        let formatted = RewardFormatter.format(earned, type: card.rewardType, currencySymbol: currencySymbol)
+        let bonusCount = card.rewardRules.count
+
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                SectionLabel(text: "Earned This Cycle")
+                Spacer()
+                if bonusCount > 0 {
+                    Text("\(bonusCount) bonus\(bonusCount == 1 ? "" : "es")")
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(formatted.isEmpty ? "0" : formatted)
+                    .font(AppTypography.amount)
+                    .foregroundColor(rewardColor)
+                if card.baseRewardRate > 0 {
+                    Text("at \(rateDisplay)")
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var rewardColor: Color {
+        switch card.rewardType {
+        case .miles: return AppColors.rewardMiles
+        case .cashback: return AppColors.rewardCash
+        case .none: return AppColors.textPrimary
+        }
+    }
+
+    private var rateDisplay: String {
+        let n = Double(truncating: card.baseRewardRate as NSDecimalNumber)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 4
+        formatter.minimumFractionDigits = 0
+        let value = formatter.string(from: NSNumber(value: n)) ?? "0"
+        switch card.rewardType {
+        case .cashback: return "\(value)%"
+        case .miles: return "\(value) mpd"
+        case .none: return ""
+        }
     }
 
     @ViewBuilder

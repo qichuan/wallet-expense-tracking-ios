@@ -180,7 +180,7 @@ struct HomeView: View {
             }
         }
         .sheet(item: $selectedTransaction) { tx in
-            TransactionFormView(transaction: tx)
+            TransactionDetailView(transaction: tx)
         }
     }
 

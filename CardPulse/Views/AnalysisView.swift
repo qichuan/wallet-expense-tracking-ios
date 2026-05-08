@@ -124,6 +124,36 @@ struct AnalysisView: View {
         filteredTransactions.sorted { $0.date > $1.date }
     }
 
+    // MARK: - Rewards summary
+
+    /// Aggregate miles + cashback earned in the selected range. Cashback is FX-converted
+    /// to the default currency using the same cached rates as `amountInDefault`.
+    private var rewardSummary: (miles: Decimal, cashback: Decimal) {
+        var miles: Decimal = 0
+        var cashback: Double = 0
+        for tx in filteredTransactions {
+            guard let card = tx.card,
+                  let value = RewardCalculator.reward(for: tx) else { continue }
+            switch card.rewardType {
+            case .miles:
+                miles += value
+            case .cashback:
+                let raw = Double(truncating: value as NSDecimalNumber)
+                let txCode = tx.resolvedCurrency
+                let converted: Double
+                if txCode != defaultCurrencyCode, let rate = cachedRates[txCode] {
+                    converted = raw * rate
+                } else {
+                    converted = raw
+                }
+                cashback += converted
+            case .none:
+                break
+            }
+        }
+        return (miles, Decimal(cashback))
+    }
+
     // MARK: - Donut data
 
     /// Category string as it should appear in analytics groupings:
@@ -317,6 +347,11 @@ struct AnalysisView: View {
                         totalSpendCard
                             .padding(.horizontal, 20)
 
+                        if rewardSummary.miles > 0 || rewardSummary.cashback > 0 {
+                            rewardsCard
+                                .padding(.horizontal, 20)
+                        }
+
                         donutCard
                             .padding(.horizontal, 20)
 
@@ -340,7 +375,7 @@ struct AnalysisView: View {
                 maybeRequestReview()
             }
             .sheet(item: $selectedTransaction) { transaction in
-                TransactionFormView(transaction: transaction)
+                TransactionDetailView(transaction: transaction)
             }
         }
     }
@@ -389,6 +424,49 @@ struct AnalysisView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface(padding: 18)
+    }
+
+    @ViewBuilder
+    private var rewardsCard: some View {
+        let summary = rewardSummary
+        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel(text: "Rewards Earned")
+            HStack(spacing: 16) {
+                if summary.miles > 0 {
+                    rewardTile(
+                        label: "Miles",
+                        value: RewardFormatter.format(summary.miles, type: .miles, currencySymbol: symbol),
+                        color: AppColors.rewardMiles
+                    )
+                }
+                if summary.cashback > 0 {
+                    rewardTile(
+                        label: "Cashback",
+                        value: RewardFormatter.format(summary.cashback, type: .cashback, currencySymbol: symbol),
+                        color: AppColors.rewardCash
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface(padding: 18)
+    }
+
+    @ViewBuilder
+    private func rewardTile(label: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(AppTypography.metricLabel)
+                .foregroundColor(AppColors.textTertiary)
+                .tracking(1.0)
+            Text(value)
+                .font(AppTypography.metricValue)
+                .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
