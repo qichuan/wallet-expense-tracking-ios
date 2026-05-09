@@ -33,7 +33,7 @@ struct WalletTransactionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         // Parse currency and numeric value from the raw amount string
-        guard let (resolvedCurrency, decimalAmount) = CurrencyUtils.parseCurrencyAndAmount(from: amount),
+        guard let (resolvedCurrency, decimalAmount) = await CurrencyUtils.parseCurrencyAndAmount(from: amount),
               decimalAmount != 0 else {
             return .result()
         }
@@ -82,7 +82,7 @@ struct WalletTransactionIntent: AppIntent {
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation
-        AnalyticsTracker.log("add_wallet_transaction", [
+        await AnalyticsTracker.log("add_wallet_transaction", [
             "type": "ttp",
             "merchant": merchantName,
             "currency": resolvedCurrency,
@@ -97,6 +97,7 @@ struct WalletTransactionIntent: AppIntent {
 
         // Notify user about the new transaction
         await notifyUserAboutNewTransaction(
+            transactionId: txn.id,
             merchant: merchantName,
             amount: decimalAmount,
             currencyCode: resolvedCurrency,
@@ -313,7 +314,7 @@ struct WalletTransactionIntent: AppIntent {
         }
         return "Other"
     }
-    private func notifyUserAboutNewTransaction(merchant: String, amount: Decimal, currencyCode: String, cardName: String?) async {
+    private func notifyUserAboutNewTransaction(transactionId: UUID, merchant: String, amount: Decimal, currencyCode: String, cardName: String?) async {
         let center = UNUserNotificationCenter.current()
         // Request authorization if not already granted
         do {
@@ -349,6 +350,7 @@ struct WalletTransactionIntent: AppIntent {
         content.title = title
         content.body = body
         content.sound = .default
+        content.userInfo = [NotificationRouter.transactionIdUserInfoKey: transactionId.uuidString]
         
         // Fire quickly after intent completes
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
