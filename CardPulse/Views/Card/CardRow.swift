@@ -50,6 +50,8 @@ struct CardRow: View {
                 header
                 if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
                     goalBlock
+                } else {
+                    spentBlock
                 }
                 if card.rewardType != .none {
                     rewardsRow
@@ -115,7 +117,23 @@ struct CardRow: View {
     }
 
     private var showsCycleLabel: Bool {
-        (card.hasMinimumSpending && card.minimumSpendingAmount > 0) || card.rewardType != .none
+        true
+    }
+
+    @ViewBuilder
+    private var spentBlock: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(spentAmount)
+                .font(AppTypography.amount)
+                .foregroundColor(AppColors.textPrimary)
+            Text("spent")
+                .font(AppTypography.amountTarget)
+                .foregroundColor(AppColors.textSecondary)
+            Spacer()
+            Text("\(card.daysRemaining)d left")
+                .font(AppTypography.rowMeta)
+                .foregroundColor(AppColors.textTertiary)
+        }
     }
 
     private var rewardColor: Color {
