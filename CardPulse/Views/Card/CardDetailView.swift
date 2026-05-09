@@ -56,10 +56,17 @@ struct CardDetailView: View {
                         if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
                             spendingCard
                                 .padding(.horizontal, 20)
+                        } else {
+                            spentOnlyCard
+                                .padding(.horizontal, 20)
                         }
                         if card.rewardType != .none {
                             rewardsCard
                                 .padding(.horizontal, 20)
+                            if card.hasMinimumSpending && card.minimumSpendingAmount > 0 && card.remainingAmount > 0 {
+                                minSpendNotice
+                                    .padding(.horizontal, 20)
+                            }
                         }
                         cycleSection
                     }
@@ -103,11 +110,9 @@ struct CardDetailView: View {
                 RewardTypePill(rewardType: card.rewardType)
                     .padding(.top, 6)
             }
-            if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
-                Text(card.spendingPeriodDisplay)
-                    .font(AppTypography.bannerBody)
-                    .foregroundColor(AppColors.textSecondary)
-            }
+            Text(card.spendingPeriodDisplay)
+                .font(AppTypography.bannerBody)
+                .foregroundColor(AppColors.textSecondary)
         }
         .padding(.horizontal, 20)
     }
@@ -197,6 +202,46 @@ struct CardDetailView: View {
         case .cashback: return AppColors.rewardCash
         case .none: return AppColors.textPrimary
         }
+    }
+
+    @ViewBuilder
+    private var spentOnlyCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(currencySymbol)\(formatted(card.monthlySpent))")
+                    .font(AppTypography.amountHero)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("spent")
+                    .font(AppTypography.amountTarget)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            HStack(alignment: .top) {
+                Spacer()
+                Text("\(card.daysRemaining)d left")
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+        }
+        .padding(20)
+        .background(AppColors.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var minSpendNotice: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundColor(AppColors.accent)
+            Text("Rewards are only available when minimum spending of \(currencySymbol)\(formatted(card.minimumSpendingAmount)) is met.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.accent.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var rateDisplay: String {
