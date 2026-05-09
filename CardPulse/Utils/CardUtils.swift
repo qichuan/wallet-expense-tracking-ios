@@ -44,20 +44,28 @@ extension Card {
 
     // MARK: - Monthly/Cycle helpers
     
+    /// Statement day used for billing-cycle math. When the card tracks a minimum spend,
+    /// this is the user-configured day. Otherwise we treat the last day of the month
+    /// as the statement day so reward cycles still align with calendar months — most
+    /// banks default new cards to month-end before the user configures their actual cycle.
+    var effectiveStatementDay: Int {
+        hasMinimumSpending ? minimumSpendingByDayOfMonth : 31
+    }
+
     /// Gets the statement date for a given month, handling months with fewer days
     func statementDate(for date: Date, calendar: Calendar) -> Date {
         let components = calendar.dateComponents([.year, .month], from: date)
         let daysInMonth = calendar.range(of: .day, in: .month, for: date)?.count ?? 31
-        
+
         // If the statement day exceeds days in month, use the last day of the month
-        let actualDay = min(minimumSpendingByDayOfMonth, daysInMonth)
-        
+        let actualDay = min(effectiveStatementDay, daysInMonth)
+
         var comps = components
         comps.day = actualDay
         comps.hour = 23
         comps.minute = 59
         comps.second = 59
-        
+
         return calendar.date(from: comps) ?? date
     }
     

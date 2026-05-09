@@ -51,6 +51,9 @@ struct CardRow: View {
                 if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
                     goalBlock
                 }
+                if card.rewardType != .none {
+                    rewardsRow
+                }
             }
             .padding(.leading, 14)
             .padding(.trailing, 2)
@@ -72,7 +75,7 @@ struct CardRow: View {
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
+                    if showsCycleLabel {
                         Text(card.spendingPeriodDisplay)
                     }
                 }
@@ -108,6 +111,37 @@ struct CardRow: View {
             }
 
             progressBar
+        }
+    }
+
+    private var showsCycleLabel: Bool {
+        (card.hasMinimumSpending && card.minimumSpendingAmount > 0) || card.rewardType != .none
+    }
+
+    private var rewardColor: Color {
+        switch card.rewardType {
+        case .miles: return AppColors.rewardMiles
+        case .cashback: return AppColors.rewardCash
+        case .none: return AppColors.textPrimary
+        }
+    }
+
+    @ViewBuilder
+    private var rewardsRow: some View {
+        let earned = RewardCalculator.cycleReward(for: card)
+        let formatted = RewardFormatter.format(earned, type: card.rewardType, currencySymbol: currencySymbol)
+
+        HStack(spacing: 6) {
+            Image(systemName: "gift.fill")
+                .font(AppTypography.metricLabel)
+                .foregroundColor(rewardColor)
+            Text("Earned this cycle")
+                .font(AppTypography.rowMeta)
+                .foregroundColor(AppColors.textTertiary)
+            Spacer()
+            Text(formatted.isEmpty ? "—" : formatted)
+                .font(AppTypography.rowValue)
+                .foregroundColor(rewardColor)
         }
     }
 

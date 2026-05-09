@@ -91,6 +91,26 @@ struct TransactionRow: View {
         return nil
     }
 
+    /// Earned reward for this transaction (formatted in the card's reward unit).
+    /// `nil` if the card has no reward type or the rate evaluates to zero — we don't
+    /// want to clutter the row with a "+0 miles" line.
+    private var rewardText: String? {
+        guard let card = transaction.card,
+              card.rewardType != .none,
+              let value = RewardCalculator.reward(for: transaction),
+              value > 0 else { return nil }
+        let symbol = CurrencyUtils.symbol(for: transaction.resolvedCurrency)
+        return "+" + RewardFormatter.format(value, type: card.rewardType, currencySymbol: symbol)
+    }
+
+    private var rewardColor: Color {
+        switch transaction.card?.rewardType ?? .none {
+        case .miles: return AppColors.rewardMiles
+        case .cashback: return AppColors.rewardCash
+        case .none: return AppColors.textTertiary
+        }
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
@@ -141,6 +161,11 @@ struct TransactionRow: View {
                         .font(AppTypography.amountTransactionAlt)
                         .foregroundColor(AppColors.textTertiary)
                 }
+                if let reward = rewardText {
+                    Text(reward)
+                        .font(AppTypography.amountTransactionAlt)
+                        .foregroundColor(rewardColor)
+                }
             }
         }
         .padding(.vertical, 12)
@@ -156,7 +181,9 @@ struct TransactionRow: View {
         minimumSpendingAmount: 4000,
         hasMinimumSpending: true,
         rewardType: .miles,
-        minimumSpendingByDayOfMonth: 15
+        minimumSpendingByDayOfMonth: 15,
+        baseRewardRate: 1.4,
+        roundingBlock: 5
     )
 
     return VStack(spacing: 8) {
