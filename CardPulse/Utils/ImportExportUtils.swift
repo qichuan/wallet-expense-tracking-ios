@@ -14,6 +14,14 @@ struct ParsedCardEntry {
     let hasMinimumSpending: Bool
     let rewardType: String
     let minSpendingDay: Int
+    let baseRewardRate: Decimal
+    let roundingBlock: Decimal
+}
+
+struct ParsedRewardRuleEntry {
+    let cardName: String
+    let categoryName: String
+    let rate: Decimal
 }
 
 struct ParsedCategoryEntry {
@@ -39,6 +47,7 @@ struct ImportPlan {
     var cards: [ParsedCardEntry] = []
     var categories: [ParsedCategoryEntry] = []
     var currencies: [ParsedCurrencyEntry] = []
+    var rewardRules: [ParsedRewardRuleEntry] = []
 
     // Computed against current DB / settings
     var cardsToCreate: [String] = []
@@ -58,6 +67,7 @@ struct ImportResult {
     let transactionsAdded: Int
     let cardsAdded: Int
     let categoriesAdded: Int
+    let rewardRulesAdded: Int
     let transactionsSkippedAsDuplicates: Int
 }
 
@@ -122,6 +132,19 @@ struct ImportExportUtils {
         }
         components.append(current)
         return components
+    }
+
+    /// Compact decimal formatter for rate-like fields. Avoids scientific notation
+    /// from `Decimal.description` for very small values and trims trailing zeroes
+    /// so a re-import parses cleanly.
+    private static func formatRate(_ value: Decimal) -> String {
+        let d = Double(truncating: value as NSDecimalNumber)
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 6
+        f.minimumFractionDigits = 0
+        f.usesGroupingSeparator = false
+        return f.string(from: NSNumber(value: d)) ?? "0"
     }
 
     private static func escapeCSVField(_ field: String) -> String {
@@ -217,6 +240,8 @@ struct ImportExportUtils {
         let iHas    = idx(["hasminimumspending"]) ?? 2
         let iReward = idx(["rewardtype"]) ?? 3
         let iDay    = idx(["minspendingbydayofmonth"]) ?? 4
+        let iRate   = idx(["baserewardrate"])
+        let iBlock  = idx(["roundingblock"])
 
         var result: [ParsedCardEntry] = []
         for line in lines.dropFirst() {
@@ -226,12 +251,48 @@ struct ImportExportUtils {
             let has = ((f.indices.contains(iHas) ? f[iHas] : "false").lowercased() == "true")
             let reward = f.indices.contains(iReward) ? f[iReward] : "none"
             let day = Int(f.indices.contains(iDay) ? f[iDay] : "1") ?? 1
+            let baseRate: Decimal = {
+                guard let i = iRate, f.indices.contains(i) else { return 0 }
+                return Decimal(string: f[i]) ?? 0
+            }()
+            let block: Decimal = {
+                guard let i = iBlock, f.indices.contains(i) else { return 1 }
+                return Decimal(string: f[i]) ?? 1
+            }()
             result.append(ParsedCardEntry(
                 name: f[iName],
                 minimumSpending: amount,
                 hasMinimumSpending: has,
                 rewardType: reward,
-                minSpendingDay: day
+                minSpendingDay: day,
+                baseRewardRate: baseRate,
+                roundingBlock: block
+            ))
+        }
+        return result
+    }
+
+    private static func parseRewardRuleSection(lines: [String]) -> [ParsedRewardRuleEntry] {
+        guard !lines.isEmpty else { return [] }
+        let header = parseCSVLine(lines[0]).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        func idx(_ names: [String]) -> Int? {
+            for n in names { if let i = header.firstIndex(of: n) { return i } }
+            return nil
+        }
+        let iCard     = idx(["card", "cardname"]) ?? 0
+        let iCategory = idx(["category", "categoryname"]) ?? 1
+        let iRate     = idx(["rate"]) ?? 2
+
+        var result: [ParsedRewardRuleEntry] = []
+        for line in lines.dropFirst() {
+            let f = parseCSVLine(line)
+            guard f.indices.contains(iCard), f.indices.contains(iCategory),
+                  !f[iCard].isEmpty, !f[iCategory].isEmpty else { continue }
+            let rate = Decimal(string: f.indices.contains(iRate) ? f[iRate] : "0") ?? 0
+            result.append(ParsedRewardRuleEntry(
+                cardName: f[iCard],
+                categoryName: f[iCategory],
+                rate: rate
             ))
         }
         return result
@@ -311,6 +372,7 @@ struct ImportExportUtils {
         if let lines = sections["CARDS"] { plan.cards = parseCardSection(lines: lines) }
         if let lines = sections["CATEGORIES"] { plan.categories = parseCategorySection(lines: lines) }
         if let lines = sections["CURRENCIES"] { plan.currencies = parseCurrencySection(lines: lines) }
+        if let lines = sections["REWARDRULES"] { plan.rewardRules = parseRewardRuleSection(lines: lines) }
         if let lines = sections["TRANSACTIONS"] { plan.transactionRows = parseTransactionSection(lines: lines) }
 
         plan.suggestedDefaultCurrency = plan.currencies.first(where: { $0.isDefault })?.code
@@ -405,7 +467,9 @@ struct ImportExportUtils {
                 minimumSpendingAmount: parsed.minimumSpending,
                 hasMinimumSpending: parsed.hasMinimumSpending,
                 rewardType: RewardType(rawValue: parsed.rewardType) ?? .none,
-                minimumSpendingByDayOfMonth: parsed.minSpendingDay
+                minimumSpendingByDayOfMonth: parsed.minSpendingDay,
+                baseRewardRate: parsed.baseRewardRate,
+                roundingBlock: parsed.roundingBlock
             )
             modelContext.insert(card)
             nameToCard[parsed.name] = card
@@ -444,7 +508,22 @@ struct ImportExportUtils {
             categoriesAdded += 1
         }
 
-        // 3. Transactions
+        // 3. Reward rules — dedupe by (card name, lower-cased category) so re-importing
+        // the same backup is idempotent.
+        var rulesAdded = 0
+        for parsed in plan.rewardRules {
+            guard let card = nameToCard[parsed.cardName] else { continue }
+            let categoryKey = parsed.categoryName.lowercased()
+            let exists = card.rewardRules.contains {
+                $0.categoryName.lowercased() == categoryKey
+            }
+            guard !exists else { continue }
+            let rule = CardRewardRule(card: card, categoryName: parsed.categoryName, rate: parsed.rate)
+            modelContext.insert(rule)
+            rulesAdded += 1
+        }
+
+        // 4. Transactions
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let defaultCurrency = CurrencyUtils.defaultCurrencyCode
@@ -472,6 +551,7 @@ struct ImportExportUtils {
             transactionsAdded: txnAdded,
             cardsAdded: cardsAdded,
             categoriesAdded: categoriesAdded,
+            rewardRulesAdded: rulesAdded,
             transactionsSkippedAsDuplicates: plan.duplicateRowsSkipped
         )
     }
@@ -495,11 +575,23 @@ struct ImportExportUtils {
 
         // CARDS
         out += "\(sectionMarkerPrefix)CARDS\n"
-        out += "Name,MinimumSpending,HasMinimumSpending,RewardType,MinSpendingByDayOfMonth\n"
+        out += "Name,MinimumSpending,HasMinimumSpending,RewardType,MinSpendingByDayOfMonth,BaseRewardRate,RoundingBlock\n"
         let cards = (try? modelContext.fetch(FetchDescriptor<Card>())) ?? []
         for card in cards {
             let amount = String(format: "%.2f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber))
-            out += "\(escapeCSVField(card.name)),\(amount),\(card.hasMinimumSpending),\(card.rewardType.rawValue),\(card.minimumSpendingByDayOfMonth)\n"
+            let rate = formatRate(card.baseRewardRate)
+            let block = formatRate(card.roundingBlock)
+            out += "\(escapeCSVField(card.name)),\(amount),\(card.hasMinimumSpending),\(card.rewardType.rawValue),\(card.minimumSpendingByDayOfMonth),\(rate),\(block)\n"
+        }
+        out += "\n"
+
+        // REWARDRULES
+        out += "\(sectionMarkerPrefix)REWARDRULES\n"
+        out += "Card,Category,Rate\n"
+        for card in cards {
+            for rule in card.rewardRules {
+                out += "\(escapeCSVField(card.name)),\(escapeCSVField(rule.categoryName)),\(formatRate(rule.rate))\n"
+            }
         }
         out += "\n"
 

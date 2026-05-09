@@ -368,6 +368,7 @@ private extension SettingsView {
             summary.append("\(result.transactionsAdded) transactions")
             if result.cardsAdded > 0 { summary.append("\(result.cardsAdded) cards") }
             if result.categoriesAdded > 0 { summary.append("\(result.categoriesAdded) categories") }
+            if result.rewardRulesAdded > 0 { summary.append("\(result.rewardRulesAdded) reward rules") }
             if !importPlan.currenciesToEnable.isEmpty {
                 summary.append("\(importPlan.currenciesToEnable.count) currencies enabled")
             }
@@ -381,6 +382,7 @@ private extension SettingsView {
                 "transactions": result.transactionsAdded,
                 "cards": result.cardsAdded,
                 "categories": result.categoriesAdded,
+                "reward_rules": result.rewardRulesAdded,
                 "currencies_enabled": importPlan.currenciesToEnable.count,
                 "duplicates_skipped": result.transactionsSkippedAsDuplicates
             ])
