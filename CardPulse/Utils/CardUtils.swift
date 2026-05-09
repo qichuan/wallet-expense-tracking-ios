@@ -44,12 +44,11 @@ extension Card {
 
     // MARK: - Monthly/Cycle helpers
     
-    /// Statement day used for billing-cycle math. When the card tracks a minimum spend,
-    /// this is the user-configured day. Otherwise we treat the last day of the month
-    /// as the statement day so reward cycles still align with calendar months — most
-    /// banks default new cards to month-end before the user configures their actual cycle.
+    /// Statement day used for billing-cycle math. Always uses the user-configured day
+    /// so that spending totals and reward cycles align with the real billing cycle
+    /// regardless of whether a minimum-spend goal is active.
     var effectiveStatementDay: Int {
-        hasMinimumSpending ? minimumSpendingByDayOfMonth : 31
+        minimumSpendingByDayOfMonth
     }
 
     /// Gets the statement date for a given month, handling months with fewer days
