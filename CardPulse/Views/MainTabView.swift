@@ -14,6 +14,8 @@ struct MainTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var cards: [Card]
     @State private var selectedTab = 0
+    @State private var transactionFromNotification: Transaction?
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
@@ -57,6 +59,17 @@ struct MainTabView: View {
         }
     }
 
+    private func consumePendingNotificationTransaction() {
+        guard let id = notificationRouter.pendingTransactionId else { return }
+        var descriptor = FetchDescriptor<Transaction>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        if let tx = try? modelContext.fetch(descriptor).first {
+            selectedTab = 0
+            transactionFromNotification = tx
+        }
+        notificationRouter.pendingTransactionId = nil
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView()
@@ -98,6 +111,7 @@ struct MainTabView: View {
                 hasCompletedOnboarding = true
             }
             refreshExchangeRatesIfNeeded()
+            consumePendingNotificationTransaction()
         }
         .onChange(of: cards.count) { writeWidgetData() }
         .onChange(of: selectedTab) { _, newTab in
@@ -109,11 +123,17 @@ struct MainTabView: View {
             default: break
             }
         }
+        .onChange(of: notificationRouter.pendingTransactionId) {
+            consumePendingNotificationTransaction()
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 writeWidgetData()
                 refreshExchangeRatesIfNeeded()
             }
+        }
+        .sheet(item: $transactionFromNotification) { tx in
+            TransactionDetailView(transaction: tx)
         }
     }
 }
