@@ -76,6 +76,7 @@ struct CardFormView: View {
                         if rewardType != .none {
                             rewardRulesSection
                         }
+                        billingCycleSection
                         minimumSpendingSection
 
                         if cardToEdit != nil {
@@ -379,6 +380,21 @@ struct CardFormView: View {
     // MARK: - Minimum spending
 
     @ViewBuilder
+    private var billingCycleSection: some View {
+        FormSection("Billing Cycle") {
+            statementDayRow
+
+            Text("Your billing cycle resets on this day each month.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 14)
+        }
+    }
+
+    @ViewBuilder
     private var minimumSpendingSection: some View {
         FormSection("Minimum Spending") {
             FormToggleRow(title: "Track minimum spend", isOn: $hasMinimumSpending)
@@ -386,10 +402,8 @@ struct CardFormView: View {
             if hasMinimumSpending {
                 FormDivider()
                 amountRow
-                FormDivider()
-                statementDayRow
 
-                Text("Your minimum spending resets on this day each month. Reach the minimum before then to earn rewards from your card issuer.")
+                Text("Reach the minimum before your statement day to earn rewards from your card issuer.")
                     .font(AppTypography.caption)
                     .foregroundColor(AppColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -519,9 +533,9 @@ struct CardFormView: View {
             editing.name = cardName
             editing.rewardType = rewardType
             editing.hasMinimumSpending = hasMinimumSpending
+            editing.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
             if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) {
                 editing.minimumSpendingAmount = parsed
-                editing.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
             }
             editing.baseRewardRate = parsedBaseRate
             editing.roundingBlock = roundingBlock
@@ -541,7 +555,7 @@ struct CardFormView: View {
                 if hasMinimumSpending, let parsed = Decimal(string: minimumSpendingAmount) { return parsed }
                 return 0
             }()
-            let stmtDay: Int = hasMinimumSpending ? minimumSpendingByDayOfMonth : 1
+            let stmtDay: Int = minimumSpendingByDayOfMonth
             let card = Card(
                 name: cardName,
                 minimumSpendingAmount: newMinimumSpendingAmount,
