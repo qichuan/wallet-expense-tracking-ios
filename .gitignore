@@ -62,8 +62,3 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 appstore/mockdata_appstore.csv
-CardPulse/GoogleService-Info.plist 
-
-
-#Firebase
-GoogleService-Info.plist
