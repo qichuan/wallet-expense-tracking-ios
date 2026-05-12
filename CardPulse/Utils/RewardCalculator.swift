@@ -11,7 +11,8 @@ import Foundation
 ///
 ///   reward = floor(amount / roundingBlock) * roundingBlock * effectiveRate
 ///
-/// where `effectiveRate` prefers a category-specific rule over the card's base rate.
+/// where `effectiveRate` is the card's base rate plus any matching category bonus
+/// rate (e.g. base 0.5% + Groceries bonus 5% = 5.5%).
 /// For cashback the rate is treated as a percent (`1.6` → 1.6%); for miles the rate
 /// is miles-per-dollar (`1.4` → 1.4 mpd).
 enum RewardCalculator {
@@ -91,7 +92,7 @@ enum RewardCalculator {
         let bonus = card.rewardRules.first {
             !raw.isEmpty && $0.categoryName.caseInsensitiveCompare(raw) == .orderedSame
         }
-        let effective = bonus?.rate ?? card.baseRewardRate
+        let effective = card.baseRewardRate + (bonus?.rate ?? 0)
         let reward: Decimal = {
             switch card.rewardType {
             case .cashback: return rounded * effective / 100
@@ -117,7 +118,7 @@ enum RewardCalculator {
         if let raw = category?.trimmingCharacters(in: .whitespacesAndNewlines),
            !raw.isEmpty,
            let rule = card.rewardRules.first(where: { $0.categoryName.caseInsensitiveCompare(raw) == .orderedSame }) {
-            return rule.rate
+            return card.baseRewardRate + rule.rate
         }
         return card.baseRewardRate
     }

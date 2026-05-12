@@ -186,15 +186,8 @@ struct TransactionDetailView: View {
                     value: format(amount: breakdown.rounded))
 
             FormDivider()
-            calcRow(label: rateLabel(for: breakdown),
+            calcRow(label: "Base rate",
                     value: format(rate: breakdown.effectiveRate, type: breakdown.rewardType))
-
-            if let bonus = breakdown.bonusCategory, breakdown.effectiveRate != breakdown.baseRate {
-                FormDivider()
-                calcRow(label: "Base rate (\(bonus) bonus applied)",
-                        value: format(rate: breakdown.baseRate, type: breakdown.rewardType),
-                        valueColor: AppColors.textTertiary)
-            }
 
             FormDivider()
             HStack(spacing: 12) {
@@ -238,13 +231,6 @@ struct TransactionDetailView: View {
         let n = Double(truncating: block as NSDecimalNumber)
         if n <= 1 { return "Eligible amount" }
         return "Rounded down to $\(String(format: "%.0f", n)) block"
-    }
-
-    private func rateLabel(for breakdown: RewardCalculator.Breakdown) -> String {
-        if let bonus = breakdown.bonusCategory, breakdown.effectiveRate != breakdown.baseRate {
-            return "Bonus rate (\(bonus))"
-        }
-        return "Base rate"
     }
 
     private func format(amount: Decimal) -> String {
