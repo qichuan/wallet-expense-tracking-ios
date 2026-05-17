@@ -80,6 +80,7 @@ enum RewardCalculator {
         let roundingBlock: Decimal
         let effectiveRate: Decimal
         let baseRate: Decimal
+        let bonusRate: Decimal
         let bonusCategory: String?
         let rewardType: RewardType
         let reward: Decimal
@@ -106,6 +107,7 @@ enum RewardCalculator {
             roundingBlock: card.roundingBlock,
             effectiveRate: effective,
             baseRate: card.baseRewardRate,
+            bonusRate: bonus?.rate ?? 0,
             bonusCategory: bonus.map { $0.categoryName },
             rewardType: card.rewardType,
             reward: reward
