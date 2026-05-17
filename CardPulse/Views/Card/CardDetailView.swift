@@ -169,26 +169,23 @@ struct CardDetailView: View {
         let bonusCount = card.rewardRules.count
 
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                SectionLabel(text: "Earned This Cycle")
-                Spacer()
-                if bonusCount > 0 {
-                    Text("\(bonusCount) bonus\(bonusCount == 1 ? "" : "es")")
-                        .font(AppTypography.rowMeta)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
+            SectionLabel(text: "* Earned This Cycle")
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(formatted.isEmpty ? "0" : formatted)
                     .font(AppTypography.amount)
                     .foregroundColor(rewardColor)
                 if card.baseRewardRate > 0 {
-                    Text("at \(rateDisplay)")
+                    Text(rateSubtitle(bonusCount: bonusCount))
                         .font(AppTypography.rowMeta)
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
+
+            Text("* For estimation only. Refer to your card statement for the final \(disclaimerUnit) earned.")
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -255,6 +252,20 @@ struct CardDetailView: View {
         case .cashback: return "\(value)%"
         case .miles: return "\(value) mpd"
         case .none: return ""
+        }
+    }
+
+    private func rateSubtitle(bonusCount: Int) -> String {
+        let base = "at \(rateDisplay)"
+        guard bonusCount > 0 else { return base }
+        return "\(base) + \(bonusCount) bonus\(bonusCount == 1 ? "" : "es")"
+    }
+
+    private var disclaimerUnit: String {
+        switch card.rewardType {
+        case .cashback: return "cashback"
+        case .miles:    return "miles"
+        case .none:     return "rewards"
         }
     }
 
