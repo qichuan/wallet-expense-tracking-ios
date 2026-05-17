@@ -18,6 +18,11 @@ CardPulse takes the mental load off.
 
 
 # What's New in This Version
+
+v2.4
+- Add miles and cashback estimation 
+- Some performace improvments and bug fixes
+
 v2.2
 - Recurring transactions — Mark a transaction as recurring and it continues every month automatically 
 - Re-arrange your cards — Drag cards into the order you want on the Cards screen.
