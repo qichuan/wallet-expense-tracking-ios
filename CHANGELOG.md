@@ -1,7 +1,13 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
-- [ADD] - Prompt user for app review
+
+## 2.4 - 2026-05-16
+- [ADDED] - Prompt user for app review
+- [ADDED] - Estimate miles and cashback
+- [CHANGED] - Always show spending, statement day, and min-spend notice in card screen
+- [CHANGED] - Open transaction detail after tapping notification 
+
 
 ## 2.2 - May 3 2026
 - [ADDED] - Support recurring transaction
