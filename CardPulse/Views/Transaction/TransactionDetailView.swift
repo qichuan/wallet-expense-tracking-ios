@@ -187,11 +187,17 @@ struct TransactionDetailView: View {
 
             FormDivider()
             calcRow(label: "Base rate",
-                    value: format(rate: breakdown.effectiveRate, type: breakdown.rewardType))
+                    value: format(rate: breakdown.baseRate, type: breakdown.rewardType))
+
+            if breakdown.bonusCategory != nil, breakdown.bonusRate > 0 {
+                FormDivider()
+                calcRow(label: "Bonus rate",
+                        value: format(rate: breakdown.bonusRate, type: breakdown.rewardType))
+            }
 
             FormDivider()
             HStack(spacing: 12) {
-                Text("Earned")
+                Text("* Earned")
                     .font(AppTypography.rowTitle)
                     .foregroundColor(AppColors.textPrimary)
                 Spacer()
@@ -202,7 +208,7 @@ struct TransactionDetailView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
 
-            Text(formulaCaption(for: breakdown))
+            Text("* For estimation only. Refer to your card statement for the final \(disclaimerUnit(for: breakdown.rewardType)) earned.")
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -252,18 +258,11 @@ struct TransactionDetailView: View {
         }
     }
 
-    private func formulaCaption(for breakdown: RewardCalculator.Breakdown) -> String {
-        switch breakdown.rewardType {
-        case .cashback:
-            return "Cashback = eligible amount × rate."
-        case .miles:
-            let blockValue = Double(truncating: breakdown.roundingBlock as NSDecimalNumber)
-            if blockValue > 1 {
-                return "Miles are calculated on the rounded-down amount, then multiplied by the rate."
-            }
-            return "Miles = transaction amount × rate."
-        case .none:
-            return ""
+    private func disclaimerUnit(for type: RewardType) -> String {
+        switch type {
+        case .cashback: return "cashback"
+        case .miles:    return "miles"
+        case .none:     return "rewards"
         }
     }
 }
