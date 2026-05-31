@@ -13,12 +13,12 @@ struct OnboardingFlow: View {
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = ""
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
 
-    @State private var stepIndex = 0   // 0 = welcome, 1–4 = steps
+    @State private var stepIndex = 0   // 0 = welcome, 1–5 = steps
     @State private var goingForward = true
     @State private var currencySelectedCode = ""
     @State private var automationPrimaryAction: () -> Void = {}
 
-    private let totalSteps = 4
+    private let totalSteps = 5
 
     var body: some View {
         ZStack {
@@ -77,6 +77,8 @@ struct OnboardingFlow: View {
                 case 3:
                     NotificationsStepView()
                 case 4:
+                    LocationStepView()
+                case 5:
                     AutomationStepView(
                         onRegisterPrimaryAction: { automationPrimaryAction = $0 },
                         onFinish: complete
@@ -105,7 +107,7 @@ struct OnboardingFlow: View {
                 action: performPrimaryAction
             )
 
-            if stepIndex == 4 {
+            if stepIndex == 5 {
                 Button(action: complete) {
                     Text("Skip for now")
                         .font(AppTypography.navButton)
@@ -120,7 +122,7 @@ struct OnboardingFlow: View {
 
     private var currentPrimaryTitle: String {
         switch stepIndex {
-        case 4: return "Open Shortcuts to set up"
+        case 5: return "Open Shortcuts to set up"
         default: return "Continue"
         }
     }
@@ -132,7 +134,7 @@ struct OnboardingFlow: View {
     private func performPrimaryAction() {
         switch stepIndex {
         case 1: currencySave()
-        case 4: automationPrimaryAction()
+        case 5: automationPrimaryAction()
         default: advance()
         }
     }
