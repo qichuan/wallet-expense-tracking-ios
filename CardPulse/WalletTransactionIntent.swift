@@ -71,6 +71,9 @@ struct WalletTransactionIntent: AppIntent {
         }
 
         let guessedCategory = inferCategory(merchantName: merchantName, in: context)
+        // Best-effort: record where the tap-to-pay happened when location is authorized.
+        // Returns nil quickly if permission is off or no fix is available.
+        let location = await LocationManager.capture()
         let txn = Transaction(
             merchant: merchantName,
             amount: decimalAmount,
@@ -78,7 +81,10 @@ struct WalletTransactionIntent: AppIntent {
             category: guessedCategory,
             note: nil,
             card: matchedCard,
-            currency: resolvedCurrency
+            currency: resolvedCurrency,
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            placeName: location?.placeName
         )
         context.insert(txn)
         // current spent is derived from transactions; no direct mutation

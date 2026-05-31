@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import CoreLocation
 
 @Model
 final class Transaction {
@@ -24,12 +25,27 @@ final class Transaction {
     /// template for next month's instance. Toggling off on the latest instance stops the chain.
     var isRecurring: Bool = false
 
+    /// Latitude where the transaction was made, captured from the device's location at add
+    /// time when location permission is granted. `nil` when permission was off or unavailable.
+    var latitude: Double?
+    /// Longitude where the transaction was made. See `latitude`.
+    var longitude: Double?
+    /// Reverse-geocoded place name (e.g. "Tiong Bahru Bakery" or a street address) for the
+    /// captured coordinate. `nil` when geocoding failed or no location was captured.
+    var placeName: String?
+
     /// Resolved currency: falls back to the user's default when the stored value is empty.
     var resolvedCurrency: String {
         currency.isEmpty ? CurrencyUtils.defaultCurrencyCode : currency
     }
 
-    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, note: String? = nil, card: Card? = nil, currency: String = "", isRecurring: Bool = false) {
+    /// Captured coordinate, present only when both latitude and longitude were stored.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let latitude, let longitude else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    init(merchant: String, amount: Decimal, date: Date, category: String? = nil, note: String? = nil, card: Card? = nil, currency: String = "", isRecurring: Bool = false, latitude: Double? = nil, longitude: Double? = nil, placeName: String? = nil) {
         self.id = UUID()
         self.merchant = merchant
         self.amount = amount
@@ -39,5 +55,8 @@ final class Transaction {
         self.note = note
         self.card = card
         self.isRecurring = isRecurring
+        self.latitude = latitude
+        self.longitude = longitude
+        self.placeName = placeName
     }
 }

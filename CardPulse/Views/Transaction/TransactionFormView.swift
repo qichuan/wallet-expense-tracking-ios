@@ -35,6 +35,9 @@ struct TransactionFormView: View {
     @State private var transactionDate: Date
     @State private var isRecurring: Bool
     @State private var showingDeleteAlert = false
+    /// Guards against re-entrant saves. A new-transaction save waits asynchronously for a
+    /// location fix before persisting; without this a second Save tap would insert a duplicate.
+    @State private var isSaving = false
 
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
@@ -200,6 +203,9 @@ struct TransactionFormView: View {
             .onAppear {
                 if transactionToEdit == nil {
                     merchantFocused = true
+                    // Ask for location the first time the user adds a transaction, so we can
+                    // record where it was made. No-op once a decision has been made.
+                    LocationManager.shared.requestPermission()
                 }
             }
         }
@@ -475,8 +481,8 @@ struct TransactionFormView: View {
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Save") { saveTransaction() }
                 .font(AppTypography.navButton)
-                .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
-                .disabled(!isValid)
+                .foregroundColor(isValid && !isSaving ? AppColors.accent : AppColors.textTertiary)
+                .disabled(!isValid || isSaving)
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
@@ -505,7 +511,8 @@ struct TransactionFormView: View {
     }
 
     private func saveTransaction() {
-        guard let amountDecimal = Decimal(string: amount) else { return }
+        guard !isSaving, let amountDecimal = Decimal(string: amount) else { return }
+        isSaving = true
         if let editing = transactionToEdit {
             editing.merchant = merchant
             editing.amount = amountDecimal
@@ -522,33 +529,53 @@ struct TransactionFormView: View {
                 }
                 WidgetDataWriter.refresh(using: modelContext)
                 dismiss()
-            } catch { print("Error saving transaction: \(error)") }
+            } catch {
+                isSaving = false
+                print("Error saving transaction: \(error)")
+            }
         } else {
-            let transaction = Transaction(
-                merchant: merchant,
-                amount: amountDecimal,
-                date: transactionDate,
-                category: category.isEmpty ? nil : category,
-                note: note.isEmpty ? nil : note,
-                card: selectedCard,
-                currency: currency,
-                isRecurring: isRecurring
-            )
-            modelContext.insert(transaction)
-            AnalyticsTracker.log("add_wallet_transaction", [
-                "type": "manual",
-                "merchant": merchant,
-                "amount": amount,
-                "currency": currency
-            ])
-            do {
-                try modelContext.save()
-                if isRecurring {
-                    RecurringMaterializer.materialize(in: modelContext)
-                }
-                WidgetDataWriter.refresh(using: modelContext)
-                dismiss()
-            } catch { print("Error saving transaction: \(error)") }
+            // Capture where the transaction was made (best-effort) before persisting. Returns
+            // nil quickly when location permission is off or no fix is available in time.
+            Task {
+                let location = await LocationManager.capture()
+                persistNewTransaction(amount: amountDecimal, location: location)
+            }
+        }
+    }
+
+    @MainActor
+    private func persistNewTransaction(amount amountDecimal: Decimal, location: CapturedLocation?) {
+        let transaction = Transaction(
+            merchant: merchant,
+            amount: amountDecimal,
+            date: transactionDate,
+            category: category.isEmpty ? nil : category,
+            note: note.isEmpty ? nil : note,
+            card: selectedCard,
+            currency: currency,
+            isRecurring: isRecurring,
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            placeName: location?.placeName
+        )
+        modelContext.insert(transaction)
+        AnalyticsTracker.log("add_wallet_transaction", [
+            "type": "manual",
+            "merchant": merchant,
+            "amount": amount,
+            "currency": currency,
+            "has_location": location != nil
+        ])
+        do {
+            try modelContext.save()
+            if isRecurring {
+                RecurringMaterializer.materialize(in: modelContext)
+            }
+            WidgetDataWriter.refresh(using: modelContext)
+            dismiss()
+        } catch {
+            isSaving = false
+            print("Error saving transaction: \(error)")
         }
     }
 
