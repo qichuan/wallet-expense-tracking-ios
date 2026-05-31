@@ -165,10 +165,97 @@ enum SchemaV4: VersionedSchema {
     }
 }
 
-// MARK: - V5 Schema (current — adds reward-rate fields to Card and the CardRewardRule model)
+// MARK: - V5 Schema (adds reward-rate fields to Card and the CardRewardRule model — frozen pre-location shape)
+//
+// V5 freezes `Card`, `Transaction`, and `CardRewardRule` (which are coupled by
+// relationships) so V6's additions of location fields to live `Transaction`
+// don't change V5's per-stage SwiftData checksum.
 
 enum SchemaV5: VersionedSchema {
     static var versionIdentifier = Schema.Version(5, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [SchemaV5.Card.self, SchemaV5.Transaction.self, SpendingCategory.self, SchemaV5.CardRewardRule.self]
+    }
+
+    @Model final class Card {
+        var id: UUID
+        var name: String
+        var minimumSpendingAmount: Decimal
+        var hasMinimumSpending: Bool
+        var rewardType: RewardType
+        var createdAt: Date
+        var minimumSpendingByDayOfMonth: Int
+        var baseRewardRate: Decimal = 0
+        var roundingBlock: Decimal = 1
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV5.Transaction.card)
+        var transactions: [SchemaV5.Transaction] = []
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV5.CardRewardRule.card)
+        var rewardRules: [SchemaV5.CardRewardRule] = []
+
+        init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false,
+             rewardType: RewardType = .none, minimumSpendingByDayOfMonth: Int = 1,
+             baseRewardRate: Decimal = 0, roundingBlock: Decimal = 1) {
+            self.id = UUID()
+            self.name = name
+            self.minimumSpendingAmount = minimumSpendingAmount
+            self.hasMinimumSpending = hasMinimumSpending
+            self.rewardType = rewardType
+            self.createdAt = Date()
+            self.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
+            self.baseRewardRate = baseRewardRate
+            self.roundingBlock = roundingBlock
+        }
+    }
+
+    @Model final class Transaction {
+        var id: UUID
+        var merchant: String
+        var amount: Decimal
+        var currency: String = ""
+        var date: Date
+        var category: String?
+        var note: String?
+        var card: SchemaV5.Card?
+        var isRecurring: Bool = false
+
+        init(merchant: String, amount: Decimal, date: Date,
+             category: String? = nil, note: String? = nil, card: SchemaV5.Card? = nil,
+             currency: String = "", isRecurring: Bool = false) {
+            self.id = UUID()
+            self.merchant = merchant
+            self.amount = amount
+            self.currency = currency
+            self.date = date
+            self.category = category
+            self.note = note
+            self.card = card
+            self.isRecurring = isRecurring
+        }
+    }
+
+    @Model final class CardRewardRule {
+        var id: UUID
+        var card: SchemaV5.Card?
+        var categoryName: String
+        var rate: Decimal
+        var createdAt: Date
+
+        init(card: SchemaV5.Card? = nil, categoryName: String, rate: Decimal) {
+            self.id = UUID()
+            self.card = card
+            self.categoryName = categoryName
+            self.rate = rate
+            self.createdAt = Date()
+        }
+    }
+}
+
+// MARK: - V6 Schema (current — Transaction gains `latitude`, `longitude`, `placeName`)
+
+enum SchemaV6: VersionedSchema {
+    static var versionIdentifier = Schema.Version(6, 0, 0)
     static var models: [any PersistentModel.Type] {
         [Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self]
     }
@@ -178,10 +265,10 @@ enum SchemaV5: VersionedSchema {
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self]
     }
 
-    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     /// Skipped when the user has not yet chosen a default currency — the onboarding
@@ -228,6 +315,13 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static let migrateV4toV5 = MigrationStage.lightweight(
         fromVersion: SchemaV4.self,
         toVersion: SchemaV5.self
+    )
+
+    /// V5 → V6: add `latitude`, `longitude`, and `placeName` to `Transaction`. All three
+    /// are optional with no default, so SwiftData handles this as a lightweight migration.
+    static let migrateV5toV6 = MigrationStage.lightweight(
+        fromVersion: SchemaV5.self,
+        toVersion: SchemaV6.self
     )
 }
 

@@ -4,6 +4,8 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CardPulse uses your location to save where each transaction was made, so you can see it on a map later.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

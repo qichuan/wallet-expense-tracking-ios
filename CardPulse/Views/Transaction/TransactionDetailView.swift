@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import MapKit
 
 /// Read-only details for a single `Transaction`. Renders metadata plus a step-by-step
 /// breakdown of how the reward (miles or cashback) was calculated, with an Edit
@@ -48,6 +49,9 @@ struct TransactionDetailView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         amountHero
                         detailsSection
+                        if let coordinate = transaction.coordinate {
+                            locationSection(coordinate: coordinate)
+                        }
                         if let note = transaction.note, !note.isEmpty {
                             noteSection(note)
                         }
@@ -161,6 +165,44 @@ struct TransactionDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
+        }
+    }
+
+    // MARK: - Location
+
+    /// Place name plus a non-interactive map pin for the coordinate captured when the
+    /// transaction was added. Shown only when a coordinate is stored.
+    @ViewBuilder
+    private func locationSection(coordinate: CLLocationCoordinate2D) -> some View {
+        let placeName = transaction.placeName
+        FormSection("Location") {
+            if let placeName, !placeName.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(AppTypography.iconMedium)
+                        .foregroundColor(AppColors.accent)
+                    Text(placeName)
+                        .font(AppTypography.rowValue)
+                        .foregroundColor(AppColors.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                FormDivider()
+            }
+
+            Map(initialPosition: .region(MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+            ))) {
+                Marker(placeName ?? transaction.merchant, coordinate: coordinate)
+                    .tint(AppColors.accent)
+            }
+            .frame(height: 180)
+            .allowsHitTesting(false)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
         }
     }
 
@@ -284,7 +326,10 @@ struct TransactionDetailView: View {
         date: Date(),
         category: "Food & Drinks",
         note: "Saturday breakfast",
-        card: card
+        card: card,
+        latitude: 1.2847,
+        longitude: 103.8334,
+        placeName: "Tiong Bahru Bakery, 56 Eng Hoon St"
     )
     return TransactionDetailView(transaction: tx)
         .modelContainer(container)
