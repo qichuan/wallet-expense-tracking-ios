@@ -35,6 +35,9 @@ struct TransactionFormView: View {
     @State private var transactionDate: Date
     @State private var isRecurring: Bool
     @State private var showingDeleteAlert = false
+    /// Guards against re-entrant saves. A new-transaction save waits asynchronously for a
+    /// location fix before persisting; without this a second Save tap would insert a duplicate.
+    @State private var isSaving = false
 
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
@@ -478,8 +481,8 @@ struct TransactionFormView: View {
         ToolbarItem(placement: .navigationBarTrailing) {
             Button("Save") { saveTransaction() }
                 .font(AppTypography.navButton)
-                .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
-                .disabled(!isValid)
+                .foregroundColor(isValid && !isSaving ? AppColors.accent : AppColors.textTertiary)
+                .disabled(!isValid || isSaving)
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
@@ -508,7 +511,8 @@ struct TransactionFormView: View {
     }
 
     private func saveTransaction() {
-        guard let amountDecimal = Decimal(string: amount) else { return }
+        guard !isSaving, let amountDecimal = Decimal(string: amount) else { return }
+        isSaving = true
         if let editing = transactionToEdit {
             editing.merchant = merchant
             editing.amount = amountDecimal
@@ -525,7 +529,10 @@ struct TransactionFormView: View {
                 }
                 WidgetDataWriter.refresh(using: modelContext)
                 dismiss()
-            } catch { print("Error saving transaction: \(error)") }
+            } catch {
+                isSaving = false
+                print("Error saving transaction: \(error)")
+            }
         } else {
             // Capture where the transaction was made (best-effort) before persisting. Returns
             // nil quickly when location permission is off or no fix is available in time.
@@ -566,7 +573,10 @@ struct TransactionFormView: View {
             }
             WidgetDataWriter.refresh(using: modelContext)
             dismiss()
-        } catch { print("Error saving transaction: \(error)") }
+        } catch {
+            isSaving = false
+            print("Error saving transaction: \(error)")
+        }
     }
 
     private func deleteTransaction() {
