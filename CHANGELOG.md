@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Convert card spend to your main currency for goals, miles, and cashback, and show the original amounts on the card detail screen
 
 ## 2.4 - 2026-05-16
 - [ADDED] - Prompt user for app review
