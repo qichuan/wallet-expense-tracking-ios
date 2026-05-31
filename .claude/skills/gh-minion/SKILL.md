@@ -1,11 +1,11 @@
 ---
 name: gh-minion
-description: Reads a GitHub issue, implements the feature on a new branch, updates CHANGELOG.md, and opens a PR. Invoke as `/gh-minion <issue-number>` (e.g. `/gh-minion 42`).
+description: Reads a GitHub issue, implements the feature on a new branch, updates CHANGELOG.md, opens a PR, and self-reviews it as a senior engineer. Invoke as `/gh-minion <issue-number>` (e.g. `/gh-minion 42`).
 ---
 
 # gh-minion
 
-End-to-end implementation of a GitHub issue: fetch ticket → branch → implement → changelog → PR.
+End-to-end implementation of a GitHub issue: fetch ticket → branch → implement → changelog → PR → senior-engineer review.
 
 ## Invocation
 
@@ -148,7 +148,46 @@ EOF
 )"
 ```
 
-Return the PR URL to the user as the final output.
+Note the PR URL — you'll return it after the review in step 8.
+
+### 8. Self-review the PR as a senior engineer
+
+Once the PR is open, change hats: review your own diff as critically as a senior engineer who *didn't* write it would in a code review. Review the **pushed** diff so you catch what actually landed, not your memory of the change:
+
+```bash
+gh pr diff <num>
+```
+
+Optionally run `/code-review high` for a second machine pass, but still do the manual review below — the checklist is project-aware in ways a generic pass is not. Read the entire diff and evaluate against each lens:
+
+**Correctness & edge cases**
+- Empty / nil / zero inputs, first launch, missing or not-yet-loaded data (e.g. FX rates absent), very large values.
+- Off-by-one and boundary conditions — date/billing-cycle edges, rounding, currency conversion.
+- Anything that silently drops or double-counts data (e.g. converting an amount twice across layers).
+
+**Build & integration risk** — you cannot run `xcodebuild`, so reason about it explicitly:
+- **Target membership.** If a file gains a new dependency (a new `import`, or a reference to a type like `CurrencyUtils`), confirm *every* target that compiles that file also compiles the dependency. The widget extension only includes a subset of `CardPulse/` — check the synchronized-group `membershipExceptions` in `CardPulse.xcodeproj/project.pbxproj`. App-only utilities must not leak into a file the widget target compiles.
+- **Schema changes.** A new or changed SwiftData `@Model` field needs a migration stage in `CardPulseMigrationPlan` and, if seeded, a `CategorySeeding`-style safety seed.
+
+**SwiftUI reactivity**
+- A view only re-renders for a `UserDefaults`/`@AppStorage`-derived value (exchange rates, default currency, etc.) if it actually observes that key. If a parent computes state (status, counts, filters) from the same source as a child, the parent needs the same observation or it goes stale while the child updates.
+
+**Conventions (CLAUDE.md)**
+- `AppColors`/`AppTypography` tokens only — no inline colors/fonts. `MerchantUtils.normalizedCategory(for:)` for categories. `CurrencyUtils` for currency parsing/symbols. `AnalyticsTracker` for events (never `Analytics.logEvent`). New SwiftUI views have a `#Preview` using `ModelContainer.createMockContainer()`. Dark-mode-only intact.
+
+**Scope & hygiene**
+- The diff touches only files relevant to the ticket — no stray/unrelated files, leftover debug prints, commented-out code, or committed secrets.
+- The CHANGELOG bullet is present, correctly categorized, and accurate.
+
+**Security**
+- No hardcoded secrets or keys; no logging of sensitive data; external/parsed input is validated.
+
+Then act on what you find:
+- **Clear bug or convention violation** → fix it and push a *separate* follow-up commit on the same branch (subject like `Address self-review: <what>`). The PR updates automatically. Do **not** amend or force-push the already-pushed commits.
+- **Judgment call, ambiguity, or a larger redesign** → don't silently change scope; describe it to the user and ask how to proceed.
+- **Nothing actionable** → say so explicitly rather than inventing nitpicks.
+
+As the final output, give the user a review summary grouped into **Blockers**, **Minor / non-blocking**, and **Verified OK**, followed by the PR URL. If you pushed review-fix commits, note them.
 
 ## Guardrails
 
