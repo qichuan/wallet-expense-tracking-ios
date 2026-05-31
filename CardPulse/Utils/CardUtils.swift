@@ -8,6 +8,15 @@
 import Foundation
 import SwiftData
 
+extension Transaction {
+    /// Amount converted to the user's default currency using cached FX rates.
+    /// Falls back to the raw amount when no rate is available so spend is never dropped.
+    var amountInDefaultCurrency: Decimal {
+        guard let rate = CurrencyUtils.rateToDefault(from: resolvedCurrency) else { return amount }
+        return amount * Decimal(rate)
+    }
+}
+
 extension Card {
     var progressPercentage: Double {
         guard minimumSpendingAmount > 0 else { return 0 }
@@ -120,10 +129,27 @@ extension Card {
         }
     }
 
-    var monthlySpent: Decimal {
-        // Filter transactions within the cycle: >= start and < end (exclusive end)
+    /// Transactions falling within the current billing cycle: >= start and < end (exclusive end).
+    var cycleTransactions: [Transaction] {
         transactions.filter { $0.date >= currentCycleStart && $0.date < currentCycleEnd }
-            .reduce(0) { $0 + $1.amount }
+    }
+
+    /// Total spent this cycle, converted to the user's default currency using cached FX rates.
+    /// Used for the spend goal, progress, and reward calculations so mixed-currency spend rolls up correctly.
+    var monthlySpent: Decimal {
+        cycleTransactions.reduce(0) { $0 + $1.amountInDefaultCurrency }
+    }
+
+    /// Cycle spend grouped by each transaction's original currency, sorted by amount descending.
+    /// Lets the detail view list the original amounts beneath the converted total.
+    var monthlySpentByCurrency: [(currency: String, amount: Decimal)] {
+        var totals: [String: Decimal] = [:]
+        for tx in cycleTransactions {
+            totals[tx.resolvedCurrency, default: 0] += tx.amount
+        }
+        return totals
+            .map { (currency: $0.key, amount: $0.value) }
+            .sorted { $0.amount > $1.amount }
     }
     
     /// Returns a formatted string representing the current spending period

@@ -13,6 +13,8 @@ struct CardRow: View {
     var status: CardStatus? = nil
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    // Observed so spend/reward amounts recompute when FX rates are refreshed.
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     private var currencySymbol: String {
         CurrencyUtils.symbol(for: defaultCurrencyCode)
