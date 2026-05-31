@@ -19,6 +19,10 @@ CardPulse takes the mental load off.
 
 # What's New in This Version
 
+v2.5
+- Transaction locations — Save where each purchase was made and see the place name and a map right on the transaction screen.
+- Some performance improvements and bug fixes
+
 v2.4
 - Add miles and cashback estimation 
 - Some performace improvments and bug fixes
