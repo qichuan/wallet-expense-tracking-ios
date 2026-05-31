@@ -11,6 +11,8 @@ struct CardDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    // Observed so the converted total recomputes when FX rates are refreshed.
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     @State private var showingEdit = false
     @State private var selectedTransaction: Transaction?
@@ -43,6 +45,26 @@ struct CardDetailView: View {
         f.numberStyle = .decimal
         f.maximumFractionDigits = 0
         return f.string(from: NSNumber(value: n)) ?? "0"
+    }
+
+    /// Formats an original-currency amount with its own symbol and 2 decimals,
+    /// e.g. "RM 50.00", for the breakdown beneath the converted total.
+    private func formattedOriginal(_ amount: Decimal, currency: String) -> String {
+        let n = Double(truncating: amount as NSDecimalNumber)
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.minimumFractionDigits = 2
+        f.maximumFractionDigits = 2
+        let value = f.string(from: NSNumber(value: n)) ?? "0.00"
+        return "\(CurrencyUtils.symbol(for: currency))\(value)"
+    }
+
+    /// Per-currency cycle spend, only kept when it adds information beyond the
+    /// converted total (mixed currencies, or a single foreign currency).
+    private var originalBreakdown: [(currency: String, amount: Decimal)] {
+        let breakdown = card.monthlySpentByCurrency
+        let isSingleDefault = breakdown.count == 1 && breakdown.first?.currency == defaultCurrencyCode
+        return isSingleDefault ? [] : breakdown
     }
 
     var body: some View {
@@ -130,6 +152,8 @@ struct CardDetailView: View {
                     .foregroundColor(AppColors.textSecondary)
             }
 
+            originalAmountsRow
+
             // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -160,6 +184,26 @@ struct CardDetailView: View {
         .padding(20)
         .background(AppColors.backgroundCard)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    /// Lists the original per-currency amounts beneath the converted total so the
+    /// user can see what the converted figure is made of. Hidden when everything is
+    /// already in the default currency.
+    @ViewBuilder
+    private var originalAmountsRow: some View {
+        let breakdown = originalBreakdown
+        if !breakdown.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Original")
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textTertiary)
+                Text(breakdown.map { formattedOriginal($0.amount, currency: $0.currency) }
+                        .joined(separator: "  ·  "))
+                    .font(AppTypography.rowValue)
+                    .foregroundColor(AppColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     @ViewBuilder
@@ -212,6 +256,8 @@ struct CardDetailView: View {
                     .font(AppTypography.amountTarget)
                     .foregroundColor(AppColors.textSecondary)
             }
+
+            originalAmountsRow
 
             HStack(alignment: .top) {
                 Spacer()

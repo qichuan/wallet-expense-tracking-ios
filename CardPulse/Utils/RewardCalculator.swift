@@ -43,14 +43,22 @@ enum RewardCalculator {
         }
     }
 
-    /// Total reward earned in the card's current billing cycle.
+    /// Reward for a transaction, computed on the amount converted to the user's
+    /// default currency. Use this for card-level cycle totals so mixed-currency
+    /// spend (and the miles/cashback it earns) rolls up in a single currency.
+    static func convertedReward(for transaction: Transaction) -> Decimal? {
+        guard let card = transaction.card, card.rewardType != .none else { return nil }
+        return reward(amount: transaction.amountInDefaultCurrency,
+                      category: transaction.category,
+                      card: card)
+    }
+
+    /// Total reward earned in the card's current billing cycle, computed on
+    /// amounts converted to the default currency.
     static func cycleReward(for card: Card) -> Decimal {
         guard card.rewardType != .none else { return 0 }
-        let start = card.currentCycleStart
-        let end = card.currentCycleEnd
-        return card.transactions
-            .filter { $0.date >= start && $0.date < end }
-            .compactMap { reward(for: $0) }
+        return card.cycleTransactions
+            .compactMap { convertedReward(for: $0) }
             .reduce(0, +)
     }
 
