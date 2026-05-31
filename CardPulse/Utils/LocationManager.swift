@@ -5,6 +5,7 @@
 
 import Foundation
 import CoreLocation
+import Combine
 
 /// A captured location plus its reverse-geocoded place name, ready to store on a `Transaction`.
 struct CapturedLocation {
