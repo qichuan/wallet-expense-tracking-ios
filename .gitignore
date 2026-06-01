@@ -62,3 +62,6 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 appstore/mockdata_appstore.csv
+
+# Firebase — contains API keys, never commit
+GoogleService-Info.plist
