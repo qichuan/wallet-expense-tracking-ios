@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+
+## 2.5 - 2026-06-01
 - [ADDED] - Set or edit a transaction's location by searching an address or place with autocomplete
 
 ## 2.5 - 2026-05-31

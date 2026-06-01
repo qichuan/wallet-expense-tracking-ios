@@ -20,6 +20,10 @@ CardPulse takes the mental load off.
 # What's New in This Version
 
 v2.5
+- Edit transaction locations — Set or change where a purchase was made by searching an address or place with autocomplete.
+- Some performance improvements and bug fixes
+
+v2.5
 - Transaction locations — Save where each purchase was made and see the place name and a map right on the transaction screen.
 - Some performance improvements and bug fixes
 
