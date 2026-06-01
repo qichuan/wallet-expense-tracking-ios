@@ -54,6 +54,8 @@ enum AnalyticsTracker {
         #if DEBUG
         print("[Analytics:DEBUG-skipped] \(name) \(sanitised)")
         #else
+        let isCI = ProcessInfo.processInfo.environment["CI"] == "TRUE"
+        guard !isCI else { return }
         Analytics.logEvent(name, parameters: sanitised.isEmpty ? nil : sanitised)
         #endif
     }
