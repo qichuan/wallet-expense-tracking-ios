@@ -18,9 +18,28 @@ struct TransactionDetailView: View {
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
 
     @State private var showingEdit = false
+    /// Camera for the embedded location map. Kept in state (rather than seeded once via
+    /// `initialPosition`) so editing the location can recenter the existing map instead of
+    /// rebuilding it — rebuilding tore down and recreated the Metal layer, which logged
+    /// `CAMetalLayer ignoring invalid setDrawableSize width=0 height=0` on each edit.
+    @State private var mapCameraPosition: MapCameraPosition = .automatic
 
     private var currencySymbol: String {
         CurrencyUtils.symbol(for: transaction.resolvedCurrency)
+    }
+
+    /// Stable identity for the stored coordinate, used to detect location changes. Empty
+    /// when no coordinate is stored.
+    private var coordinateKey: String {
+        guard let c = transaction.coordinate else { return "" }
+        return "\(c.latitude),\(c.longitude)"
+    }
+
+    private func mapPosition(for coordinate: CLLocationCoordinate2D) -> MapCameraPosition {
+        .region(MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        ))
     }
 
     private static let dateFormatter: DateFormatter = {
@@ -49,8 +68,8 @@ struct TransactionDetailView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         amountHero
                         detailsSection
-                        if let coordinate = transaction.coordinate {
-                            locationSection(coordinate: coordinate)
+                        if transaction.coordinate != nil || !(transaction.placeName ?? "").isEmpty {
+                            locationSection
                         }
                         if let note = transaction.note, !note.isEmpty {
                             noteSection(note)
@@ -170,11 +189,12 @@ struct TransactionDetailView: View {
 
     // MARK: - Location
 
-    /// Place name plus a non-interactive map pin for the coordinate captured when the
-    /// transaction was added. Shown only when a coordinate is stored.
+    /// Place name and, when a coordinate is stored, a non-interactive map pin. The place
+    /// name alone shows when the user entered a location that couldn't be resolved to a point.
     @ViewBuilder
-    private func locationSection(coordinate: CLLocationCoordinate2D) -> some View {
+    private var locationSection: some View {
         let placeName = transaction.placeName
+        let coordinate = transaction.coordinate
         FormSection("Location") {
             if let placeName, !placeName.isEmpty {
                 HStack(spacing: 12) {
@@ -188,21 +208,26 @@ struct TransactionDetailView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                FormDivider()
+                if coordinate != nil {
+                    FormDivider()
+                }
             }
 
-            Map(initialPosition: .region(MKCoordinateRegion(
-                center: coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-            ))) {
-                Marker(placeName ?? transaction.merchant, coordinate: coordinate)
-                    .tint(AppColors.accent)
+            if let coordinate {
+                Map(position: $mapCameraPosition) {
+                    Marker(placeName ?? transaction.merchant, coordinate: coordinate)
+                        .tint(AppColors.accent)
+                }
+                .frame(height: 180)
+                .allowsHitTesting(false)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
+                .onAppear { mapCameraPosition = mapPosition(for: coordinate) }
+                // Recenter the existing map when the location is edited, rather than
+                // rebuilding the whole Map view.
+                .onChange(of: coordinateKey) { mapCameraPosition = mapPosition(for: coordinate) }
             }
-            .frame(height: 180)
-            .allowsHitTesting(false)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
         }
     }
 
