@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - Set or edit a transaction's location by searching an address or place with autocomplete
 
 ## 2.5 - 2026-05-31
 - [ADDED] - Save where each transaction was made and view the place name and a map on the transaction screen
