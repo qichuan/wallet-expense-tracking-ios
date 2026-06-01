@@ -207,6 +207,10 @@ struct TransactionDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
+                // `initialPosition` only seeds the camera once, so editing the location
+                // wouldn't recenter the map. Keying on the coordinate rebuilds the Map
+                // (and re-evaluates the initial region) whenever the place changes.
+                .id("\(coordinate.latitude),\(coordinate.longitude)")
             }
         }
     }
