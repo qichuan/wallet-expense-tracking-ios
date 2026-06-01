@@ -18,9 +18,28 @@ struct TransactionDetailView: View {
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
 
     @State private var showingEdit = false
+    /// Camera for the embedded location map. Kept in state (rather than seeded once via
+    /// `initialPosition`) so editing the location can recenter the existing map instead of
+    /// rebuilding it — rebuilding tore down and recreated the Metal layer, which logged
+    /// `CAMetalLayer ignoring invalid setDrawableSize width=0 height=0` on each edit.
+    @State private var mapCameraPosition: MapCameraPosition = .automatic
 
     private var currencySymbol: String {
         CurrencyUtils.symbol(for: transaction.resolvedCurrency)
+    }
+
+    /// Stable identity for the stored coordinate, used to detect location changes. Empty
+    /// when no coordinate is stored.
+    private var coordinateKey: String {
+        guard let c = transaction.coordinate else { return "" }
+        return "\(c.latitude),\(c.longitude)"
+    }
+
+    private func mapPosition(for coordinate: CLLocationCoordinate2D) -> MapCameraPosition {
+        .region(MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        ))
     }
 
     private static let dateFormatter: DateFormatter = {
@@ -195,10 +214,7 @@ struct TransactionDetailView: View {
             }
 
             if let coordinate {
-                Map(initialPosition: .region(MKCoordinateRegion(
-                    center: coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                ))) {
+                Map(position: $mapCameraPosition) {
                     Marker(placeName ?? transaction.merchant, coordinate: coordinate)
                         .tint(AppColors.accent)
                 }
@@ -207,10 +223,10 @@ struct TransactionDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                // `initialPosition` only seeds the camera once, so editing the location
-                // wouldn't recenter the map. Keying on the coordinate rebuilds the Map
-                // (and re-evaluates the initial region) whenever the place changes.
-                .id("\(coordinate.latitude),\(coordinate.longitude)")
+                .onAppear { mapCameraPosition = mapPosition(for: coordinate) }
+                // Recenter the existing map when the location is edited, rather than
+                // rebuilding the whole Map view.
+                .onChange(of: coordinateKey) { mapCameraPosition = mapPosition(for: coordinate) }
             }
         }
     }
