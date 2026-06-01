@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct TransactionFormView: View {
     let transactionToEdit: Transaction?
@@ -39,9 +40,22 @@ struct TransactionFormView: View {
     /// location fix before persisting; without this a second Save tap would insert a duplicate.
     @State private var isSaving = false
 
+    /// The location text the user typed/selected. Persisted as the transaction's `placeName`.
+    @State private var locationQuery: String
+    /// Coordinate resolved from a picked autocomplete suggestion. Cleared when the user edits
+    /// the text manually, so a stored coordinate never disagrees with the place name.
+    @State private var locationLatitude: Double?
+    @State private var locationLongitude: Double?
+    /// The exact text last written programmatically from a suggestion selection. Lets the
+    /// `locationQuery` `onChange` tell a real edit (which invalidates the coordinate) apart
+    /// from the field updating itself after a pick.
+    @State private var appliedLocationText: String?
+    @StateObject private var locationSearch = LocationSearchCompleter()
+
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var noteFocused: Bool
+    @FocusState private var locationFocused: Bool
 
     /// Cards sorted by the user's saved order from `CardsView`.
     private var orderedCards: [Card] {
@@ -96,6 +110,11 @@ struct TransactionFormView: View {
             _note = State(initialValue: transaction.note ?? "")
             _transactionDate = State(initialValue: transaction.date)
             _isRecurring = State(initialValue: transaction.isRecurring)
+            let existingPlace = transaction.placeName ?? ""
+            _locationQuery = State(initialValue: existingPlace)
+            _locationLatitude = State(initialValue: transaction.latitude)
+            _locationLongitude = State(initialValue: transaction.longitude)
+            _appliedLocationText = State(initialValue: existingPlace.isEmpty ? nil : existingPlace)
         } else {
             _merchant = State(initialValue: "")
             _amount = State(initialValue: "")
@@ -105,6 +124,10 @@ struct TransactionFormView: View {
             _note = State(initialValue: "")
             _transactionDate = State(initialValue: Date())
             _isRecurring = State(initialValue: false)
+            _locationQuery = State(initialValue: "")
+            _locationLatitude = State(initialValue: nil)
+            _locationLongitude = State(initialValue: nil)
+            _appliedLocationText = State(initialValue: nil)
         }
     }
 
@@ -182,6 +205,7 @@ struct TransactionFormView: View {
                         merchantSection
                         amountSection
                         detailsSection
+                        locationSection
                         recurringSection
                         noteSection
 
@@ -432,6 +456,112 @@ struct TransactionFormView: View {
     }
 
     @ViewBuilder
+    private var locationSection: some View {
+        FormSection("Location") {
+            HStack(spacing: 12) {
+                Image(systemName: "mappin.circle.fill")
+                    .font(AppTypography.iconMedium)
+                    .foregroundColor(locationLatitude != nil ? AppColors.accent : AppColors.textTertiary)
+                TextField(
+                    "",
+                    text: $locationQuery,
+                    prompt: Text("Search address or place").foregroundColor(AppColors.textTertiary)
+                )
+                .font(AppTypography.rowValue)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.leading)
+                .focused($locationFocused)
+                .submitLabel(.search)
+                if !locationQuery.isEmpty {
+                    Button {
+                        clearLocation()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(AppTypography.rowMeta)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+
+            if locationFocused, !locationSearch.results.isEmpty {
+                FormDivider()
+                ForEach(Array(locationSearch.results.enumerated()), id: \.offset) { index, completion in
+                    Button {
+                        applyLocationCompletion(completion, rank: index)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .font(AppTypography.rowMeta)
+                                .foregroundColor(AppColors.textSecondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(completion.title)
+                                    .font(AppTypography.rowTitle)
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .lineLimit(1)
+                                if !completion.subtitle.isEmpty {
+                                    Text(completion.subtitle)
+                                        .font(AppTypography.rowMeta)
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if index != locationSearch.results.count - 1 {
+                        FormDivider()
+                    }
+                }
+            }
+        }
+        .onChange(of: locationQuery) { _, newValue in
+            locationSearch.query = newValue
+            // A change that matches the text we just wrote from a selection is the field
+            // catching up, not a user edit — leave the resolved coordinate intact.
+            guard newValue != appliedLocationText else { return }
+            locationLatitude = nil
+            locationLongitude = nil
+        }
+    }
+
+    private func clearLocation() {
+        locationQuery = ""
+        locationLatitude = nil
+        locationLongitude = nil
+        appliedLocationText = nil
+        locationSearch.clearResults()
+    }
+
+    private func applyLocationCompletion(_ completion: MKLocalSearchCompletion, rank: Int) {
+        let display = completion.subtitle.isEmpty
+            ? completion.title
+            : "\(completion.title), \(completion.subtitle)"
+        appliedLocationText = display
+        locationQuery = display
+        locationFocused = false
+        locationSearch.clearResults()
+
+        AnalyticsTracker.log(AnalyticsTracker.Event.locationSuggestionSelected, [
+            "suggestion_rank": rank,
+            "is_editing": transactionToEdit != nil
+        ])
+
+        Task {
+            if let coordinate = await locationSearch.resolve(completion) {
+                locationLatitude = coordinate.latitude
+                locationLongitude = coordinate.longitude
+            }
+        }
+    }
+
+    @ViewBuilder
     private var recurringSection: some View {
         FormSection("Recurring") {
             FormToggleRow(title: "Repeat monthly", isOn: $isRecurring)
@@ -522,6 +652,10 @@ struct TransactionFormView: View {
             editing.note = note.isEmpty ? nil : note
             editing.card = selectedCard
             editing.isRecurring = isRecurring
+            let trimmedPlace = locationQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+            editing.placeName = trimmedPlace.isEmpty ? nil : trimmedPlace
+            editing.latitude = locationLatitude
+            editing.longitude = locationLongitude
             do {
                 try modelContext.save()
                 if isRecurring {
@@ -534,17 +668,33 @@ struct TransactionFormView: View {
                 print("Error saving transaction: \(error)")
             }
         } else {
-            // Capture where the transaction was made (best-effort) before persisting. Returns
-            // nil quickly when location permission is off or no fix is available in time.
-            Task {
-                let location = await LocationManager.capture()
-                persistNewTransaction(amount: amountDecimal, location: location)
+            let trimmedPlace = locationQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedPlace.isEmpty {
+                // User picked/typed a location — honour it and skip the GPS capture entirely.
+                persistNewTransaction(
+                    amount: amountDecimal,
+                    latitude: locationLatitude,
+                    longitude: locationLongitude,
+                    placeName: trimmedPlace
+                )
+            } else {
+                // Capture where the transaction was made (best-effort) before persisting. Returns
+                // nil quickly when location permission is off or no fix is available in time.
+                Task {
+                    let location = await LocationManager.capture()
+                    persistNewTransaction(
+                        amount: amountDecimal,
+                        latitude: location?.latitude,
+                        longitude: location?.longitude,
+                        placeName: location?.placeName
+                    )
+                }
             }
         }
     }
 
     @MainActor
-    private func persistNewTransaction(amount amountDecimal: Decimal, location: CapturedLocation?) {
+    private func persistNewTransaction(amount amountDecimal: Decimal, latitude: Double?, longitude: Double?, placeName: String?) {
         let transaction = Transaction(
             merchant: merchant,
             amount: amountDecimal,
@@ -554,9 +704,9 @@ struct TransactionFormView: View {
             card: selectedCard,
             currency: currency,
             isRecurring: isRecurring,
-            latitude: location?.latitude,
-            longitude: location?.longitude,
-            placeName: location?.placeName
+            latitude: latitude,
+            longitude: longitude,
+            placeName: placeName
         )
         modelContext.insert(transaction)
         AnalyticsTracker.log("add_wallet_transaction", [
@@ -564,7 +714,7 @@ struct TransactionFormView: View {
             "merchant": merchant,
             "amount": amount,
             "currency": currency,
-            "has_location": location != nil
+            "has_location": latitude != nil
         ])
         do {
             try modelContext.save()

@@ -49,8 +49,8 @@ struct TransactionDetailView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         amountHero
                         detailsSection
-                        if let coordinate = transaction.coordinate {
-                            locationSection(coordinate: coordinate)
+                        if transaction.coordinate != nil || !(transaction.placeName ?? "").isEmpty {
+                            locationSection
                         }
                         if let note = transaction.note, !note.isEmpty {
                             noteSection(note)
@@ -170,11 +170,12 @@ struct TransactionDetailView: View {
 
     // MARK: - Location
 
-    /// Place name plus a non-interactive map pin for the coordinate captured when the
-    /// transaction was added. Shown only when a coordinate is stored.
+    /// Place name and, when a coordinate is stored, a non-interactive map pin. The place
+    /// name alone shows when the user entered a location that couldn't be resolved to a point.
     @ViewBuilder
-    private func locationSection(coordinate: CLLocationCoordinate2D) -> some View {
+    private var locationSection: some View {
         let placeName = transaction.placeName
+        let coordinate = transaction.coordinate
         FormSection("Location") {
             if let placeName, !placeName.isEmpty {
                 HStack(spacing: 12) {
@@ -188,21 +189,25 @@ struct TransactionDetailView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                FormDivider()
+                if coordinate != nil {
+                    FormDivider()
+                }
             }
 
-            Map(initialPosition: .region(MKCoordinateRegion(
-                center: coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-            ))) {
-                Marker(placeName ?? transaction.merchant, coordinate: coordinate)
-                    .tint(AppColors.accent)
+            if let coordinate {
+                Map(initialPosition: .region(MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                ))) {
+                    Marker(placeName ?? transaction.merchant, coordinate: coordinate)
+                        .tint(AppColors.accent)
+                }
+                .frame(height: 180)
+                .allowsHitTesting(false)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
             }
-            .frame(height: 180)
-            .allowsHitTesting(false)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
         }
     }
 
