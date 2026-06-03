@@ -23,6 +23,8 @@ struct CardFormView: View {
     @State private var minimumSpendingByDayOfMonth: Int
     @State private var baseRewardRate: String
     @State private var roundingBlock: Decimal
+    @State private var maxMilesCap: String
+    @State private var maxCashbackCap: String
     @State private var draftRules: [DraftRule]
     @State private var editingRule: DraftRule?
     @State private var showingAddRule = false
@@ -31,6 +33,7 @@ struct CardFormView: View {
     @FocusState private var nameFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var rateFocused: Bool
+    @FocusState private var capFocused: Bool
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
 
@@ -44,6 +47,8 @@ struct CardFormView: View {
             _minimumSpendingByDayOfMonth = State(initialValue: card.minimumSpendingByDayOfMonth)
             _baseRewardRate = State(initialValue: Self.format(rate: card.baseRewardRate))
             _roundingBlock = State(initialValue: card.roundingBlock)
+            _maxMilesCap = State(initialValue: Self.formatCap(card.maxMilesCap))
+            _maxCashbackCap = State(initialValue: Self.formatCap(card.maxCashbackCap))
             _draftRules = State(initialValue: card.rewardRules.map {
                 DraftRule(existingId: $0.id, categoryName: $0.categoryName, rate: Self.format(rate: $0.rate))
             })
@@ -55,6 +60,8 @@ struct CardFormView: View {
             _minimumSpendingByDayOfMonth = State(initialValue: 1)
             _baseRewardRate = State(initialValue: "")
             _roundingBlock = State(initialValue: 1)
+            _maxMilesCap = State(initialValue: "")
+            _maxCashbackCap = State(initialValue: "")
             _draftRules = State(initialValue: [])
         }
     }
@@ -219,6 +226,8 @@ struct CardFormView: View {
             FormDivider()
             roundingRow
             FormDivider()
+            capRow
+            FormDivider()
             categoryBonusList
 
             Text(rewardsHelpText)
@@ -299,6 +308,52 @@ struct CardFormView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var capRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Cycle cap")
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("Max \(rewardType == .miles ? "miles" : "cashback") per cycle")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer()
+            if rewardType == .cashback {
+                Text(CurrencyUtils.symbol(for: defaultCurrencyCode))
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textSecondary)
+                TextField("None", text: $maxCashbackCap,
+                          prompt: Text("None").foregroundColor(AppColors.textTertiary))
+                    .keyboardType(.decimalPad)
+                    .focused($capFocused)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 100)
+                    .onChange(of: maxCashbackCap) { _, newValue in
+                        maxCashbackCap = sanitiseRate(newValue)
+                    }
+            } else {
+                TextField("None", text: $maxMilesCap,
+                          prompt: Text("None").foregroundColor(AppColors.textTertiary))
+                    .keyboardType(.decimalPad)
+                    .focused($capFocused)
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 100)
+                    .onChange(of: maxMilesCap) { _, newValue in
+                        maxMilesCap = sanitiseRate(newValue)
+                    }
+                Text("miles")
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
         .padding(.horizontal, 16)
@@ -484,6 +539,7 @@ struct CardFormView: View {
                 nameFocused = false
                 amountFocused = false
                 rateFocused = false
+                capFocused = false
             } label: {
                 Image(systemName: "keyboard.chevron.compact.down")
                     .foregroundColor(AppColors.accent)
@@ -492,6 +548,21 @@ struct CardFormView: View {
     }
 
     // MARK: - Helpers
+
+    private static func formatCap(_ value: Decimal) -> String {
+        guard value > 0 else { return "" }
+        let n = Double(truncating: value as NSDecimalNumber)
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 0
+        return f.string(from: NSNumber(value: n)) ?? ""
+    }
+
+    private func parseCap(_ raw: String) -> Decimal {
+        guard !raw.isEmpty else { return 0 }
+        return Decimal(string: raw) ?? 0
+    }
 
     private static func format(rate: Decimal) -> String {
         if rate == 0 { return "" }
@@ -539,6 +610,8 @@ struct CardFormView: View {
             }
             editing.baseRewardRate = parsedBaseRate
             editing.roundingBlock = roundingBlock
+            editing.maxMilesCap = parseCap(maxMilesCap)
+            editing.maxCashbackCap = parseCap(maxCashbackCap)
             reconcileRules(on: editing)
             do {
                 try modelContext.save()
@@ -563,7 +636,9 @@ struct CardFormView: View {
                 rewardType: rewardType,
                 minimumSpendingByDayOfMonth: stmtDay,
                 baseRewardRate: parsedBaseRate,
-                roundingBlock: roundingBlock
+                roundingBlock: roundingBlock,
+                maxMilesCap: parseCap(maxMilesCap),
+                maxCashbackCap: parseCap(maxCashbackCap)
             )
             modelContext.insert(card)
             for draft in validRules() {

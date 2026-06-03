@@ -209,19 +209,54 @@ struct CardDetailView: View {
     @ViewBuilder
     private var rewardsCard: some View {
         let earned = RewardCalculator.cycleReward(for: card)
-        let formatted = RewardFormatter.format(earned, type: card.rewardType, currencySymbol: currencySymbol)
+        let formattedEarned = RewardFormatter.format(earned, type: card.rewardType, currencySymbol: currencySymbol)
         let bonusCount = card.rewardRules.count
+        let cap = RewardCalculator.activeCap(for: card)
+        let capReached = RewardCalculator.isCapReached(for: card)
+        let remaining = RewardCalculator.remainingUntilCap(for: card)
 
         VStack(alignment: .leading, spacing: 10) {
             SectionLabel(text: "* Earned This Cycle")
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(formatted.isEmpty ? "0" : formatted)
+                Text(formattedEarned.isEmpty ? "0" : formattedEarned)
                     .font(AppTypography.amount)
                     .foregroundColor(rewardColor)
-                if card.baseRewardRate > 0 {
+                if cap > 0 {
+                    Text("/ \(RewardFormatter.format(cap, type: card.rewardType, currencySymbol: currencySymbol)) cap")
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textSecondary)
+                } else if card.baseRewardRate > 0 {
                     Text(rateSubtitle(bonusCount: bonusCount))
                         .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+
+            if cap > 0 {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(AppColors.backgroundCardSoft)
+                        let pct = cap > 0 ? CGFloat(Double(truncating: earned as NSDecimalNumber) / Double(truncating: cap as NSDecimalNumber)) : 0
+                        Capsule()
+                            .fill(capReached ? AppColors.statusBehind : rewardColor)
+                            .frame(width: geo.size.width * min(1, pct))
+                    }
+                }
+                .frame(height: 6)
+
+                if capReached {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.statusBehind)
+                        Text("Cap reached — no more \(disclaimerUnit) this cycle")
+                            .font(AppTypography.caption)
+                            .foregroundColor(AppColors.statusBehind)
+                    }
+                } else if let remaining {
+                    Text("\(RewardFormatter.format(remaining, type: card.rewardType, currencySymbol: currencySymbol)) remaining until cap")
+                        .font(AppTypography.caption)
                         .foregroundColor(AppColors.textSecondary)
                 }
             }

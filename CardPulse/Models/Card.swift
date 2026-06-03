@@ -38,6 +38,12 @@ final class Card {
     /// applying the rate. `1` means no rounding; `5` matches UOB/DBS-style $5 blocks.
     var roundingBlock: Decimal = 1
 
+    /// Maximum miles earnable per billing cycle. `0` means no cap.
+    var maxMilesCap: Decimal = 0
+
+    /// Maximum cashback earnable per billing cycle (in the card's default currency). `0` means no cap.
+    var maxCashbackCap: Decimal = 0
+
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
 
@@ -50,7 +56,9 @@ final class Card {
          rewardType: RewardType = .none,
          minimumSpendingByDayOfMonth: Int = 1,
          baseRewardRate: Decimal = 0,
-         roundingBlock: Decimal = 1) {
+         roundingBlock: Decimal = 1,
+         maxMilesCap: Decimal = 0,
+         maxCashbackCap: Decimal = 0) {
         self.id = UUID()
         self.name = name
         self.minimumSpendingAmount = minimumSpendingAmount
@@ -60,5 +68,7 @@ final class Card {
         self.minimumSpendingByDayOfMonth = max(1, min(31, minimumSpendingByDayOfMonth))
         self.baseRewardRate = baseRewardRate
         self.roundingBlock = roundingBlock
+        self.maxMilesCap = maxMilesCap
+        self.maxCashbackCap = maxCashbackCap
     }
 }

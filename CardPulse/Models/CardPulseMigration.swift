@@ -252,10 +252,103 @@ enum SchemaV5: VersionedSchema {
     }
 }
 
-// MARK: - V6 Schema (current — Transaction gains `latitude`, `longitude`, `placeName`)
+// MARK: - V6 Schema (frozen — Transaction gained `latitude`, `longitude`, `placeName`)
+//
+// V6 freezes `Card`, `Transaction`, and `CardRewardRule` so V7's additions to the
+// live `Card` (`maxMilesCap`, `maxCashbackCap`) don't change V6's per-stage checksum.
 
 enum SchemaV6: VersionedSchema {
     static var versionIdentifier = Schema.Version(6, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [SchemaV6.Card.self, SchemaV6.Transaction.self, SpendingCategory.self, SchemaV6.CardRewardRule.self]
+    }
+
+    @Model final class Card {
+        var id: UUID
+        var name: String
+        var minimumSpendingAmount: Decimal
+        var hasMinimumSpending: Bool
+        var rewardType: RewardType
+        var createdAt: Date
+        var minimumSpendingByDayOfMonth: Int
+        var baseRewardRate: Decimal = 0
+        var roundingBlock: Decimal = 1
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV6.Transaction.card)
+        var transactions: [SchemaV6.Transaction] = []
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV6.CardRewardRule.card)
+        var rewardRules: [SchemaV6.CardRewardRule] = []
+
+        init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false,
+             rewardType: RewardType = .none, minimumSpendingByDayOfMonth: Int = 1,
+             baseRewardRate: Decimal = 0, roundingBlock: Decimal = 1) {
+            self.id = UUID()
+            self.name = name
+            self.minimumSpendingAmount = minimumSpendingAmount
+            self.hasMinimumSpending = hasMinimumSpending
+            self.rewardType = rewardType
+            self.createdAt = Date()
+            self.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
+            self.baseRewardRate = baseRewardRate
+            self.roundingBlock = roundingBlock
+        }
+    }
+
+    @Model final class Transaction {
+        var id: UUID
+        var merchant: String
+        var amount: Decimal
+        var currency: String = ""
+        var date: Date
+        var category: String?
+        var note: String?
+        var card: SchemaV6.Card?
+        var isRecurring: Bool = false
+        var latitude: Double?
+        var longitude: Double?
+        var placeName: String?
+
+        init(merchant: String, amount: Decimal, date: Date,
+             category: String? = nil, note: String? = nil, card: SchemaV6.Card? = nil,
+             currency: String = "", isRecurring: Bool = false,
+             latitude: Double? = nil, longitude: Double? = nil, placeName: String? = nil) {
+            self.id = UUID()
+            self.merchant = merchant
+            self.amount = amount
+            self.currency = currency
+            self.date = date
+            self.category = category
+            self.note = note
+            self.card = card
+            self.isRecurring = isRecurring
+            self.latitude = latitude
+            self.longitude = longitude
+            self.placeName = placeName
+        }
+    }
+
+    @Model final class CardRewardRule {
+        var id: UUID
+        var card: SchemaV6.Card?
+        var categoryName: String
+        var rate: Decimal
+        var createdAt: Date
+
+        init(card: SchemaV6.Card? = nil, categoryName: String, rate: Decimal) {
+            self.id = UUID()
+            self.card = card
+            self.categoryName = categoryName
+            self.rate = rate
+            self.createdAt = Date()
+        }
+    }
+}
+
+// MARK: - V7 Schema (current — Card gains `maxMilesCap` and `maxCashbackCap`)
+
+enum SchemaV7: VersionedSchema {
+    static var versionIdentifier = Schema.Version(7, 0, 0)
     static var models: [any PersistentModel.Type] {
         [Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self]
     }
@@ -265,10 +358,10 @@ enum SchemaV6: VersionedSchema {
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self]
     }
 
-    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     /// Skipped when the user has not yet chosen a default currency — the onboarding
@@ -322,6 +415,13 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static let migrateV5toV6 = MigrationStage.lightweight(
         fromVersion: SchemaV5.self,
         toVersion: SchemaV6.self
+    )
+
+    /// V6 → V7: add `maxMilesCap` and `maxCashbackCap` to `Card`. Both default to `0`
+    /// (no cap), so SwiftData handles this as a lightweight migration.
+    static let migrateV6toV7 = MigrationStage.lightweight(
+        fromVersion: SchemaV6.self,
+        toVersion: SchemaV7.self
     )
 }
 
