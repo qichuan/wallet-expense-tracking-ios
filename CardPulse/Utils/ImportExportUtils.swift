@@ -16,6 +16,8 @@ struct ParsedCardEntry {
     let minSpendingDay: Int
     let baseRewardRate: Decimal
     let roundingBlock: Decimal
+    let maxMilesCap: Decimal
+    let maxCashbackCap: Decimal
 }
 
 struct ParsedRewardRuleEntry {
@@ -242,6 +244,19 @@ struct ImportExportUtils {
         let iDay    = idx(["minspendingbydayofmonth"]) ?? 4
         let iRate   = idx(["baserewardrate"])
         let iBlock  = idx(["roundingblock"])
+        let iMiles  = idx(["maxmilescap"])
+        let iCash   = idx(["maxcashbackcap"])
+
+        func decimal(at index: Int?, default fallback: Decimal) -> ([String]) -> Decimal {
+            { fields in
+                guard let i = index, fields.indices.contains(i) else { return fallback }
+                return Decimal(string: fields[i]) ?? fallback
+            }
+        }
+        let baseRateOf  = decimal(at: iRate, default: 0)
+        let blockOf     = decimal(at: iBlock, default: 1)
+        let milesCapOf  = decimal(at: iMiles, default: 0)
+        let cashCapOf   = decimal(at: iCash, default: 0)
 
         var result: [ParsedCardEntry] = []
         for line in lines.dropFirst() {
@@ -251,22 +266,16 @@ struct ImportExportUtils {
             let has = ((f.indices.contains(iHas) ? f[iHas] : "false").lowercased() == "true")
             let reward = f.indices.contains(iReward) ? f[iReward] : "none"
             let day = Int(f.indices.contains(iDay) ? f[iDay] : "1") ?? 1
-            let baseRate: Decimal = {
-                guard let i = iRate, f.indices.contains(i) else { return 0 }
-                return Decimal(string: f[i]) ?? 0
-            }()
-            let block: Decimal = {
-                guard let i = iBlock, f.indices.contains(i) else { return 1 }
-                return Decimal(string: f[i]) ?? 1
-            }()
             result.append(ParsedCardEntry(
                 name: f[iName],
                 minimumSpending: amount,
                 hasMinimumSpending: has,
                 rewardType: reward,
                 minSpendingDay: day,
-                baseRewardRate: baseRate,
-                roundingBlock: block
+                baseRewardRate: baseRateOf(f),
+                roundingBlock: blockOf(f),
+                maxMilesCap: milesCapOf(f),
+                maxCashbackCap: cashCapOf(f)
             ))
         }
         return result
@@ -469,7 +478,9 @@ struct ImportExportUtils {
                 rewardType: RewardType(rawValue: parsed.rewardType) ?? .none,
                 minimumSpendingByDayOfMonth: parsed.minSpendingDay,
                 baseRewardRate: parsed.baseRewardRate,
-                roundingBlock: parsed.roundingBlock
+                roundingBlock: parsed.roundingBlock,
+                maxMilesCap: parsed.maxMilesCap,
+                maxCashbackCap: parsed.maxCashbackCap
             )
             modelContext.insert(card)
             nameToCard[parsed.name] = card
@@ -575,13 +586,15 @@ struct ImportExportUtils {
 
         // CARDS
         out += "\(sectionMarkerPrefix)CARDS\n"
-        out += "Name,MinimumSpending,HasMinimumSpending,RewardType,MinSpendingByDayOfMonth,BaseRewardRate,RoundingBlock\n"
+        out += "Name,MinimumSpending,HasMinimumSpending,RewardType,MinSpendingByDayOfMonth,BaseRewardRate,RoundingBlock,MaxMilesCap,MaxCashbackCap\n"
         let cards = (try? modelContext.fetch(FetchDescriptor<Card>())) ?? []
         for card in cards {
             let amount = String(format: "%.2f", Double(truncating: card.minimumSpendingAmount as NSDecimalNumber))
             let rate = formatRate(card.baseRewardRate)
             let block = formatRate(card.roundingBlock)
-            out += "\(escapeCSVField(card.name)),\(amount),\(card.hasMinimumSpending),\(card.rewardType.rawValue),\(card.minimumSpendingByDayOfMonth),\(rate),\(block)\n"
+            let milesCap = formatRate(card.maxMilesCap)
+            let cashCap = formatRate(card.maxCashbackCap)
+            out += "\(escapeCSVField(card.name)),\(amount),\(card.hasMinimumSpending),\(card.rewardType.rawValue),\(card.minimumSpendingByDayOfMonth),\(rate),\(block),\(milesCap),\(cashCap)\n"
         }
         out += "\n"
 

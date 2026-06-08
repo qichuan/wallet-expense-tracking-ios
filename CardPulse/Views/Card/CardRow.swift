@@ -148,21 +148,47 @@ struct CardRow: View {
 
     @ViewBuilder
     private var rewardsRow: some View {
-        let earned = RewardCalculator.cycleReward(for: card)
-        let formatted = RewardFormatter.format(earned, type: card.rewardType, currencySymbol: currencySymbol)
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        let formatted = RewardFormatter.format(status.earned, type: card.rewardType, currencySymbol: currencySymbol)
 
-        HStack(spacing: 6) {
-            Image(systemName: "gift.fill")
-                .font(AppTypography.metricLabel)
-                .foregroundColor(rewardColor)
-            Text("Earned this cycle")
-                .font(AppTypography.rowMeta)
-                .foregroundColor(AppColors.textTertiary)
-            Spacer()
-            Text(formatted.isEmpty ? "—" : formatted)
-                .font(AppTypography.rowValue)
-                .foregroundColor(rewardColor)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "gift.fill")
+                    .font(AppTypography.metricLabel)
+                    .foregroundColor(rewardColor)
+                Text("Earned this cycle")
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textTertiary)
+                Spacer()
+                if status.hasCap {
+                    Text("/ \(RewardFormatter.format(status.cap, type: card.rewardType, currencySymbol: currencySymbol)) cap")
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                Text(formatted.isEmpty ? "—" : formatted)
+                    .font(AppTypography.rowValue)
+                    .foregroundColor(rewardColor)
+            }
+
+            if status.isCapReached {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.statusBehind)
+                    Text("Cap reached — no more \(disclaimerUnit) this cycle")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.statusBehind)
+                }
+            } else if let remaining = status.remaining {
+                Text("\(RewardFormatter.format(remaining, type: card.rewardType, currencySymbol: currencySymbol)) remaining until cap")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
         }
+    }
+
+    private var disclaimerUnit: String {
+        card.rewardType == .miles ? "miles" : "cashback"
     }
 
     @ViewBuilder

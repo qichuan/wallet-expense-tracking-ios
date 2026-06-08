@@ -254,4 +254,111 @@ final class RewardCalculatorTests: XCTestCase {
         XCTAssertEqual(result.cashback, Decimal(string: "1.5")) // (100+50)*0.01
         XCTAssertEqual(result.miles, Decimal(200))             // 200*1.0
     }
+
+    // MARK: - Cycle caps
+    //
+    // `Date()` transactions always fall in the card's current billing cycle, so
+    // `makeTxn` is sufficient to exercise the cycle-level cap logic.
+
+    func testCycleReward_NoCap_SumsAllTransactions() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx)
+        _ = makeTxn(amount: Decimal(50), card: card, in: ctx)
+
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(150))
+    }
+
+    func testCycleReward_ClampsToMilesCap() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        card.maxMilesCap = 120
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx)
+        _ = makeTxn(amount: Decimal(50), card: card, in: ctx) // 150 uncapped
+
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(120))
+    }
+
+    func testCycleReward_ClampsToCashbackCap() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 10, in: ctx) // 10%
+        card.maxCashbackCap = 12
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx) // 10
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx) // +10 = 20 uncapped
+
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(12))
+    }
+
+    func testCycleReward_BelowCap_NotClamped() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        card.maxMilesCap = 500
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx)
+
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(100))
+    }
+
+    func testActiveCap_SelectsByRewardType() throws {
+        let ctx = try makeContext()
+        let miles = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        miles.maxMilesCap = 200
+        miles.maxCashbackCap = 99
+        XCTAssertEqual(RewardCalculator.activeCap(for: miles), Decimal(200))
+
+        let cash = makeCard(rewardType: .cashback, baseRate: 1.0, in: ctx)
+        cash.maxMilesCap = 99
+        cash.maxCashbackCap = 50
+        XCTAssertEqual(RewardCalculator.activeCap(for: cash), Decimal(50))
+    }
+
+    func testStatus_CapReached_AtExactBoundary() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        card.maxMilesCap = 100
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx) // exactly the cap
+
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        XCTAssertTrue(status.isCapReached)
+        XCTAssertEqual(status.earned, Decimal(100))
+        XCTAssertEqual(status.remaining, Decimal(0))
+        XCTAssertEqual(status.progress, 1.0)
+    }
+
+    func testStatus_BelowCap_RemainingAndProgress() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        card.maxMilesCap = 200
+        _ = makeTxn(amount: Decimal(50), card: card, in: ctx) // 50 miles
+
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        XCTAssertFalse(status.isCapReached)
+        XCTAssertEqual(status.remaining, Decimal(150))
+        XCTAssertEqual(status.progress, 0.25, accuracy: 0.0001)
+    }
+
+    func testStatus_OverCap_RemainingClampedToZero() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 10, in: ctx)
+        card.maxCashbackCap = 5
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx) // 10 uncapped
+
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        XCTAssertTrue(status.isCapReached)
+        XCTAssertEqual(status.earned, Decimal(5))
+        XCTAssertEqual(status.uncapped, Decimal(10))
+        XCTAssertEqual(status.remaining, Decimal(0))
+    }
+
+    func testStatus_NoCap_HasNoCapState() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.0, in: ctx)
+        _ = makeTxn(amount: Decimal(100), card: card, in: ctx)
+
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        XCTAssertFalse(status.hasCap)
+        XCTAssertFalse(status.isCapReached)
+        XCTAssertNil(status.remaining)
+        XCTAssertEqual(status.progress, 0)
+        XCTAssertEqual(status.earned, Decimal(100))
+    }
 }
