@@ -149,7 +149,7 @@ struct CardRow: View {
     @ViewBuilder
     private var rewardsRow: some View {
         let status = RewardCalculator.cycleRewardStatus(for: card)
-        let formatted = RewardFormatter.format(status.earned, type: card.rewardType, currencySymbol: currencySymbol)
+        let formatted = RewardFormatter.format(status.uncapped, type: card.rewardType, currencySymbol: currencySymbol)
 
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
@@ -160,14 +160,14 @@ struct CardRow: View {
                     .font(AppTypography.rowMeta)
                     .foregroundColor(AppColors.textTertiary)
                 Spacer()
+                Text(formatted.isEmpty ? "—" : formatted)
+                    .font(AppTypography.rowValue)
+                    .foregroundColor(rewardColor)
                 if status.hasCap {
                     Text("/ \(RewardFormatter.format(status.cap, type: card.rewardType, currencySymbol: currencySymbol)) cap")
                         .font(AppTypography.rowMeta)
                         .foregroundColor(AppColors.textTertiary)
                 }
-                Text(formatted.isEmpty ? "—" : formatted)
-                    .font(AppTypography.rowValue)
-                    .foregroundColor(rewardColor)
             }
 
             if status.isCapReached {

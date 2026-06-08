@@ -209,7 +209,7 @@ struct CardDetailView: View {
     @ViewBuilder
     private var rewardsCard: some View {
         let status = RewardCalculator.cycleRewardStatus(for: card)
-        let formattedEarned = RewardFormatter.format(status.earned, type: card.rewardType, currencySymbol: currencySymbol)
+        let formattedEarned = RewardFormatter.format(status.uncapped, type: card.rewardType, currencySymbol: currencySymbol)
         let bonusCount = card.rewardRules.count
 
         VStack(alignment: .leading, spacing: 10) {
