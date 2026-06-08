@@ -8,7 +8,7 @@ import {
   interpolate,
   useCurrentFrame,
 } from "remotion";
-import { CaptionStrip, FootageTap, ScrollHint, ActionType } from "./parts";
+import { CaptionStrip, FootageTap, ActionType } from "./parts";
 import { IntroCard, OutroCard } from "./Bookends";
 
 // ---- Geometry ----
@@ -35,7 +35,6 @@ type Step = {
   toSec: number;
   pause: number; // read-hold frames before the segment plays
   taps: Tap[];
-  scrollHint?: boolean;
 };
 
 // Each step: hold on its first frame (so the instruction can be read), then
@@ -55,13 +54,12 @@ const STEPS: Step[] = [
   },
   {
     num: 2,
-    text: "Scroll down and choose Wallet",
-    action: "scroll",
+    text: "Choose Wallet",
+    action: "tap",
     fromSec: 2.4,
     toSec: 6.2,
     pause: 55,
     taps: [{ x: 360, y: 1175, t: 5.6 }],
-    scrollHint: true,
   },
   {
     num: 3,
@@ -74,13 +72,12 @@ const STEPS: Step[] = [
   },
   {
     num: 4,
-    text: "Scroll down and turn on Run Immediately",
-    action: "scroll",
+    text: "Turn on Run Immediately",
+    action: "tap",
     fromSec: 9.2,
     toSec: 11.2,
     pause: 60,
     taps: [{ x: 250, y: 1290, t: 10.6 }],
-    scrollHint: true,
   },
   {
     num: 5,
@@ -166,7 +163,6 @@ const StepBlock: React.FC<{ step: Step }> = ({ step }) => {
       </Sequence>
 
       {/* Overlays */}
-      {step.scrollHint && playing ? <ScrollHint /> : null}
       {step.taps.map((tp, i) => (
         <FootageTap
           key={i}
