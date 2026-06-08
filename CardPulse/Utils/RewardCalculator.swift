@@ -56,13 +56,7 @@ enum RewardCalculator {
     /// Total reward earned in the card's current billing cycle, computed on
     /// amounts converted to the default currency, capped at the configured limit.
     static func cycleReward(for card: Card) -> Decimal {
-        guard card.rewardType != .none else { return 0 }
-        let total = card.cycleTransactions
-            .compactMap { convertedReward(for: $0) }
-            .reduce(0, +)
-        let cap = activeCap(for: card)
-        guard cap > 0 else { return total }
-        return min(total, cap)
+        cycleRewardStatus(for: card).earned
     }
 
     /// The active cap for a card's current reward type. Returns `0` when no cap is set.
@@ -74,21 +68,43 @@ enum RewardCalculator {
         }
     }
 
-    /// Whether the card has reached its reward cap this cycle.
-    static func isCapReached(for card: Card) -> Bool {
-        let cap = activeCap(for: card)
-        guard cap > 0 else { return false }
-        let uncapped = card.cycleTransactions
+    /// Uncapped total reward across the card's current billing cycle.
+    private static func uncappedCycleReward(for card: Card) -> Decimal {
+        guard card.rewardType != .none else { return 0 }
+        return card.cycleTransactions
             .compactMap { convertedReward(for: $0) }
             .reduce(0, +)
-        return uncapped >= cap
     }
 
-    /// Reward remaining before the cap is hit. Returns `nil` when no cap is configured.
-    static func remainingUntilCap(for card: Card) -> Decimal? {
+    /// Snapshot of a card's cycle reward standing against its cap, computed in a
+    /// single pass over the cycle's transactions. Prefer this in views that need
+    /// several of these values at once.
+    struct CycleRewardStatus {
+        /// Reward earned this cycle, clamped to the cap when one is set.
+        let earned: Decimal
+        /// The active cap; `0` means no cap.
+        let cap: Decimal
+        /// Uncapped earned reward — used to decide whether the cap is reached.
+        let uncapped: Decimal
+
+        var hasCap: Bool { cap > 0 }
+        var isCapReached: Bool { hasCap && uncapped >= cap }
+        /// Reward remaining before the cap is hit; `nil` when no cap is set.
+        var remaining: Decimal? { hasCap ? max(0, cap - earned) : nil }
+        /// Progress toward the cap in `0...1`; `0` when no cap is set.
+        var progress: Double {
+            guard hasCap else { return 0 }
+            let c = Double(truncating: cap as NSDecimalNumber)
+            guard c > 0 else { return 0 }
+            return min(1, Double(truncating: earned as NSDecimalNumber) / c)
+        }
+    }
+
+    static func cycleRewardStatus(for card: Card) -> CycleRewardStatus {
         let cap = activeCap(for: card)
-        guard cap > 0 else { return nil }
-        return max(0, cap - cycleReward(for: card))
+        let uncapped = uncappedCycleReward(for: card)
+        let earned = cap > 0 ? min(uncapped, cap) : uncapped
+        return CycleRewardStatus(earned: earned, cap: cap, uncapped: uncapped)
     }
 
     /// Aggregate of rewards across multiple transactions, bucketed by reward type.

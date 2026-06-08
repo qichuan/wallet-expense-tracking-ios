@@ -47,8 +47,8 @@ struct CardFormView: View {
             _minimumSpendingByDayOfMonth = State(initialValue: card.minimumSpendingByDayOfMonth)
             _baseRewardRate = State(initialValue: Self.format(rate: card.baseRewardRate))
             _roundingBlock = State(initialValue: card.roundingBlock)
-            _maxMilesCap = State(initialValue: Self.formatCap(card.maxMilesCap))
-            _maxCashbackCap = State(initialValue: Self.formatCap(card.maxCashbackCap))
+            _maxMilesCap = State(initialValue: Self.format(rate: card.maxMilesCap))
+            _maxCashbackCap = State(initialValue: Self.format(rate: card.maxCashbackCap))
             _draftRules = State(initialValue: card.rewardRules.map {
                 DraftRule(existingId: $0.id, categoryName: $0.categoryName, rate: Self.format(rate: $0.rate))
             })
@@ -549,21 +549,6 @@ struct CardFormView: View {
 
     // MARK: - Helpers
 
-    private static func formatCap(_ value: Decimal) -> String {
-        guard value > 0 else { return "" }
-        let n = Double(truncating: value as NSDecimalNumber)
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 2
-        f.minimumFractionDigits = 0
-        return f.string(from: NSNumber(value: n)) ?? ""
-    }
-
-    private func parseCap(_ raw: String) -> Decimal {
-        guard !raw.isEmpty else { return 0 }
-        return Decimal(string: raw) ?? 0
-    }
-
     private static func format(rate: Decimal) -> String {
         if rate == 0 { return "" }
         let n = Double(truncating: rate as NSDecimalNumber)
@@ -610,8 +595,8 @@ struct CardFormView: View {
             }
             editing.baseRewardRate = parsedBaseRate
             editing.roundingBlock = roundingBlock
-            editing.maxMilesCap = parseCap(maxMilesCap)
-            editing.maxCashbackCap = parseCap(maxCashbackCap)
+            editing.maxMilesCap = parseRate(maxMilesCap)
+            editing.maxCashbackCap = parseRate(maxCashbackCap)
             reconcileRules(on: editing)
             do {
                 try modelContext.save()
@@ -637,8 +622,8 @@ struct CardFormView: View {
                 minimumSpendingByDayOfMonth: stmtDay,
                 baseRewardRate: parsedBaseRate,
                 roundingBlock: roundingBlock,
-                maxMilesCap: parseCap(maxMilesCap),
-                maxCashbackCap: parseCap(maxCashbackCap)
+                maxMilesCap: parseRate(maxMilesCap),
+                maxCashbackCap: parseRate(maxCashbackCap)
             )
             modelContext.insert(card)
             for draft in validRules() {
