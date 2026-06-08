@@ -181,6 +181,35 @@ final class CurrencyParsingTests: XCTestCase {
         XCTAssertEqual(result?.1, Decimal(50000))
     }
 
+    // MARK: - Apple Pay country-disambiguated symbols
+
+    func testApplePaySymbol_JPY() {
+        // Sample from Apple Pay (issue #30): "JP¥1,630"
+        let result = CurrencyUtils.parseCurrencyAndAmount(from: "JP¥1,630")
+        XCTAssertEqual(result?.0, "JPY")
+        XCTAssertEqual(result?.1, Decimal(1630))
+    }
+
+    func testApplePaySymbol_JPY_withSpace() {
+        let result = CurrencyUtils.parseCurrencyAndAmount(from: "JP¥ 1,630")
+        XCTAssertEqual(result?.0, "JPY")
+        XCTAssertEqual(result?.1, Decimal(1630))
+    }
+
+    func testApplePaySymbol_CNY() {
+        // CN¥ shares the "¥" glyph with yen but must resolve to yuan.
+        let result = CurrencyUtils.parseCurrencyAndAmount(from: "CN¥88.00")
+        XCTAssertEqual(result?.0, "CNY")
+        XCTAssertEqual(result?.1, Decimal(string: "88.00"))
+    }
+
+    func testBareYen_stillResolvesToJPY() {
+        // Without a country prefix the bare glyph keeps its existing behaviour.
+        let result = CurrencyUtils.parseCurrencyAndAmount(from: "¥1500")
+        XCTAssertEqual(result?.0, "JPY")
+        XCTAssertEqual(result?.1, Decimal(1500))
+    }
+
     // MARK: - Bare dollar sign ($) uses default currency
 
     func testBareDollarSign_usesDefaultCurrency() {

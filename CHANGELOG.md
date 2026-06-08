@@ -2,6 +2,7 @@
 
 ## XX.XX.XX - 20XX-XX-XX
 - [ADDED] - Set separate per-cycle caps for miles and cashback on each card; the card detail screen shows your progress toward the cap and alerts you when it is reached
+- [CHANGED] - Detect Japanese yen and Chinese yuan amounts from Apple Pay's "JP¥" / "CN¥" formats so the currency and amount import correctly
 
 ## 2.5 - 2026-06-01
 - [ADDED] - Set or edit a transaction's location by searching an address or place with autocomplete

@@ -238,14 +238,26 @@ struct CurrencyUtils {
 
     // MARK: - Currency & Amount Parsing
 
-    /// Parses a raw amount string (e.g. "S$12.50", "MYR 8.00", "8.00 MYR", "$4.99")
-    /// into a (currencyCode, amount) tuple.  Falls back to the user's default currency
-    /// when no symbol/code is recognised.
+    /// Apple Pay disambiguates currencies that share a glyph by prefixing the
+    /// symbol with a country code — e.g. "JP¥1,630" for yen and "CN¥1,630" for
+    /// yuan, which both otherwise collapse to a bare "¥". These prefixes are
+    /// matched ahead of the plain symbols so the right currency wins.
+    private static let applePaySymbolAliases: [(symbol: String, code: String)] = [
+        ("JP¥", "JPY"),
+        ("CN¥", "CNY"),
+    ]
+
+    /// Parses a raw amount string (e.g. "S$12.50", "MYR 8.00", "8.00 MYR", "$4.99",
+    /// "JP¥1,630") into a (currencyCode, amount) tuple.  Falls back to the user's
+    /// default currency when no symbol/code is recognised.
     static func parseCurrencyAndAmount(from raw: String) -> (String, Decimal)? {
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
 
         let currencies = allAvailableCurrencies
         var symbolToCode: [(String, String)] = []
+        // 0. Apple Pay country-disambiguated symbols (e.g. "JP¥") — matched first
+        //    so they take priority over the ambiguous bare glyph.
+        symbolToCode += applePaySymbolAliases.map { ($0.symbol, $0.code) }
         // 1. ISO code prefixes (e.g. "SGD 12.50")
         symbolToCode += currencies.map { ($0.code, $0.code) }
         // 2. Currency symbols, longest first so "S$" is tried before "$".
