@@ -146,7 +146,7 @@ export const OutroCard: React.FC = () => {
           lineHeight: 1.4,
         }}
       >
-        Every Apple Wallet tap is now logged automatically in CardPulse.
+        Tap-to-pay Apple Pay transactions are now tracked automatically
       </div>
     </AbsoluteFill>
   );
