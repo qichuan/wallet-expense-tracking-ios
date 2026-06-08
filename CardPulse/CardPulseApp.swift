@@ -14,10 +14,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
     #if !DEBUG
-    let isCI = ProcessInfo.processInfo.environment["CI"] == "TRUE"
-    if !isCI {
-        FirebaseApp.configure()
-    }
+    FirebaseApp.configure()
     #endif
     UNUserNotificationCenter.current().delegate = NotificationRouter.shared
     return true
