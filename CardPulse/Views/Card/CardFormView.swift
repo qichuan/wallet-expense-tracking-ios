@@ -261,13 +261,13 @@ struct CardFormView: View {
             FormDivider()
             foreignRateRow
             FormDivider()
+            currencyRateList
+            FormDivider()
             roundingRow
             FormDivider()
             capRow
             FormDivider()
             categoryBonusList
-            FormDivider()
-            currencyRateList
 
             Text(rewardsHelpText)
                 .font(AppTypography.caption)

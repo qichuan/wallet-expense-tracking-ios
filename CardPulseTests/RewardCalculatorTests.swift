@@ -9,13 +9,32 @@ import SwiftData
 
 final class RewardCalculatorTests: XCTestCase {
 
+    /// The currency-rate logic compares against `CurrencyUtils.defaultCurrencyCode`
+    /// (UserDefaults-backed), so pin it to SGD for the test run and restore after.
+    private var savedDefaultCurrency: String?
+
+    override func setUp() {
+        super.setUp()
+        savedDefaultCurrency = UserDefaults.standard.string(forKey: CurrencyUtils.defaultCurrencyKey)
+        UserDefaults.standard.set("SGD", forKey: CurrencyUtils.defaultCurrencyKey)
+    }
+
+    override func tearDown() {
+        if let saved = savedDefaultCurrency {
+            UserDefaults.standard.set(saved, forKey: CurrencyUtils.defaultCurrencyKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: CurrencyUtils.defaultCurrencyKey)
+        }
+        super.tearDown()
+    }
+
     // MARK: - Helpers
 
     /// Returns an in-memory container holding the live schema. Used so we can
     /// instantiate `Card`/`Transaction`/`CardRewardRule` with the relationships
     /// the calculator depends on. Each test gets its own context.
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self])
+        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self, CardCurrencyRule.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
         return ModelContext(container)
@@ -24,7 +43,9 @@ final class RewardCalculatorTests: XCTestCase {
     private func makeCard(rewardType: RewardType,
                           baseRate: Decimal,
                           block: Decimal = 1,
+                          foreignRate: Decimal = 0,
                           rules: [(category: String, rate: Decimal)] = [],
+                          currencyRules: [(code: String, rate: Decimal)] = [],
                           in context: ModelContext) -> Card {
         let card = Card(
             name: "Test Card",
@@ -32,18 +53,23 @@ final class RewardCalculatorTests: XCTestCase {
             hasMinimumSpending: false,
             rewardType: rewardType,
             baseRewardRate: baseRate,
-            roundingBlock: block
+            roundingBlock: block,
+            foreignRewardRate: foreignRate
         )
         context.insert(card)
         for r in rules {
             let rule = CardRewardRule(card: card, categoryName: r.category, rate: r.rate)
             context.insert(rule)
         }
+        for r in currencyRules {
+            let rule = CardCurrencyRule(card: card, currencyCode: r.code, rate: r.rate)
+            context.insert(rule)
+        }
         return card
     }
 
-    private func makeTxn(amount: Decimal, category: String? = nil, card: Card?, in context: ModelContext) -> Transaction {
-        let tx = Transaction(merchant: "Test", amount: amount, date: Date(), category: category, card: card)
+    private func makeTxn(amount: Decimal, category: String? = nil, card: Card?, currency: String = "", in context: ModelContext) -> Transaction {
+        let tx = Transaction(merchant: "Test", amount: amount, date: Date(), category: category, card: card, currency: currency)
         context.insert(tx)
         return tx
     }
@@ -164,6 +190,114 @@ final class RewardCalculatorTests: XCTestCase {
         let tx = makeTxn(amount: Decimal(100), category: nil, card: card, in: ctx)
 
         XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(140))
+    }
+
+    // MARK: - Currency rates
+    //
+    // The UOB PRVI Miles shape from issue #25: 1.2 mpd local (SGD), 2.4 mpd on
+    // any foreign currency, 3 mpd on specific currencies. Currency rates replace
+    // the base rate; category bonuses still add on top.
+
+    func testForeignRate_AppliesToNonDefaultCurrency() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4, in: ctx)
+        let local = makeTxn(amount: Decimal(100), card: card, currency: "SGD", in: ctx)
+        let foreign = makeTxn(amount: Decimal(100), card: card, currency: "USD", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: local), Decimal(120))   // 100 * 1.2
+        XCTAssertEqual(RewardCalculator.reward(for: foreign), Decimal(240)) // 100 * 2.4
+    }
+
+    func testForeignRate_EmptyCurrency_ResolvesToDefault_UsesBaseRate() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4, in: ctx)
+        // Empty currency means "use the default currency" — must not earn the foreign rate.
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(120))
+    }
+
+    func testForeignRate_Unset_ForeignSpendEarnsBaseRate() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 0, in: ctx)
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "USD", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(120))
+    }
+
+    func testCurrencyRule_BeatsForeignRate() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4,
+                            currencyRules: [(code: "MYR", rate: 3.0)], in: ctx)
+        let myr = makeTxn(amount: Decimal(100), card: card, currency: "MYR", in: ctx)
+        let usd = makeTxn(amount: Decimal(100), card: card, currency: "USD", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: myr), Decimal(300)) // per-currency rule
+        XCTAssertEqual(RewardCalculator.reward(for: usd), Decimal(240)) // blanket foreign rate
+    }
+
+    func testCurrencyRule_CaseInsensitiveMatch() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2,
+                            currencyRules: [(code: "MYR", rate: 3.0)], in: ctx)
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "myr", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(300))
+    }
+
+    func testCurrencyRate_ReplacesBase_CategoryBonusStillAdds() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4,
+                            rules: [(category: "Travel", rate: 4.0)],
+                            currencyRules: [(code: "MYR", rate: 3.0)], in: ctx)
+        // Currency rate replaces base (3, not 1.2 + 3), then the bonus adds: 3 + 4 = 7 mpd.
+        let tx = makeTxn(amount: Decimal(100), category: "Travel", card: card, currency: "MYR", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(700))
+    }
+
+    func testCurrencyRate_RespectsRoundingBlock() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, block: 5, foreignRate: 2.4, in: ctx)
+        // 36.35 → rounded to 35 → 35 * 2.4 = 84 miles.
+        let tx = makeTxn(amount: Decimal(string: "36.35")!, card: card, currency: "USD", in: ctx)
+
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(84))
+    }
+
+    func testForeignRate_Cashback_TreatedAsPercent() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 1.6, foreignRate: 3.0, in: ctx)
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "USD", in: ctx)
+
+        // 100 * 0.03 = 3.0
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(3))
+    }
+
+    func testBreakdown_CurrencyOverride_PopulatesCurrencyFields() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4,
+                            currencyRules: [(code: "MYR", rate: 3.0)], in: ctx)
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "MYR", in: ctx)
+
+        let breakdown = RewardCalculator.breakdown(for: tx)
+        XCTAssertEqual(breakdown?.currencyCode, "MYR")
+        XCTAssertEqual(breakdown?.currencyRate, Decimal(3))
+        XCTAssertEqual(breakdown?.baseRate, Decimal(string: "1.2"))
+        XCTAssertEqual(breakdown?.effectiveRate, Decimal(3))
+        XCTAssertEqual(breakdown?.reward, Decimal(300))
+    }
+
+    func testBreakdown_DefaultCurrency_HasNoCurrencyFields() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .miles, baseRate: 1.2, foreignRate: 2.4,
+                            currencyRules: [(code: "MYR", rate: 3.0)], in: ctx)
+        let tx = makeTxn(amount: Decimal(100), card: card, currency: "SGD", in: ctx)
+
+        let breakdown = RewardCalculator.breakdown(for: tx)
+        XCTAssertNil(breakdown?.currencyCode)
+        XCTAssertEqual(breakdown?.currencyRate, Decimal(0))
+        XCTAssertEqual(breakdown?.effectiveRate, Decimal(string: "1.2"))
     }
 
     // MARK: - Edge cases
