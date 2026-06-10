@@ -20,6 +20,7 @@ extension ModelContainer {
             let mockCards = createMockCards()
             let mockTransactions = createMockTransactions(for: mockCards)
             let mockRules = sampleRules(for: mockCards)
+            let mockCurrencyRules = sampleCurrencyRules(for: mockCards)
 
             for card in mockCards {
                 container.mainContext.insert(card)
@@ -30,6 +31,10 @@ extension ModelContainer {
             }
 
             for rule in mockRules {
+                container.mainContext.insert(rule)
+            }
+
+            for rule in mockCurrencyRules {
                 container.mainContext.insert(rule)
             }
 
@@ -57,7 +62,8 @@ extension ModelContainer {
                 hasMinimumSpending: true,
                 rewardType: .miles,
                 baseRewardRate: 1.4,
-                roundingBlock: 5
+                roundingBlock: 5,
+                foreignRewardRate: 2.4
             ),
             Card(
                 name: "Amex Gold Card",
@@ -88,6 +94,14 @@ extension ModelContainer {
             rules.append(CardRewardRule(card: miles, categoryName: "Travel", rate: 4))
         }
         return rules
+    }
+
+    private static func sampleCurrencyRules(for cards: [Card]) -> [CardCurrencyRule] {
+        guard let miles = cards.first(where: { $0.rewardType == .miles }) else { return [] }
+        return [
+            CardCurrencyRule(card: miles, currencyCode: "MYR", rate: 3),
+            CardCurrencyRule(card: miles, currencyCode: "THB", rate: 3)
+        ]
     }
     
     private static func createMockTransactions(for cards: [Card]) -> [Transaction] {

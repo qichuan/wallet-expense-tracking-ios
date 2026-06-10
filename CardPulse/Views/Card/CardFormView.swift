@@ -25,14 +25,19 @@ struct CardFormView: View {
     @State private var roundingBlock: Decimal
     @State private var maxMilesCap: String
     @State private var maxCashbackCap: String
+    @State private var foreignRewardRate: String
     @State private var draftRules: [DraftRule]
     @State private var editingRule: DraftRule?
     @State private var showingAddRule = false
+    @State private var draftCurrencyRules: [DraftCurrencyRule]
+    @State private var editingCurrencyRule: DraftCurrencyRule?
+    @State private var showingAddCurrencyRule = false
     @State private var showingDeleteAlert = false
 
     @FocusState private var nameFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var rateFocused: Bool
+    @FocusState private var foreignRateFocused: Bool
     @FocusState private var capFocused: Bool
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
@@ -49,8 +54,12 @@ struct CardFormView: View {
             _roundingBlock = State(initialValue: card.roundingBlock)
             _maxMilesCap = State(initialValue: Self.format(rate: card.maxMilesCap))
             _maxCashbackCap = State(initialValue: Self.format(rate: card.maxCashbackCap))
+            _foreignRewardRate = State(initialValue: Self.format(rate: card.foreignRewardRate))
             _draftRules = State(initialValue: card.rewardRules.map {
                 DraftRule(existingId: $0.id, categoryName: $0.categoryName, rate: Self.format(rate: $0.rate))
+            })
+            _draftCurrencyRules = State(initialValue: card.currencyRules.map {
+                DraftCurrencyRule(existingId: $0.id, currencyCode: $0.currencyCode, rate: Self.format(rate: $0.rate))
             })
         } else {
             _cardName = State(initialValue: "")
@@ -62,7 +71,9 @@ struct CardFormView: View {
             _roundingBlock = State(initialValue: 1)
             _maxMilesCap = State(initialValue: "")
             _maxCashbackCap = State(initialValue: "")
+            _foreignRewardRate = State(initialValue: "")
             _draftRules = State(initialValue: [])
+            _draftCurrencyRules = State(initialValue: [])
         }
     }
 
@@ -148,6 +159,30 @@ struct CardFormView: View {
                 draftRules.removeAll { $0.id == rule.id }
             }
         }
+        .sheet(isPresented: $showingAddCurrencyRule) {
+            CurrencyRuleEditor(
+                rule: nil,
+                rewardType: rewardType,
+                existingCurrencies: draftCurrencyRules.map { $0.currencyCode },
+                defaultCurrencyCode: defaultCurrencyCode
+            ) { newRule in
+                draftCurrencyRules.append(newRule)
+            }
+        }
+        .sheet(item: $editingCurrencyRule) { rule in
+            CurrencyRuleEditor(
+                rule: rule,
+                rewardType: rewardType,
+                existingCurrencies: draftCurrencyRules.filter { $0.id != rule.id }.map { $0.currencyCode },
+                defaultCurrencyCode: defaultCurrencyCode
+            ) { updated in
+                if let idx = draftCurrencyRules.firstIndex(where: { $0.id == updated.id }) {
+                    draftCurrencyRules[idx] = updated
+                }
+            } onDelete: {
+                draftCurrencyRules.removeAll { $0.id == rule.id }
+            }
+        }
     }
 
     // MARK: - Sections
@@ -224,11 +259,15 @@ struct CardFormView: View {
         FormSection("Rewards Rules") {
             baseRateRow
             FormDivider()
+            foreignRateRow
+            FormDivider()
             roundingRow
             FormDivider()
             capRow
             FormDivider()
             categoryBonusList
+            FormDivider()
+            currencyRateList
 
             Text(rewardsHelpText)
                 .font(AppTypography.caption)
@@ -243,9 +282,9 @@ struct CardFormView: View {
     private var rewardsHelpText: String {
         switch rewardType {
         case .cashback:
-            return "Cashback is calculated as a percentage of each transaction. Add category bonuses for higher rates on specific spending."
+            return "Cashback is calculated as a percentage of each transaction. Add category bonuses for higher rates on specific spending. Foreign and currency rates replace the base rate for spending in those currencies."
         case .miles:
-            return "Miles earn at your base rate per dollar, with each transaction rounded down to the nearest block. Add category bonuses to boost specific spending."
+            return "Miles earn at your base rate per dollar, with each transaction rounded down to the nearest block. Add category bonuses to boost specific spending. Foreign and currency rates replace the base rate for spending in those currencies."
         case .none:
             return ""
         }
@@ -281,6 +320,36 @@ struct CardFormView: View {
         case .miles: return "mpd"
         case .none: return ""
         }
+    }
+
+    @ViewBuilder
+    private var foreignRateRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Foreign rate")
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("Spending not in \(defaultCurrencyCode)")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer()
+            TextField("Base", text: $foreignRewardRate,
+                      prompt: Text("Base").foregroundColor(AppColors.textTertiary))
+                .keyboardType(.decimalPad)
+                .focused($foreignRateFocused)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 100)
+                .onChange(of: foreignRewardRate) { _, newValue in
+                    foreignRewardRate = sanitiseRate(newValue)
+                }
+            Text(rateUnitLabel)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     @ViewBuilder
@@ -400,6 +469,73 @@ struct CardFormView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var currencyRateList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Currency rates")
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                Button {
+                    showingAddCurrencyRule = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(AppTypography.chevronTinyBold)
+                        Text("Add")
+                            .font(AppTypography.bannerCTA)
+                    }
+                    .foregroundColor(AppColors.accent)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            if !draftCurrencyRules.isEmpty {
+                ForEach(draftCurrencyRules) { rule in
+                    Button {
+                        editingCurrencyRule = rule
+                    } label: {
+                        currencyRuleRow(rule)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func currencyRuleRow(_ rule: DraftCurrencyRule) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "globe")
+                .font(AppTypography.iconMedium)
+                .foregroundColor(AppColors.accent)
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle().fill(AppColors.accent.opacity(0.15))
+                )
+
+            Text(rule.currencyCode)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            Text("\(rule.rate.isEmpty ? "0" : rule.rate)\(rateUnitLabel)")
+                .font(AppTypography.rowValue)
+                .foregroundColor(AppColors.textSecondary)
+
+            Image(systemName: "chevron.right")
+                .font(AppTypography.chevronTiny)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -539,6 +675,7 @@ struct CardFormView: View {
                 nameFocused = false
                 amountFocused = false
                 rateFocused = false
+                foreignRateFocused = false
                 capFocused = false
             } label: {
                 Image(systemName: "keyboard.chevron.compact.down")
@@ -597,13 +734,16 @@ struct CardFormView: View {
             editing.roundingBlock = roundingBlock
             editing.maxMilesCap = parseRate(maxMilesCap)
             editing.maxCashbackCap = parseRate(maxCashbackCap)
+            editing.foreignRewardRate = parseRate(foreignRewardRate)
             reconcileRules(on: editing)
+            reconcileCurrencyRules(on: editing)
             do {
                 try modelContext.save()
                 AnalyticsTracker.edit("card", [
                     "reward_type": String(describing: rewardType),
                     "has_min_spend": hasMinimumSpending,
-                    "rule_count": editing.rewardRules.count
+                    "rule_count": editing.rewardRules.count,
+                    "currency_rule_count": editing.currencyRules.count
                 ])
                 WidgetDataWriter.refresh(using: modelContext)
                 dismiss()
@@ -623,11 +763,16 @@ struct CardFormView: View {
                 baseRewardRate: parsedBaseRate,
                 roundingBlock: roundingBlock,
                 maxMilesCap: parseRate(maxMilesCap),
-                maxCashbackCap: parseRate(maxCashbackCap)
+                maxCashbackCap: parseRate(maxCashbackCap),
+                foreignRewardRate: parseRate(foreignRewardRate)
             )
             modelContext.insert(card)
             for draft in validRules() {
                 let rule = CardRewardRule(card: card, categoryName: draft.categoryName, rate: parseRate(draft.rate))
+                modelContext.insert(rule)
+            }
+            for draft in validCurrencyRules() {
+                let rule = CardCurrencyRule(card: card, currencyCode: draft.currencyCode, rate: parseRate(draft.rate))
                 modelContext.insert(rule)
             }
             do {
@@ -636,7 +781,8 @@ struct CardFormView: View {
                     "reward_type": String(describing: rewardType),
                     "has_min_spend": hasMinimumSpending,
                     "statement_day": stmtDay,
-                    "rule_count": card.rewardRules.count
+                    "rule_count": card.rewardRules.count,
+                    "currency_rule_count": card.currencyRules.count
                 ])
                 WidgetDataWriter.refresh(using: modelContext)
                 dismiss()
@@ -672,6 +818,32 @@ struct CardFormView: View {
         }
     }
 
+    private func validCurrencyRules() -> [DraftCurrencyRule] {
+        draftCurrencyRules.filter {
+            !$0.currencyCode.trimmingCharacters(in: .whitespaces).isEmpty
+        }
+    }
+
+    /// Sync draft currency rules onto an existing card: update matched rules, insert
+    /// new ones, delete any existing rules whose ids no longer appear in the draft.
+    private func reconcileCurrencyRules(on card: Card) {
+        let drafts = validCurrencyRules()
+        let draftIds = Set(drafts.compactMap { $0.existingId })
+        for rule in card.currencyRules where !draftIds.contains(rule.id) {
+            modelContext.delete(rule)
+        }
+        for draft in drafts {
+            if let existingId = draft.existingId,
+               let rule = card.currencyRules.first(where: { $0.id == existingId }) {
+                rule.currencyCode = draft.currencyCode
+                rule.rate = parseRate(draft.rate)
+            } else {
+                let rule = CardCurrencyRule(card: card, currencyCode: draft.currencyCode, rate: parseRate(draft.rate))
+                modelContext.insert(rule)
+            }
+        }
+    }
+
     private func deleteCard() {
         guard let editing = cardToEdit else { return }
         let rewardTypeString = String(describing: editing.rewardType)
@@ -702,6 +874,22 @@ struct DraftRule: Identifiable, Hashable {
         self.id = id
         self.existingId = existingId
         self.categoryName = categoryName
+        self.rate = rate
+    }
+}
+
+// MARK: - Draft currency rule (local-only state until persisted)
+
+struct DraftCurrencyRule: Identifiable, Hashable {
+    let id: UUID
+    let existingId: UUID?
+    var currencyCode: String
+    var rate: String
+
+    init(id: UUID = UUID(), existingId: UUID? = nil, currencyCode: String, rate: String) {
+        self.id = id
+        self.existingId = existingId
+        self.currencyCode = currencyCode
         self.rate = rate
     }
 }
@@ -864,6 +1052,197 @@ private struct RewardRuleEditor: View {
             id: rule?.id ?? UUID(),
             existingId: rule?.existingId,
             categoryName: categoryName,
+            rate: rate
+        )
+        onSave(updated)
+        dismiss()
+    }
+}
+
+// MARK: - Single currency-rule editor sheet
+
+private struct CurrencyRuleEditor: View {
+    let rule: DraftCurrencyRule?
+    let rewardType: RewardType
+    let existingCurrencies: [String]
+    let defaultCurrencyCode: String
+    let onSave: (DraftCurrencyRule) -> Void
+    var onDelete: (() -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var currencyCode: String
+    @State private var rate: String
+    @FocusState private var rateFocused: Bool
+
+    init(rule: DraftCurrencyRule?,
+         rewardType: RewardType,
+         existingCurrencies: [String],
+         defaultCurrencyCode: String,
+         onSave: @escaping (DraftCurrencyRule) -> Void,
+         onDelete: (() -> Void)? = nil) {
+        self.rule = rule
+        self.rewardType = rewardType
+        self.existingCurrencies = existingCurrencies
+        self.defaultCurrencyCode = defaultCurrencyCode
+        self.onSave = onSave
+        self.onDelete = onDelete
+        let available = Self.availableCurrencyCodes(excluding: existingCurrencies, defaultCode: defaultCurrencyCode)
+        _currencyCode = State(initialValue: rule?.currencyCode ?? available.first ?? "")
+        _rate = State(initialValue: rule?.rate ?? "")
+    }
+
+    /// Currencies the user can pick: every known currency except the default
+    /// (which the base rate covers) and ones that already have a rule.
+    private static func availableCurrencyCodes(excluding existing: [String], defaultCode: String) -> [String] {
+        CurrencyUtils.allAvailableCurrencies
+            .map { $0.code }
+            .filter { $0 != defaultCode && !existing.contains($0) }
+    }
+
+    private var pickerCodes: [String] {
+        var codes = Self.availableCurrencyCodes(excluding: existingCurrencies, defaultCode: defaultCurrencyCode)
+        // Keep the rule's current currency selectable when editing.
+        if let current = rule?.currencyCode, !codes.contains(current) {
+            codes.insert(current, at: 0)
+        }
+        return codes
+    }
+
+    private var rateUnitLabel: String {
+        switch rewardType {
+        case .cashback: return "%"
+        case .miles: return "mpd"
+        case .none: return ""
+        }
+    }
+
+    private var isValid: Bool {
+        !currencyCode.trimmingCharacters(in: .whitespaces).isEmpty
+        && !rate.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.backgroundPrimary.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        FormSection("Currency") {
+                            currencyRow
+                        }
+                        FormSection("Rate") {
+                            rateRow
+
+                            Text("Replaces the base rate for spending in this currency.")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
+                                .padding(.bottom, 14)
+                        }
+                        if rule != nil, let onDelete {
+                            DestructiveButton(title: "Remove Rate") {
+                                onDelete()
+                                dismiss()
+                            }
+                            .padding(.top, 8)
+                        }
+                    }
+                    .padding(.top, 18)
+                    .padding(.bottom, 40)
+                }
+            }
+            .navigationTitle(rule == nil ? "Add Currency Rate" : "Edit Currency Rate")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") { save() }
+                        .font(AppTypography.navButton)
+                        .foregroundColor(isValid ? AppColors.accent : AppColors.textTertiary)
+                        .disabled(!isValid)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var currencyRow: some View {
+        HStack(spacing: 12) {
+            Text("Currency")
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            Menu {
+                Picker("", selection: $currencyCode) {
+                    ForEach(pickerCodes, id: \.self) { code in
+                        Text(CurrencyUtils.info(for: code)?.displayName ?? code).tag(code)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(currencyCode.isEmpty ? "Pick" : currencyCode)
+                        .foregroundColor(AppColors.accent)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(AppTypography.chevronTiny)
+                        .foregroundColor(AppColors.accent)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var rateRow: some View {
+        HStack(spacing: 12) {
+            Text("Rate")
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            TextField("0", text: $rate, prompt: Text("0").foregroundColor(AppColors.textTertiary))
+                .keyboardType(.decimalPad)
+                .focused($rateFocused)
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 100)
+                .onChange(of: rate) { _, newValue in
+                    rate = sanitise(newValue)
+                }
+            Text(rateUnitLabel)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .onAppear { rateFocused = rule == nil }
+    }
+
+    private func sanitise(_ raw: String) -> String {
+        var seenDot = false
+        var result = ""
+        for ch in raw {
+            if ch.isNumber {
+                result.append(ch)
+            } else if ch == "." && !seenDot {
+                result.append(ch)
+                seenDot = true
+            }
+        }
+        return result
+    }
+
+    private func save() {
+        let updated = DraftCurrencyRule(
+            id: rule?.id ?? UUID(),
+            existingId: rule?.existingId,
+            currencyCode: currencyCode,
             rate: rate
         )
         onSave(updated)

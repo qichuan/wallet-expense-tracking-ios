@@ -15,6 +15,11 @@ import Foundation
 /// rate (e.g. base 0.5% + Groceries bonus 5% = 5.5%).
 /// For cashback the rate is treated as a percent (`1.6` → 1.6%); for miles the rate
 /// is miles-per-dollar (`1.4` → 1.4 mpd).
+///
+/// Currency-based rates *replace* the base rate (they don't stack with it):
+/// a `CardCurrencyRule` matching the transaction's currency wins, else the card's
+/// `foreignRewardRate` applies when the currency differs from the user's default,
+/// else the base rate. Category bonuses still add on top of whichever applies.
 enum RewardCalculator {
 
     /// The reward earned for a single transaction in the card's reward unit
@@ -24,15 +29,17 @@ enum RewardCalculator {
         guard let card = transaction.card, card.rewardType != .none else { return nil }
         return reward(amount: transaction.amount,
                       category: transaction.category,
-                      card: card)
+                      card: card,
+                      currency: transaction.resolvedCurrency)
     }
 
     /// Pure-function variant — exposed for previews/tests where wiring up a
-    /// SwiftData `Transaction` would be overkill.
-    static func reward(amount: Decimal, category: String?, card: Card) -> Decimal? {
+    /// SwiftData `Transaction` would be overkill. Pass `currency` to apply the
+    /// card's currency-based rates; `nil` always uses the base rate.
+    static func reward(amount: Decimal, category: String?, card: Card, currency: String? = nil) -> Decimal? {
         guard card.rewardType != .none else { return nil }
         let rounded = roundDown(amount, toBlock: card.roundingBlock)
-        let rate = effectiveRate(card: card, category: category)
+        let rate = effectiveRate(card: card, category: category, currency: currency)
         switch card.rewardType {
         case .cashback:
             return rounded * rate / 100
@@ -48,9 +55,13 @@ enum RewardCalculator {
     /// spend (and the miles/cashback it earns) rolls up in a single currency.
     static func convertedReward(for transaction: Transaction) -> Decimal? {
         guard let card = transaction.card, card.rewardType != .none else { return nil }
+        // The rate is still driven by the original transaction currency — only the
+        // amount it applies to is converted, mirroring how banks award FCY rates
+        // on the converted amount posted to the statement.
         return reward(amount: transaction.amountInDefaultCurrency,
                       category: transaction.category,
-                      card: card)
+                      card: card,
+                      currency: transaction.resolvedCurrency)
     }
 
     /// Total reward earned in the card's current billing cycle, computed on
@@ -135,6 +146,11 @@ enum RewardCalculator {
         let baseRate: Decimal
         let bonusRate: Decimal
         let bonusCategory: String?
+        /// Transaction currency whose rate replaced the base rate (via a per-currency
+        /// rule or the blanket foreign rate), or `nil` when the base rate applied.
+        let currencyCode: String?
+        /// The currency-based rate that replaced `baseRate`; `0` when none applied.
+        let currencyRate: Decimal
         let rewardType: RewardType
         let reward: Decimal
     }
@@ -146,7 +162,9 @@ enum RewardCalculator {
         let bonus = card.rewardRules.first {
             !raw.isEmpty && $0.categoryName.caseInsensitiveCompare(raw) == .orderedSame
         }
-        let effective = card.baseRewardRate + (bonus?.rate ?? 0)
+        let currency = transaction.resolvedCurrency
+        let currencyOverride = currencyOverrideRate(card: card, currency: currency)
+        let effective = (currencyOverride ?? card.baseRewardRate) + (bonus?.rate ?? 0)
         let reward: Decimal = {
             switch card.rewardType {
             case .cashback: return rounded * effective / 100
@@ -162,6 +180,8 @@ enum RewardCalculator {
             baseRate: card.baseRewardRate,
             bonusRate: bonus?.rate ?? 0,
             bonusCategory: bonus.map { $0.categoryName },
+            currencyCode: currencyOverride != nil ? currency : nil,
+            currencyRate: currencyOverride ?? 0,
             rewardType: card.rewardType,
             reward: reward
         )
@@ -169,13 +189,30 @@ enum RewardCalculator {
 
     // MARK: - Helpers
 
-    private static func effectiveRate(card: Card, category: String?) -> Decimal {
+    private static func effectiveRate(card: Card, category: String?, currency: String? = nil) -> Decimal {
+        let base = currencyOverrideRate(card: card, currency: currency) ?? card.baseRewardRate
         if let raw = category?.trimmingCharacters(in: .whitespacesAndNewlines),
            !raw.isEmpty,
            let rule = card.rewardRules.first(where: { $0.categoryName.caseInsensitiveCompare(raw) == .orderedSame }) {
-            return card.baseRewardRate + rule.rate
+            return base + rule.rate
         }
-        return card.baseRewardRate
+        return base
+    }
+
+    /// The currency-based rate that replaces the card's base rate for `currency`,
+    /// or `nil` when the base rate applies. A per-currency rule wins over the
+    /// blanket foreign rate, which applies to any non-default currency when set.
+    private static func currencyOverrideRate(card: Card, currency: String?) -> Decimal? {
+        guard let code = currency?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !code.isEmpty else { return nil }
+        if let rule = card.currencyRules.first(where: { $0.currencyCode.caseInsensitiveCompare(code) == .orderedSame }) {
+            return rule.rate
+        }
+        if card.foreignRewardRate > 0,
+           code.caseInsensitiveCompare(CurrencyUtils.defaultCurrencyCode) != .orderedSame {
+            return card.foreignRewardRate
+        }
+        return nil
     }
 
     private static func roundDown(_ amount: Decimal, toBlock block: Decimal) -> Decimal {

@@ -44,11 +44,20 @@ final class Card {
     /// Maximum cashback earnable per billing cycle (in the card's default currency). `0` means no cap.
     var maxCashbackCap: Decimal = 0
 
+    /// Reward rate for spending in any currency other than the user's default
+    /// (e.g. `2.4` mpd foreign vs `1.2` mpd local). Replaces `baseRewardRate`
+    /// for foreign transactions. `0` means foreign spending earns the base rate.
+    /// Per-currency `currencyRules` take precedence over this blanket rate.
+    var foreignRewardRate: Decimal = 0
+
     @Relationship(deleteRule: .cascade, inverse: \Transaction.card)
     var transactions: [Transaction] = []
 
     @Relationship(deleteRule: .cascade, inverse: \CardRewardRule.card)
     var rewardRules: [CardRewardRule] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \CardCurrencyRule.card)
+    var currencyRules: [CardCurrencyRule] = []
 
     init(name: String,
          minimumSpendingAmount: Decimal,
@@ -58,7 +67,8 @@ final class Card {
          baseRewardRate: Decimal = 0,
          roundingBlock: Decimal = 1,
          maxMilesCap: Decimal = 0,
-         maxCashbackCap: Decimal = 0) {
+         maxCashbackCap: Decimal = 0,
+         foreignRewardRate: Decimal = 0) {
         self.id = UUID()
         self.name = name
         self.minimumSpendingAmount = minimumSpendingAmount
@@ -70,5 +80,6 @@ final class Card {
         self.roundingBlock = roundingBlock
         self.maxMilesCap = maxMilesCap
         self.maxCashbackCap = maxCashbackCap
+        self.foreignRewardRate = foreignRewardRate
     }
 }

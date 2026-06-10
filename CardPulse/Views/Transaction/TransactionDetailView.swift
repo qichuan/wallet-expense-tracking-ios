@@ -253,8 +253,13 @@ struct TransactionDetailView: View {
                     value: format(amount: breakdown.rounded))
 
             FormDivider()
-            calcRow(label: "Base rate",
-                    value: format(rate: breakdown.baseRate, type: breakdown.rewardType))
+            if let code = breakdown.currencyCode {
+                calcRow(label: "Currency rate (\(code))",
+                        value: format(rate: breakdown.currencyRate, type: breakdown.rewardType))
+            } else {
+                calcRow(label: "Base rate",
+                        value: format(rate: breakdown.baseRate, type: breakdown.rewardType))
+            }
 
             if breakdown.bonusCategory != nil, breakdown.bonusRate > 0 {
                 FormDivider()
