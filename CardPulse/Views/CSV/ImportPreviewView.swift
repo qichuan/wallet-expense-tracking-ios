@@ -15,6 +15,9 @@ struct ImportPreviewRow: Identifiable {
     let card: String
     let date: String
     let note: String
+    let latitude: String
+    let longitude: String
+    let placeName: String
 }
 
 struct ImportPreviewView: View {
@@ -206,6 +209,9 @@ private extension ImportPreviewView {
         df.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let date = df.date(from: row.date) ?? Date()
         let card: Card? = row.card.isEmpty ? nil : makeTempCard(name: row.card)
+        let latitude = Double(row.latitude)
+        let longitude = Double(row.longitude)
+        let hasCoordinate = latitude != nil && longitude != nil
         return Transaction(
             merchant: row.merchant,
             amount: amount,
@@ -213,7 +219,10 @@ private extension ImportPreviewView {
             category: row.category.isEmpty ? nil : row.category,
             note: row.note.isEmpty ? nil : row.note,
             card: card,
-            currency: row.currency
+            currency: row.currency,
+            latitude: hasCoordinate ? latitude : nil,
+            longitude: hasCoordinate ? longitude : nil,
+            placeName: row.placeName.isEmpty ? nil : row.placeName
         )
     }
 }

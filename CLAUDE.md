@@ -122,7 +122,7 @@ The `Theme/` folder is the single source of truth for all visual tokens:
 - **Categories**: Canonical built-in categories are defined in `MerchantUtils.defaultCategories` and persisted as `SpendingCategory` records (seeded on first launch). Unknown categories normalize to `"Other"`. Use `MerchantUtils.normalizedCategory(for:)` when storing/displaying; do not hardcode category strings.
 - **Billing cycle**: A card's billing cycle runs from `(statement day of previous month + 1)` to `(statement day of current month)`. All cycle math lives in `CardUtils.swift`.
 - **Currency**: Every `Transaction` stores a `currency` code (ISO 4217). Always use `CurrencyUtils.parseCurrencyAndAmount(from:)` to extract currency + amount from raw strings. For display, use `CurrencyUtils.symbol(for:)`. Never hardcode currency symbols.
-- **CSV format**: `Merchant,Amount,Category,Card,Date,Note` with date format `yyyy-MM-dd HH:mm:ss`. The `Amount` field may include a currency prefix (e.g. `S$12.50`) — `ImportExportUtils` uses `CurrencyUtils.parseCurrencyAndAmount` to parse it.
+- **CSV format**: `Merchant,Amount,Currency,Category,Card,Date,Note,Latitude,Longitude,PlaceName` with date format `yyyy-MM-dd HH:mm:ss`. The `Amount` field may include a currency prefix (e.g. `S$12.50`) — `ImportExportUtils` uses `CurrencyUtils.parseCurrencyAndAmount` to parse it.
 - **Previews**: All SwiftUI `#Preview` blocks use `.modelContainer(ModelContainer.createMockContainer())` to get in-memory data.
 - **Dark mode only**: The app forces dark mode (set in `OnboardingFlow` and `MainTabView` via `.preferredColorScheme(.dark)`).
 - **Design tokens**: Always use `AppColors.*` for colors and `AppTypography.*` for fonts. Never inline colors or fonts in views.
