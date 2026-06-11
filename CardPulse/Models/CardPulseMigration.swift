@@ -345,12 +345,111 @@ enum SchemaV6: VersionedSchema {
     }
 }
 
-// MARK: - V7 Schema (current — Card gains `maxMilesCap` and `maxCashbackCap`)
+// MARK: - V7 Schema (frozen — Card gained `maxMilesCap` and `maxCashbackCap`)
+//
+// V7 freezes `Card`, `Transaction`, and `CardRewardRule` so V8's additions to the
+// live `Card` (`foreignRewardRate`, `currencyRules` relationship to the new
+// `CardCurrencyRule` model) don't change V7's per-stage checksum.
 
 enum SchemaV7: VersionedSchema {
     static var versionIdentifier = Schema.Version(7, 0, 0)
     static var models: [any PersistentModel.Type] {
-        [Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self]
+        [SchemaV7.Card.self, SchemaV7.Transaction.self, SpendingCategory.self, SchemaV7.CardRewardRule.self]
+    }
+
+    @Model final class Card {
+        var id: UUID
+        var name: String
+        var minimumSpendingAmount: Decimal
+        var hasMinimumSpending: Bool
+        var rewardType: RewardType
+        var createdAt: Date
+        var minimumSpendingByDayOfMonth: Int
+        var baseRewardRate: Decimal = 0
+        var roundingBlock: Decimal = 1
+        var maxMilesCap: Decimal = 0
+        var maxCashbackCap: Decimal = 0
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV7.Transaction.card)
+        var transactions: [SchemaV7.Transaction] = []
+
+        @Relationship(deleteRule: .cascade, inverse: \SchemaV7.CardRewardRule.card)
+        var rewardRules: [SchemaV7.CardRewardRule] = []
+
+        init(name: String, minimumSpendingAmount: Decimal, hasMinimumSpending: Bool = false,
+             rewardType: RewardType = .none, minimumSpendingByDayOfMonth: Int = 1,
+             baseRewardRate: Decimal = 0, roundingBlock: Decimal = 1,
+             maxMilesCap: Decimal = 0, maxCashbackCap: Decimal = 0) {
+            self.id = UUID()
+            self.name = name
+            self.minimumSpendingAmount = minimumSpendingAmount
+            self.hasMinimumSpending = hasMinimumSpending
+            self.rewardType = rewardType
+            self.createdAt = Date()
+            self.minimumSpendingByDayOfMonth = minimumSpendingByDayOfMonth
+            self.baseRewardRate = baseRewardRate
+            self.roundingBlock = roundingBlock
+            self.maxMilesCap = maxMilesCap
+            self.maxCashbackCap = maxCashbackCap
+        }
+    }
+
+    @Model final class Transaction {
+        var id: UUID
+        var merchant: String
+        var amount: Decimal
+        var currency: String = ""
+        var date: Date
+        var category: String?
+        var note: String?
+        var card: SchemaV7.Card?
+        var isRecurring: Bool = false
+        var latitude: Double?
+        var longitude: Double?
+        var placeName: String?
+
+        init(merchant: String, amount: Decimal, date: Date,
+             category: String? = nil, note: String? = nil, card: SchemaV7.Card? = nil,
+             currency: String = "", isRecurring: Bool = false,
+             latitude: Double? = nil, longitude: Double? = nil, placeName: String? = nil) {
+            self.id = UUID()
+            self.merchant = merchant
+            self.amount = amount
+            self.currency = currency
+            self.date = date
+            self.category = category
+            self.note = note
+            self.card = card
+            self.isRecurring = isRecurring
+            self.latitude = latitude
+            self.longitude = longitude
+            self.placeName = placeName
+        }
+    }
+
+    @Model final class CardRewardRule {
+        var id: UUID
+        var card: SchemaV7.Card?
+        var categoryName: String
+        var rate: Decimal
+        var createdAt: Date
+
+        init(card: SchemaV7.Card? = nil, categoryName: String, rate: Decimal) {
+            self.id = UUID()
+            self.card = card
+            self.categoryName = categoryName
+            self.rate = rate
+            self.createdAt = Date()
+        }
+    }
+}
+
+// MARK: - V8 Schema (current — Card gains `foreignRewardRate` and the `CardCurrencyRule` model)
+
+enum SchemaV8: VersionedSchema {
+    static var versionIdentifier = Schema.Version(8, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self, CardCurrencyRule.self]
     }
 }
 
@@ -358,10 +457,10 @@ enum SchemaV7: VersionedSchema {
 
 enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self, SchemaV8.self]
     }
 
-    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7, migrateV7toV8] }
 
     /// V1 → V2: backfill `currency` on existing transactions using the user's stored default.
     /// Skipped when the user has not yet chosen a default currency — the onboarding
@@ -422,6 +521,14 @@ enum CardPulseMigrationPlan: SchemaMigrationPlan {
     static let migrateV6toV7 = MigrationStage.lightweight(
         fromVersion: SchemaV6.self,
         toVersion: SchemaV7.self
+    )
+
+    /// V7 → V8: add `foreignRewardRate` to `Card` and introduce the `CardCurrencyRule`
+    /// model. The rate defaults to `0` (foreign spending earns the base rate), so
+    /// SwiftData handles this as a lightweight migration.
+    static let migrateV7toV8 = MigrationStage.lightweight(
+        fromVersion: SchemaV7.self,
+        toVersion: SchemaV8.self
     )
 }
 

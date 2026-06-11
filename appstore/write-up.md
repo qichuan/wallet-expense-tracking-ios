@@ -22,6 +22,7 @@ CardPulse takes the mental load off.
 v2.6
 - Reward caps — Set per-cycle limits for miles/cashback on each card, and watch your progress toward the cap.
 - Japanese yen support — Yen purchases from Apple Pay now import with the right currency and amount.
+- Improve the auto-track setup video
 - Some performance improvements and bug fixes
 
 v2.5

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - Set a foreign-spending reward rate and per-currency rates on each card (e.g. 2.4 mpd overseas, 3 mpd for MYR), shown in the transaction reward breakdown
 
 ## 2.6 - 2026-06-08
 - [ADDED] - Set separate per-cycle caps for miles and cashback on each card; the card detail screen shows your progress toward the cap and alerts you when it is reached
