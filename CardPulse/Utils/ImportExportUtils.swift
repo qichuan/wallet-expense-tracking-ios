@@ -212,6 +212,9 @@ struct ImportExportUtils {
         let iCard     = idx(["card"])
         let iDate     = idx(["date"]) ?? 3
         let iNote     = idx(["note"])
+        let iLat      = idx(["latitude"])
+        let iLng      = idx(["longitude"])
+        let iPlace    = idx(["placename", "place name"])
 
         var rows: [ImportPreviewRow] = []
         for line in lines.dropFirst() {
@@ -224,7 +227,10 @@ struct ImportExportUtils {
                 category: (iCategory != nil && f.indices.contains(iCategory!)) ? f[iCategory!] : "",
                 card:     (iCard != nil && f.indices.contains(iCard!))         ? f[iCard!]     : "",
                 date:     f.indices.contains(iDate) ? f[iDate] : "",
-                note:     (iNote != nil && f.indices.contains(iNote!))         ? f[iNote!]     : ""
+                note:     (iNote != nil && f.indices.contains(iNote!))         ? f[iNote!]     : "",
+                latitude:  (iLat != nil && f.indices.contains(iLat!))          ? f[iLat!]      : "",
+                longitude: (iLng != nil && f.indices.contains(iLng!))          ? f[iLng!]      : "",
+                placeName: (iPlace != nil && f.indices.contains(iPlace!))      ? f[iPlace!]    : ""
             ))
         }
         return rows
@@ -544,6 +550,10 @@ struct ImportExportUtils {
             guard let amount = Decimal(string: row.amount),
                   let date = dateFormatter.date(from: row.date) else { continue }
             let card: Card? = row.card.isEmpty ? nil : nameToCard[row.card]
+            // A coordinate is only meaningful as a pair — drop half-parsed ones.
+            let latitude = Double(row.latitude)
+            let longitude = Double(row.longitude)
+            let hasCoordinate = latitude != nil && longitude != nil
             let txn = Transaction(
                 merchant: row.merchant,
                 amount: amount,
@@ -551,7 +561,10 @@ struct ImportExportUtils {
                 category: row.category.isEmpty ? nil : row.category,
                 note: row.note.isEmpty ? nil : row.note,
                 card: card,
-                currency: row.currency.isEmpty ? defaultCurrency : row.currency
+                currency: row.currency.isEmpty ? defaultCurrency : row.currency,
+                latitude: hasCoordinate ? latitude : nil,
+                longitude: hasCoordinate ? longitude : nil,
+                placeName: row.placeName.isEmpty ? nil : row.placeName
             )
             modelContext.insert(txn)
             txnAdded += 1
@@ -634,7 +647,7 @@ struct ImportExportUtils {
 
         // TRANSACTIONS
         out += "\(sectionMarkerPrefix)TRANSACTIONS\n"
-        out += "Merchant,Amount,Currency,Category,Card,Date,Note\n"
+        out += "Merchant,Amount,Currency,Category,Card,Date,Note,Latitude,Longitude,PlaceName\n"
         var request = FetchDescriptor<Transaction>()
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: startDate)
@@ -653,7 +666,11 @@ struct ImportExportUtils {
             let cardName = escapeCSVField(tx.card?.name ?? "")
             let dateString = dateFormatter.string(from: tx.date)
             let note = escapeCSVField(tx.note ?? "")
-            out += "\(merchant),\(amount),\(currency),\(category),\(cardName),\(dateString),\(note)\n"
+            // Double.description round-trips exactly, so re-importing restores the same coordinate.
+            let latitude = tx.latitude.map { String($0) } ?? ""
+            let longitude = tx.longitude.map { String($0) } ?? ""
+            let placeName = escapeCSVField(tx.placeName ?? "")
+            out += "\(merchant),\(amount),\(currency),\(category),\(cardName),\(dateString),\(note),\(latitude),\(longitude),\(placeName)\n"
         }
 
         return out
