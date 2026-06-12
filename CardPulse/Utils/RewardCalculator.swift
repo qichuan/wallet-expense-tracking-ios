@@ -138,9 +138,9 @@ enum RewardCalculator {
         let bonusCategory: String?
         let rewardType: RewardType
         let reward: Decimal
-        /// Currency the breakdown's amounts are denominated in. For miles this is the
-        /// default currency (the amount is FX-converted before the rate is applied);
-        /// for cashback it is the transaction's own currency.
+        /// Currency the breakdown's amounts are denominated in: the default currency
+        /// (the amount is FX-converted before the rate is applied), or the
+        /// transaction's own currency when no rate is cached.
         let currencyCode: String
         /// True when `amount` was FX-converted from the transaction's currency.
         var isConverted: Bool { currencyCode != transactionCurrency }

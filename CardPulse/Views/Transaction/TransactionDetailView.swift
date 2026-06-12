@@ -16,8 +16,8 @@ struct TransactionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
-    /// Observed so the reward breakdown (FX-converted for miles) recomputes when
-    /// cached exchange rates change while this sheet is open.
+    /// Observed so the FX-converted reward breakdown recomputes when cached
+    /// exchange rates change while this sheet is open.
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     @State private var showingEdit = false
@@ -239,8 +239,7 @@ struct TransactionDetailView: View {
     @ViewBuilder
     private func rewardSection(_ breakdown: RewardCalculator.Breakdown) -> some View {
         // Amounts in the breakdown are denominated in `breakdown.currencyCode` — for
-        // miles on foreign-currency spend that is the default currency, not the
-        // transaction's own.
+        // foreign-currency spend that is the default currency, not the transaction's own.
         let breakdownSymbol = CurrencyUtils.symbol(for: breakdown.currencyCode)
         let earnedText = RewardFormatter.format(breakdown.reward, type: breakdown.rewardType, currencySymbol: breakdownSymbol)
         let earnedColor: Color = {
