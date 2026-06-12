@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Calculate miles on the amount converted to your main currency, so foreign-currency transactions no longer show inflated miles
 - [CHANGED] - Include transaction location in CSV backups so exported places and coordinates are restored on import
 
 ## 2.6 - 2026-06-08

@@ -95,10 +95,13 @@ struct TransactionRow: View {
     /// `nil` if the card has no reward type or the rate evaluates to zero — we don't
     /// want to clutter the row with a "+0 miles" line.
     private var rewardText: String? {
-        guard let card = transaction.card,
-              card.rewardType != .none,
-              let value = RewardCalculator.reward(for: transaction),
-              value > 0 else { return nil }
+        guard let card = transaction.card, card.rewardType != .none else { return nil }
+        // Miles are computed on the FX-converted amount; cashback stays in the
+        // transaction's currency, matching the symbol shown next to it.
+        let reward = card.rewardType == .miles
+            ? RewardCalculator.convertedReward(for: transaction)
+            : RewardCalculator.reward(for: transaction)
+        guard let value = reward, value > 0 else { return nil }
         let symbol = CurrencyUtils.symbol(for: transaction.resolvedCurrency)
         return "+" + RewardFormatter.format(value, type: card.rewardType, currencySymbol: symbol)
     }
