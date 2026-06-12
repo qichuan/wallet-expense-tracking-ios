@@ -87,9 +87,9 @@ final class RewardConversionTests: XCTestCase {
 
         // 400 MYR × 0.25 = S$100 → 100 × 1.4 = 140 miles.
         XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(140))
-        // The unconverted variant would inflate this to 400 × 1.4 = 560 — the
-        // exact bug this pipeline guards against.
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(560))
+        // Applying the rate to the raw amount would inflate this to 400 × 1.4 = 560 —
+        // the exact bug this pipeline guards against.
+        XCTAssertEqual(RewardCalculator.reward(amount: Decimal(400), category: nil, card: card), Decimal(560))
     }
 
     /// Block rounding must apply to the *converted* amount, matching the UOB-style
@@ -109,7 +109,8 @@ final class RewardConversionTests: XCTestCase {
         let tx = makeTxn(amount: Decimal(100), currency: "SGD", card: card, in: ctx)
 
         XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(140))
-        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), RewardCalculator.reward(for: tx))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx),
+                       RewardCalculator.reward(amount: Decimal(100), category: nil, card: card))
     }
 
     // MARK: - Breakdown (what the transaction detail view renders)
@@ -161,9 +162,9 @@ final class RewardConversionTests: XCTestCase {
 
         // 400 MYR × 0.25 = S$100 → 100 × 2% = S$2 cashback.
         XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(2))
-        // The unconverted variant earns in MYR (RM8) — four times the value if
-        // misread as default currency.
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(8))
+        // Applying the rate to the raw amount would earn RM8 — four times the
+        // value if misread as default currency.
+        XCTAssertEqual(RewardCalculator.reward(amount: Decimal(400), category: nil, card: card), Decimal(8))
     }
 
     /// Block rounding must apply to the *converted* amount for cashback too:

@@ -17,18 +17,10 @@ import Foundation
 /// is miles-per-dollar (`1.4` → 1.4 mpd).
 enum RewardCalculator {
 
-    /// The reward earned for a single transaction in the card's reward unit
-    /// (cashback in the transaction currency, or miles). Returns `nil` for
-    /// transactions on a card with `rewardType == .none` or with no card.
-    static func reward(for transaction: Transaction) -> Decimal? {
-        guard let card = transaction.card, card.rewardType != .none else { return nil }
-        return reward(amount: transaction.amount,
-                      category: transaction.category,
-                      card: card)
-    }
-
-    /// Pure-function variant — exposed for previews/tests where wiring up a
-    /// SwiftData `Transaction` would be overkill.
+    /// Pure reward formula on an already-resolved amount — exposed for previews/tests
+    /// where wiring up a SwiftData `Transaction` would be overkill. App surfaces must
+    /// not apply this to a raw transaction amount; use `convertedReward(for:)`, which
+    /// FX-converts first (issue #36).
     static func reward(amount: Decimal, category: String?, card: Card) -> Decimal? {
         guard card.rewardType != .none else { return nil }
         let rounded = roundDown(amount, toBlock: card.roundingBlock)
@@ -44,8 +36,10 @@ enum RewardCalculator {
     }
 
     /// Reward for a transaction, computed on the amount converted to the user's
-    /// default currency. Use this for card-level cycle totals so mixed-currency
-    /// spend (and the miles/cashback it earns) rolls up in a single currency.
+    /// default currency (convert → block-round → rate). The canonical per-transaction
+    /// reward — every app surface (rows, summaries, cycle totals) goes through this,
+    /// so mixed-currency spend always rolls up in a single currency. Returns `nil`
+    /// for transactions on a card with `rewardType == .none` or with no card.
     static func convertedReward(for transaction: Transaction) -> Decimal? {
         guard let card = transaction.card, card.rewardType != .none else { return nil }
         return reward(amount: transaction.amountInDefaultCurrency,

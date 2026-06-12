@@ -55,7 +55,7 @@ final class RewardCalculatorTests: XCTestCase {
         let card = makeCard(rewardType: .cashback, baseRate: 1.6, in: ctx)
         let tx = makeTxn(amount: Decimal(string: "1050.50")!, card: card, in: ctx)
 
-        let reward = RewardCalculator.reward(for: tx)
+        let reward = RewardCalculator.convertedReward(for: tx)
         XCTAssertNotNil(reward)
         // 1050.50 * 0.016 = 16.808
         XCTAssertEqual(reward, Decimal(string: "16.808"))
@@ -67,7 +67,7 @@ final class RewardCalculatorTests: XCTestCase {
         let tx = makeTxn(amount: Decimal(string: "36.35")!, card: card, in: ctx)
 
         // 36.35 * 0.02 = 0.727
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(string: "0.727"))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(string: "0.727"))
     }
 
     // MARK: - Miles
@@ -78,7 +78,7 @@ final class RewardCalculatorTests: XCTestCase {
         let tx = makeTxn(amount: Decimal(string: "100")!, card: card, in: ctx)
 
         // 100 * 1.4 = 140
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(140))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(140))
     }
 
     /// UOB-style $5 rounding-down example from the design brief:
@@ -88,7 +88,7 @@ final class RewardCalculatorTests: XCTestCase {
         let card = makeCard(rewardType: .miles, baseRate: 1.4, block: 5, in: ctx)
         let tx = makeTxn(amount: Decimal(string: "36.35")!, card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(49))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(49))
     }
 
     func testMiles_BlockRoundingDoesNotRoundUp() throws {
@@ -97,7 +97,7 @@ final class RewardCalculatorTests: XCTestCase {
         // 4.99 must round DOWN to 0, not UP to 5.
         let tx = makeTxn(amount: Decimal(string: "4.99")!, card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(0))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(0))
     }
 
     func testMiles_ExactBlockBoundary() throws {
@@ -105,7 +105,7 @@ final class RewardCalculatorTests: XCTestCase {
         let card = makeCard(rewardType: .miles, baseRate: 1.0, block: 5, in: ctx)
         let tx = makeTxn(amount: Decimal(string: "35.00")!, card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(35))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(35))
     }
 
     // MARK: - Category bonus
@@ -122,8 +122,8 @@ final class RewardCalculatorTests: XCTestCase {
         let bonus = makeTxn(amount: Decimal(100), category: "Travel", card: card, in: ctx)
         let baseline = makeTxn(amount: Decimal(100), category: "Shopping", card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: bonus), Decimal(400))
-        XCTAssertEqual(RewardCalculator.reward(for: baseline), Decimal(140))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: bonus), Decimal(400))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: baseline), Decimal(140))
     }
 
     func testCategoryBonus_CaseInsensitiveMatch() throws {
@@ -137,7 +137,7 @@ final class RewardCalculatorTests: XCTestCase {
         let tx = makeTxn(amount: Decimal(100), category: "FOOD & drinks", card: card, in: ctx)
 
         // 100 * 0.04 = 4.0
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(string: "4.0"))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(string: "4.0"))
     }
 
     func testCategoryBonus_UnmatchedCategory_FallsBackToBase() throws {
@@ -150,7 +150,7 @@ final class RewardCalculatorTests: XCTestCase {
         )
         let tx = makeTxn(amount: Decimal(50), category: "Other", card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(70)) // 50 * 1.4
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(70)) // 50 * 1.4
     }
 
     func testCategoryBonus_NilCategory_UsesBaseRate() throws {
@@ -163,7 +163,7 @@ final class RewardCalculatorTests: XCTestCase {
         )
         let tx = makeTxn(amount: Decimal(100), category: nil, card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(140))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(140))
     }
 
     // MARK: - Edge cases
@@ -173,14 +173,14 @@ final class RewardCalculatorTests: XCTestCase {
         let card = makeCard(rewardType: .none, baseRate: 0, in: ctx)
         let tx = makeTxn(amount: Decimal(100), card: card, in: ctx)
 
-        XCTAssertNil(RewardCalculator.reward(for: tx))
+        XCTAssertNil(RewardCalculator.convertedReward(for: tx))
     }
 
     func testReward_NilForCardlessTransaction() throws {
         let ctx = try makeContext()
         let tx = makeTxn(amount: Decimal(100), card: nil, in: ctx)
 
-        XCTAssertNil(RewardCalculator.reward(for: tx))
+        XCTAssertNil(RewardCalculator.convertedReward(for: tx))
     }
 
     func testReward_ZeroRate_ReturnsZero() throws {
@@ -188,7 +188,7 @@ final class RewardCalculatorTests: XCTestCase {
         let card = makeCard(rewardType: .cashback, baseRate: 0, in: ctx)
         let tx = makeTxn(amount: Decimal(100), card: card, in: ctx)
 
-        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(0))
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(0))
     }
 
     // MARK: - Breakdown
