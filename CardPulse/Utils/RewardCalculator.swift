@@ -108,20 +108,18 @@ enum RewardCalculator {
     }
 
     /// Aggregate of rewards across multiple transactions, bucketed by reward type.
-    /// Miles are computed on amounts converted to the default currency (miles have no
-    /// currency of their own, so mixed-currency spend must be normalised first).
-    /// Cashback sums are in the *transaction's* currency — callers that mix currencies
-    /// should already be FX-converting upstream.
+    /// Both buckets are computed on amounts converted to the default currency, so
+    /// mixed-currency spend rolls up correctly: the cashback sum is denominated in
+    /// the default currency.
     static func aggregate(_ transactions: [Transaction]) -> (miles: Decimal, cashback: Decimal) {
         var miles: Decimal = 0
         var cashback: Decimal = 0
         for tx in transactions {
-            guard let card = tx.card, card.rewardType != .none else { continue }
+            guard let card = tx.card,
+                  let value = convertedReward(for: tx) else { continue }
             switch card.rewardType {
-            case .miles:
-                if let value = convertedReward(for: tx) { miles += value }
-            case .cashback:
-                if let value = reward(for: tx) { cashback += value }
+            case .miles: miles += value
+            case .cashback: cashback += value
             case .none: break
             }
         }
@@ -151,20 +149,14 @@ enum RewardCalculator {
 
     static func breakdown(for transaction: Transaction) -> Breakdown? {
         guard let card = transaction.card, card.rewardType != .none else { return nil }
-        // Miles have no currency of their own, so foreign spend is converted to the
-        // default currency before the per-dollar rate is applied. Cashback stays in
-        // the transaction's currency (the earned value is money in that currency).
-        let amount: Decimal
-        let currencyCode: String
-        if card.rewardType == .miles {
-            amount = transaction.amountInDefaultCurrency
-            currencyCode = CurrencyUtils.rateToDefault(from: transaction.resolvedCurrency) != nil
-                ? CurrencyUtils.defaultCurrencyCode
-                : transaction.resolvedCurrency
-        } else {
-            amount = transaction.amount
-            currencyCode = transaction.resolvedCurrency
-        }
+        // Rewards are earned in the card's (default) currency, so foreign spend is
+        // converted before the block rounding and rate are applied — for miles and
+        // cashback alike. When no rate is cached the raw amount is used and the
+        // breakdown keeps the transaction's currency label.
+        let amount = transaction.amountInDefaultCurrency
+        let currencyCode = CurrencyUtils.rateToDefault(from: transaction.resolvedCurrency) != nil
+            ? CurrencyUtils.defaultCurrencyCode
+            : transaction.resolvedCurrency
         let rounded = roundDown(amount, toBlock: card.roundingBlock)
         let raw = transaction.category?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let bonus = card.rewardRules.first {

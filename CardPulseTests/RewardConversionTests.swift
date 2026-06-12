@@ -7,10 +7,10 @@ import XCTest
 import SwiftData
 @testable import CardPulse
 
-/// Covers the FX-conversion step of miles calculation (issue #36): foreign-currency
+/// Covers the FX-conversion step of reward calculation (issue #36): foreign-currency
 /// spend is converted to the default currency, block-rounded, and only then
-/// multiplied by the miles-per-dollar rate — the same pipeline the transaction
-/// row and detail breakdown render.
+/// multiplied by the reward rate — for miles and cashback alike. This is the same
+/// pipeline the transaction row and detail breakdown render.
 ///
 /// The conversion path reads `UserDefaults.standard` through `CurrencyUtils`, so
 /// `setUp` seeds a deterministic default currency and rate cache and `tearDown`
@@ -139,16 +139,41 @@ final class RewardConversionTests: XCTestCase {
         XCTAssertFalse(breakdown.isConverted)
     }
 
-    func testBreakdown_ForeignCashback_StaysInTransactionCurrency() throws {
+    func testBreakdown_ForeignCashback_ShowsConvertedAmountsAndDefaultCurrency() throws {
         let ctx = try makeContext()
         let card = makeCard(rewardType: .cashback, baseRate: 2.0, in: ctx)
-        let tx = makeTxn(amount: Decimal(100), currency: "MYR", card: card, in: ctx)
+        let tx = makeTxn(amount: Decimal(400), currency: "MYR", card: card, in: ctx)
 
         let breakdown = try XCTUnwrap(RewardCalculator.breakdown(for: tx))
-        XCTAssertEqual(breakdown.amount, Decimal(100))      // raw MYR amount
-        XCTAssertEqual(breakdown.currencyCode, "MYR")
-        XCTAssertFalse(breakdown.isConverted)
-        XCTAssertEqual(breakdown.reward, Decimal(2))        // 100 × 2% in MYR
+        XCTAssertEqual(breakdown.amount, Decimal(100))      // 400 MYR × 0.25
+        XCTAssertEqual(breakdown.currencyCode, "SGD")
+        XCTAssertEqual(breakdown.transactionCurrency, "MYR")
+        XCTAssertTrue(breakdown.isConverted)
+        XCTAssertEqual(breakdown.reward, Decimal(2))        // S$100 × 2%
+    }
+
+    // MARK: - Cashback conversion
+
+    func testForeignCashback_ConvertsToDefaultCurrencyBeforeRate() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 2.0, in: ctx)
+        let tx = makeTxn(amount: Decimal(400), currency: "MYR", card: card, in: ctx)
+
+        // 400 MYR × 0.25 = S$100 → 100 × 2% = S$2 cashback.
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(2))
+        // The unconverted variant earns in MYR (RM8) — four times the value if
+        // misread as default currency.
+        XCTAssertEqual(RewardCalculator.reward(for: tx), Decimal(8))
+    }
+
+    /// Block rounding must apply to the *converted* amount for cashback too:
+    /// 145.40 MYR → S$36.35 → $5 block → S$35 → 35 × 2% = S$0.70.
+    func testForeignCashback_BlockRoundingAppliesToConvertedAmount() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 2.0, block: 5, in: ctx)
+        let tx = makeTxn(amount: Decimal(string: "145.40")!, currency: "MYR", card: card, in: ctx)
+
+        XCTAssertEqual(RewardCalculator.convertedReward(for: tx), Decimal(string: "0.7"))
     }
 
     // MARK: - Missing-rate fallback
@@ -180,5 +205,16 @@ final class RewardConversionTests: XCTestCase {
         ]
 
         XCTAssertEqual(RewardCalculator.aggregate(txs).miles, Decimal(200))
+    }
+
+    func testAggregate_MixedCurrencyCashback_SumsInDefaultCurrency() throws {
+        let ctx = try makeContext()
+        let card = makeCard(rewardType: .cashback, baseRate: 1.0, in: ctx)
+        let txs = [
+            makeTxn(amount: Decimal(100), currency: "SGD", card: card, in: ctx), // S$1.00
+            makeTxn(amount: Decimal(400), currency: "MYR", card: card, in: ctx), // S$100 → S$1.00
+        ]
+
+        XCTAssertEqual(RewardCalculator.aggregate(txs).cashback, Decimal(2))
     }
 }
