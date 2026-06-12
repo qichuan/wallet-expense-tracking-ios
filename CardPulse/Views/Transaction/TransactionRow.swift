@@ -95,11 +95,16 @@ struct TransactionRow: View {
     /// `nil` if the card has no reward type or the rate evaluates to zero — we don't
     /// want to clutter the row with a "+0 miles" line.
     private var rewardText: String? {
-        guard let card = transaction.card,
-              card.rewardType != .none,
-              let value = RewardCalculator.reward(for: transaction),
+        guard let card = transaction.card, card.rewardType != .none else { return nil }
+        // Rewards are computed on the FX-converted amount, so cashback is denominated
+        // in the default currency — unless no rate is cached, in which case the raw
+        // amount was used and the transaction's own symbol is the honest label.
+        guard let value = RewardCalculator.convertedReward(for: transaction),
               value > 0 else { return nil }
-        let symbol = CurrencyUtils.symbol(for: transaction.resolvedCurrency)
+        let code = CurrencyUtils.rateToDefault(from: transaction.resolvedCurrency) != nil
+            ? defaultCurrencyCode
+            : transaction.resolvedCurrency
+        let symbol = CurrencyUtils.symbol(for: code)
         return "+" + RewardFormatter.format(value, type: card.rewardType, currencySymbol: symbol)
     }
 

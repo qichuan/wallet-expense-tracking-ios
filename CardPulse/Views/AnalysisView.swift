@@ -126,32 +126,11 @@ struct AnalysisView: View {
 
     // MARK: - Rewards summary
 
-    /// Aggregate miles + cashback earned in the selected range. Cashback is FX-converted
-    /// to the default currency using the same cached rates as `amountInDefault`.
+    /// Aggregate miles + cashback earned in the selected range, both computed on
+    /// amounts FX-converted to the default currency (see `RewardCalculator.aggregate`).
+    /// Recomputed on rate changes via the `exchangeRatesData` @AppStorage observation.
     private var rewardSummary: (miles: Decimal, cashback: Decimal) {
-        var miles: Decimal = 0
-        var cashback: Double = 0
-        for tx in filteredTransactions {
-            guard let card = tx.card,
-                  let value = RewardCalculator.reward(for: tx) else { continue }
-            switch card.rewardType {
-            case .miles:
-                miles += value
-            case .cashback:
-                let raw = Double(truncating: value as NSDecimalNumber)
-                let txCode = tx.resolvedCurrency
-                let converted: Double
-                if txCode != defaultCurrencyCode, let rate = cachedRates[txCode] {
-                    converted = raw * rate
-                } else {
-                    converted = raw
-                }
-                cashback += converted
-            case .none:
-                break
-            }
-        }
-        return (miles, Decimal(cashback))
+        RewardCalculator.aggregate(filteredTransactions)
     }
 
     // MARK: - Donut data

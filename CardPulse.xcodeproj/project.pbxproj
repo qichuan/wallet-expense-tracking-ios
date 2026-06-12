@@ -15,6 +15,7 @@
 		2EC114E52EDBFC4E00889086 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2EC114E42EDBFC4E00889086 /* FirebaseAnalytics */; };
 		4973E47AB83EBFFD431047A5 /* CurrencyParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */; };
 		ABCDEF1234567890ABCDEF01 /* RewardCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */; };
+		ABCDEF1234567890ABCDEF03 /* RewardConversionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */; };
 		E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C3ADE3BAF41D282E245C402 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,7 @@
 		2EA927252F94F7C7008F0355 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2EBD3BFA2EAF392700295A20 /* CardPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CardPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RewardCalculatorTests.swift; sourceTree = "<group>"; };
+		ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RewardConversionTests.swift; sourceTree = "<group>"; };
 		D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrencyParsingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -183,6 +185,7 @@
 			children = (
 				EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */,
 				ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */,
+				ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */,
 			);
 			path = CardPulseTests;
 			sourceTree = "<group>";
@@ -343,6 +346,7 @@
 			files = (
 				4973E47AB83EBFFD431047A5 /* CurrencyParsingTests.swift in Sources */,
 				ABCDEF1234567890ABCDEF01 /* RewardCalculatorTests.swift in Sources */,
+				ABCDEF1234567890ABCDEF03 /* RewardConversionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -371,7 +375,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CardPulseWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CardPulseWidget/Info.plist;
@@ -405,7 +409,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CardPulseWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CardPulseWidget/Info.plist;
@@ -560,7 +564,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CardPulse/CardPulse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -603,7 +607,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CardPulse/CardPulse.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = Z88PXL4DBF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

@@ -16,6 +16,9 @@ struct TransactionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    /// Observed so the FX-converted reward breakdown recomputes when cached
+    /// exchange rates change while this sheet is open.
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     @State private var showingEdit = false
     /// Camera for the embedded location map. Kept in state (rather than seeded once via
@@ -235,7 +238,10 @@ struct TransactionDetailView: View {
 
     @ViewBuilder
     private func rewardSection(_ breakdown: RewardCalculator.Breakdown) -> some View {
-        let earnedText = RewardFormatter.format(breakdown.reward, type: breakdown.rewardType, currencySymbol: currencySymbol)
+        // Amounts in the breakdown are denominated in `breakdown.currencyCode` — for
+        // foreign-currency spend that is the default currency, not the transaction's own.
+        let breakdownSymbol = CurrencyUtils.symbol(for: breakdown.currencyCode)
+        let earnedText = RewardFormatter.format(breakdown.reward, type: breakdown.rewardType, currencySymbol: breakdownSymbol)
         let earnedColor: Color = {
             switch breakdown.rewardType {
             case .miles:    return AppColors.rewardMiles
@@ -245,12 +251,12 @@ struct TransactionDetailView: View {
         }()
 
         FormSection("Reward Calculation") {
-            calcRow(label: "Transaction amount",
-                    value: format(amount: breakdown.amount))
+            calcRow(label: breakdown.isConverted ? "Amount in \(breakdown.currencyCode)" : "Transaction amount",
+                    value: format(amount: breakdown.amount, symbol: breakdownSymbol))
 
             FormDivider()
             calcRow(label: roundingLabel(block: breakdown.roundingBlock),
-                    value: format(amount: breakdown.rounded))
+                    value: format(amount: breakdown.rounded, symbol: breakdownSymbol))
 
             FormDivider()
             calcRow(label: "Base rate",
@@ -306,9 +312,9 @@ struct TransactionDetailView: View {
         return "Rounded down to $\(String(format: "%.0f", n)) block"
     }
 
-    private func format(amount: Decimal) -> String {
+    private func format(amount: Decimal, symbol: String? = nil) -> String {
         let value = Double(truncating: amount as NSDecimalNumber)
-        return String(format: "%@%.2f", currencySymbol, value)
+        return String(format: "%@%.2f", symbol ?? currencySymbol, value)
     }
 
     private func format(rate: Decimal, type: RewardType) -> String {
