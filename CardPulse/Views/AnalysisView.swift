@@ -124,6 +124,16 @@ struct AnalysisView: View {
         filteredTransactions.sorted { $0.date > $1.date }
     }
 
+    /// Located transactions in the selected range, each converted to the default
+    /// currency, for the embedded map. Empty when nothing in range has a coordinate
+    /// (the map card is hidden in that case).
+    private var mapPoints: [MapTransactionPoint] {
+        filteredTransactions.compactMap { tx in
+            guard let coordinate = tx.coordinate else { return nil }
+            return MapTransactionPoint(coordinate: coordinate, amount: amountInDefault(tx))
+        }
+    }
+
     // MARK: - Rewards summary
 
     /// Aggregate miles + cashback earned in the selected range, both computed on
@@ -340,6 +350,14 @@ struct AnalysisView: View {
                         } else {
                             stackedBarCard
                                 .padding(.horizontal, 20)
+
+                            if !mapPoints.isEmpty {
+                                TransactionLocationMapCard(
+                                    points: mapPoints,
+                                    currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode)
+                                )
+                                .padding(.horizontal, 20)
+                            }
                         }
                     }
                     .padding(.bottom, 40)
