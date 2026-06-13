@@ -34,7 +34,11 @@ struct TransactionLocationMapCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionLabel(text: "Places")
-            Map(position: $cameraPosition, interactionModes: [.pan, .zoom]) {
+            // Non-interactive: the card lives inside the Analysis ScrollView, and an
+            // interactive map would swallow the vertical scroll gesture. The camera
+            // auto-fits all points, so manual panning isn't needed (matches the
+            // read-only map on the transaction detail screen).
+            Map(position: $cameraPosition, interactionModes: []) {
                 ForEach(clusters) { cluster in
                     Annotation("", coordinate: cluster.coordinate) {
                         clusterBubble(cluster)
@@ -43,6 +47,7 @@ struct TransactionLocationMapCard: View {
             }
             .frame(height: 220)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .allowsHitTesting(false)
             .onAppear(perform: fitToPoints)
             .onChange(of: pointsKey) { fitToPoints() }
         }
