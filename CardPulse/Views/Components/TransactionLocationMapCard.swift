@@ -89,8 +89,7 @@ struct TransactionLocationMapCard: View {
         MapTransactionPoint(coordinate: .init(latitude: 1.3521, longitude: 103.8198), amount: 120),
         MapTransactionPoint(coordinate: .init(latitude: 1.4927, longitude: 103.7414), amount: 65), // JB-ish
     ]
-    return TransactionLocationMapCard(points: singapore, currencySymbol: "$")
+    TransactionLocationMapCard(points: singapore, currencySymbol: "$")
         .padding()
         .background(AppColors.backgroundPrimary)
-        .modelContainer(ModelContainer.createMockContainer())
 }
