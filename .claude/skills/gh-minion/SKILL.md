@@ -5,7 +5,7 @@ description: Reads a GitHub issue, implements the feature on a new branch, updat
 
 # gh-minion
 
-End-to-end implementation of a GitHub issue: fetch ticket → branch → implement → changelog → PR → senior-engineer review.
+End-to-end implementation of a GitHub issue: fetch ticket → branch → implement → changelog → bump build → PR → senior-engineer review.
 
 ## Invocation
 
@@ -100,9 +100,28 @@ Match the tone and length of existing entries: short, user-facing, present-tense
 
 If a bullet from the current change already exists under the placeholder, do not duplicate it.
 
-### 6. Commit
+### 6. Bump the build number
 
-Stage only the files touched by this change (avoid `git add -A`). Create a single commit with a message that:
+Always increment the build number so every PR produces an installable build. Bump `CURRENT_PROJECT_VERSION` by 1 across **all** build configurations in `CardPulse.xcodeproj/project.pbxproj` (it appears once per config for the app and widget targets — currently 4 occurrences). Do **not** touch `MARKETING_VERSION` — that is bumped only at release time via the `/release` skill.
+
+```bash
+# Read the current value, then replace every occurrence with current+1.
+grep -n "CURRENT_PROJECT_VERSION" CardPulse.xcodeproj/project.pbxproj
+sed -i '' 's/CURRENT_PROJECT_VERSION = <current>;/CURRENT_PROJECT_VERSION = <current+1>;/g' CardPulse.xcodeproj/project.pbxproj
+```
+
+After editing, confirm the new value appears the expected number of times and the file still parses:
+
+```bash
+grep -c "CURRENT_PROJECT_VERSION = <current+1>;" CardPulse.xcodeproj/project.pbxproj
+plutil -lint CardPulse.xcodeproj/project.pbxproj
+```
+
+All occurrences must share the same value — if they were already inconsistent, stop and tell the user rather than guessing.
+
+### 7. Commit
+
+Stage only the files touched by this change (avoid `git add -A`) — this includes `CardPulse.xcodeproj/project.pbxproj` from the build-number bump. Create a single commit with a message that:
 - Has a short subject line (under 70 chars)
 - References the issue in the body: `Closes #<num>`
 - Ends with the standard Co-Authored-By trailer
@@ -120,7 +139,7 @@ EOF
 )"
 ```
 
-### 7. Push and open the PR
+### 8. Push and open the PR
 
 ```bash
 git push -u origin <branch-name>
@@ -148,9 +167,9 @@ EOF
 )"
 ```
 
-Note the PR URL — you'll return it after the review in step 8.
+Note the PR URL — you'll return it after the review in step 9.
 
-### 8. Self-review the PR as a senior engineer
+### 9. Self-review the PR as a senior engineer
 
 Once the PR is open, change hats: review your own diff as critically as a senior engineer who *didn't* write it would in a code review. Review the **pushed** diff so you catch what actually landed, not your memory of the change:
 
