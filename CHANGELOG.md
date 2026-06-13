@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - See where you spent on a map below the Analysis chart, with nearby transactions grouped and totalled in your main currency
 - [CHANGED] - Calculate miles and cashback on the amount converted to your main currency, so foreign-currency transactions no longer show inflated rewards
 - [CHANGED] - Include transaction location in CSV backups so exported places and coordinates are restored on import
 
