@@ -30,6 +30,7 @@ enum MapSnapshotRenderer {
 
         let clusters = TransactionMapClustering.clusters(for: points)
         let markerFill = UIColor(AppColors.accent)
+        let markerStroke = UIColor(AppColors.onAccent)
 
         MKMapSnapshotter(options: options).start(with: .main) { snapshot, _ in
             guard let snapshot else {
@@ -47,7 +48,7 @@ enum MapSnapshotRenderer {
                                       width: radius * 2, height: radius * 2)
                     let dot = UIBezierPath(ovalIn: rect)
                     markerFill.setFill()
-                    UIColor.white.setStroke()
+                    markerStroke.setStroke()
                     dot.lineWidth = 2
                     dot.fill()
                     dot.stroke()
