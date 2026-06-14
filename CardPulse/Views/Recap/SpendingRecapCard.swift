@@ -36,7 +36,6 @@ struct SpendingRecap {
     /// Located points for the embedded map snapshot; empty hides the map.
     let mapPoints: [MapTransactionPoint]
 
-    var shareTitle: String { "My \(periodTitle) spending recap" }
     var hasRewards: Bool { miles > 0 || cashback > 0 }
 
     /// Caption shared alongside the recap image. Includes a download CTA + App Store
