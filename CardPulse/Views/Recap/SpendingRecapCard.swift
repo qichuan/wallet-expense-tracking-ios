@@ -38,6 +38,13 @@ struct SpendingRecap {
 
     var shareTitle: String { "My \(periodTitle) spending recap" }
     var hasRewards: Bool { miles > 0 || cashback > 0 }
+
+    /// Caption shared alongside the recap image. Includes a download CTA + App Store
+    /// link so anyone who sees the post can tap through and install CardPulse.
+    var shareCaption: String {
+        "My \(periodTitle) spending recap, tracked with CardPulse 📊\n"
+        + "Track your cards, spending and rewards: \(AppLinks.appStore.absoluteString)"
+    }
 }
 
 /// The visual recap. Rendered both on screen and (via `ImageRenderer`) into the shared

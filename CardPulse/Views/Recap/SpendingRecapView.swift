@@ -5,18 +5,17 @@
 
 import SwiftUI
 import UIKit
-import CoreTransferable
-import UniformTypeIdentifiers
 
 /// Sheet presenting the shareable recap. On appear it renders the map snapshot (if any)
-/// and then rasterises the card into a PNG for the share sheet, so the shared image and
-/// the on-screen card are identical.
+/// and then rasterises the card into an image, so the shared image and the on-screen card
+/// are identical. Sharing attaches the image plus a caption with an App Store download CTA.
 struct SpendingRecapView: View {
     let recap: SpendingRecap
 
     @Environment(\.dismiss) private var dismiss
     @State private var mapImage: UIImage?
     @State private var shareImage: UIImage?
+    @State private var showingShareSheet = false
 
     var body: some View {
         NavigationStack {
@@ -35,11 +34,8 @@ struct SpendingRecapView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if let shareImage {
-                        ShareLink(
-                            item: RecapShareImage(image: shareImage),
-                            preview: SharePreview(recap.shareTitle, image: Image(uiImage: shareImage))
-                        ) {
+                    if shareImage != nil {
+                        Button(action: { showingShareSheet = true }) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(AppTypography.navButton)
                                 .foregroundColor(AppColors.accent)
@@ -47,6 +43,13 @@ struct SpendingRecapView: View {
                     } else {
                         ProgressView()
                     }
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                if let shareImage {
+                    // Image first, then the CTA caption: social targets attach the image
+                    // and compose the caption (with the App Store link) as the post text.
+                    ActivityShareSheet(items: [shareImage, recap.shareCaption])
                 }
             }
         }
@@ -74,16 +77,5 @@ struct SpendingRecapView: View {
         )
         renderer.scale = 3
         shareImage = renderer.uiImage
-    }
-}
-
-/// Wraps the rendered recap so `ShareLink` exports it as a PNG file/image.
-struct RecapShareImage: Transferable {
-    let image: UIImage
-
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(exportedContentType: .png) { wrapper in
-            wrapper.image.pngData() ?? Data()
-        }
     }
 }
