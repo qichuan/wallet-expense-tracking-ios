@@ -51,6 +51,7 @@ struct AnalysisView: View {
     @State private var selectedDate: Date = Date()
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedTransaction: Transaction?
+    @State private var showingRecap = false
 
     // MARK: - Ranges
 
@@ -132,6 +133,48 @@ struct AnalysisView: View {
             guard let coordinate = tx.coordinate else { return nil }
             return MapTransactionPoint(coordinate: coordinate, amount: amountInDefault(tx))
         }
+    }
+
+    // MARK: - Recap
+
+    /// The shareable recap is offered for month and year views with at least one
+    /// transaction — week/day periods aren't "wrapped"-worthy.
+    private var canShareRecap: Bool {
+        (selectedGranularity == .month || selectedGranularity == .year) && !filteredTransactions.isEmpty
+    }
+
+    private var recapPeriodTitle: String {
+        let df = DateFormatter()
+        df.dateFormat = selectedGranularity == .year ? "yyyy" : "MMMM yyyy"
+        return df.string(from: selectedDate)
+    }
+
+    private var recapTopMerchant: SpendingRecap.Merchant? {
+        Dictionary(grouping: filteredTransactions) { $0.merchant }
+            .map { SpendingRecap.Merchant(name: $0.key, amount: $0.value.reduce(0) { $0 + amountInDefault($1) }) }
+            .max { $0.amount < $1.amount }
+    }
+
+    private var spendingRecap: SpendingRecap {
+        let rewards = rewardSummary
+        return SpendingRecap(
+            periodTitle: recapPeriodTitle,
+            totalSpend: currentTotal,
+            currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode),
+            miles: rewards.miles,
+            cashback: rewards.cashback,
+            topCategories: donutSlices.prefix(3).map {
+                SpendingRecap.Category(
+                    name: $0.category,
+                    amount: Double(truncating: $0.amount as NSDecimalNumber),
+                    color: $0.color
+                )
+            },
+            topMerchant: recapTopMerchant,
+            transactionCount: filteredTransactions.count,
+            placesCount: TransactionMapClustering.clusters(for: mapPoints).count,
+            mapPoints: mapPoints
+        )
     }
 
     // MARK: - Rewards summary
@@ -321,7 +364,17 @@ struct AnalysisView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        BrandHeader(title: "Analysis")
+                        BrandHeader(title: "Analysis") {
+                            if canShareRecap {
+                                Button(action: { showingRecap = true }) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(AppTypography.iconLarge)
+                                        .foregroundColor(AppColors.accent)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Share spending recap")
+                            }
+                        }
 
                         SegmentedPillControl(
                             selection: $selectedGranularity,
@@ -373,6 +426,9 @@ struct AnalysisView: View {
             }
             .sheet(item: $selectedTransaction) { transaction in
                 TransactionDetailView(transaction: transaction)
+            }
+            .sheet(isPresented: $showingRecap) {
+                SpendingRecapView(recap: spendingRecap)
             }
         }
     }
