@@ -64,6 +64,13 @@ enum CycleNudgeScheduler {
         fireComponents.hour = 10
         fireComponents.minute = 0
 
+        // The reminder window for this cycle has already passed (the app wasn't opened
+        // before the lead date) → don't add a request that can never fire.
+        guard let fireDate = Calendar.current.date(from: fireComponents), fireDate > Date() else {
+            center.removePendingNotificationRequests(withIdentifiers: [id])
+            return
+        }
+
         let symbol = CurrencyUtils.symbol(for: CurrencyUtils.defaultCurrencyCode)
         let remaining = String(format: "%.0f", Double(truncating: card.remainingAmount as NSDecimalNumber))
         let dateFormatter = DateFormatter()
