@@ -35,8 +35,31 @@ enum CycleNudgeScheduler {
     /// User-configured days before the statement to fire the reminder, clamped to a
     /// sane range. Falls back to `defaultLeadDays` when unset.
     static var leadDays: Int {
-        let stored = UserDefaults.standard.integer(forKey: leadDaysKey)
-        return (1...30).contains(stored) ? stored : defaultLeadDays
+        resolvedLeadDays(stored: UserDefaults.standard.integer(forKey: leadDaysKey))
+    }
+
+    // MARK: - Pure decision logic (exposed for testing)
+
+    /// Clamps a stored lead-days value to `1...30`, falling back to `defaultLeadDays`
+    /// when out of range (including the `0` that `UserDefaults` returns when unset).
+    static func resolvedLeadDays(stored: Int) -> Int {
+        (1...30).contains(stored) ? stored : defaultLeadDays
+    }
+
+    /// Date components (the lead date at 10:00 local) at which a min-spend reminder for
+    /// `statementDate` should fire. `nil` only if date math fails.
+    static func reminderFireComponents(statementDate: Date, leadDays: Int, calendar: Calendar = .current) -> DateComponents? {
+        guard let fireBase = calendar.date(byAdding: .day, value: -leadDays, to: statementDate) else { return nil }
+        var components = calendar.dateComponents([.year, .month, .day], from: fireBase)
+        components.hour = 10
+        components.minute = 0
+        return components
+    }
+
+    /// The cap nudge fires at most once per cycle: only when this cycle differs from the
+    /// last cycle we fired for this card.
+    static func shouldFireCapNudge(lastFiredCycle: String?, currentCycle: String) -> Bool {
+        lastFiredCycle != currentCycle
     }
 
     private static let minSpendPrefix = "nudge.minspend."
@@ -69,12 +92,8 @@ enum CycleNudgeScheduler {
 
         guard
             let statementDay = Calendar.current.date(byAdding: .day, value: -1, to: card.currentCycleEnd),
-            let fireBase = Calendar.current.date(byAdding: .day, value: -leadDays, to: statementDay)
+            let fireComponents = reminderFireComponents(statementDate: statementDay, leadDays: leadDays)
         else { return }
-
-        var fireComponents = Calendar.current.dateComponents([.year, .month, .day], from: fireBase)
-        fireComponents.hour = 10
-        fireComponents.minute = 0
 
         // The reminder window for this cycle has already passed (the app wasn't opened
         // before the lead date) → don't add a request that can never fire.
@@ -122,7 +141,7 @@ enum CycleNudgeScheduler {
         // Fire at most once per cycle per card.
         let cycle = cycleKey(for: card)
         var ledger = capLedger()
-        guard ledger[card.id.uuidString] != cycle else { return }
+        guard shouldFireCapNudge(lastFiredCycle: ledger[card.id.uuidString], currentCycle: cycle) else { return }
 
         let unit = card.rewardType == .miles ? "miles" : "cashback"
         let content = UNMutableNotificationContent()

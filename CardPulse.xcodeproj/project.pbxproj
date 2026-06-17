@@ -17,6 +17,7 @@
 		ABCDEF1234567890ABCDEF01 /* RewardCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */; };
 		ABCDEF1234567890ABCDEF03 /* RewardConversionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */; };
 		ABCDEF1234567890ABCDEF05 /* TransactionMapClusteringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF06 /* TransactionMapClusteringTests.swift */; };
+		ABCDEF1234567890ABCDEF07 /* CycleNudgeSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF08 /* CycleNudgeSchedulerTests.swift */; };
 		E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C3ADE3BAF41D282E245C402 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +63,7 @@
 		ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RewardCalculatorTests.swift; sourceTree = "<group>"; };
 		ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RewardConversionTests.swift; sourceTree = "<group>"; };
 		ABCDEF1234567890ABCDEF06 /* TransactionMapClusteringTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TransactionMapClusteringTests.swift; sourceTree = "<group>"; };
+		ABCDEF1234567890ABCDEF08 /* CycleNudgeSchedulerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CycleNudgeSchedulerTests.swift; sourceTree = "<group>"; };
 		D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrencyParsingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -189,6 +191,7 @@
 				ABCDEF1234567890ABCDEF02 /* RewardCalculatorTests.swift */,
 				ABCDEF1234567890ABCDEF04 /* RewardConversionTests.swift */,
 				ABCDEF1234567890ABCDEF06 /* TransactionMapClusteringTests.swift */,
+				ABCDEF1234567890ABCDEF08 /* CycleNudgeSchedulerTests.swift */,
 			);
 			path = CardPulseTests;
 			sourceTree = "<group>";
@@ -351,6 +354,7 @@
 				ABCDEF1234567890ABCDEF01 /* RewardCalculatorTests.swift in Sources */,
 				ABCDEF1234567890ABCDEF03 /* RewardConversionTests.swift in Sources */,
 				ABCDEF1234567890ABCDEF05 /* TransactionMapClusteringTests.swift in Sources */,
+				ABCDEF1234567890ABCDEF07 /* CycleNudgeSchedulerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
