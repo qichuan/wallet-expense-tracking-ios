@@ -15,6 +15,7 @@ struct CardsView: View {
     @State private var showingAddGoal = false
     @State private var selectedCard: Card?
     @State private var filter: Filter = .all
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
 
     /// Persisted card display order as a JSON array of UUID strings.
     /// Stored outside SwiftData so the data model stays untouched.
@@ -170,6 +171,17 @@ struct CardsView: View {
                 selectedCard = nil
             }
         }
+        .onAppear { consumePendingNotificationCard() }
+        .onChange(of: notificationRouter.pendingCardId) { consumePendingNotificationCard() }
+    }
+
+    /// Opens the card referenced by a tapped cycle-nudge notification.
+    private func consumePendingNotificationCard() {
+        guard let id = notificationRouter.pendingCardId else { return }
+        if let card = cards.first(where: { $0.id == id }) {
+            selectedCard = card
+        }
+        notificationRouter.pendingCardId = nil
     }
 
     @ViewBuilder

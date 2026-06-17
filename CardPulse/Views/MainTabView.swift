@@ -59,6 +59,12 @@ struct MainTabView: View {
         }
     }
 
+    private func scheduleCycleNudges() {
+        guard hasCompletedOnboarding else { return }
+        let cards = self.cards
+        Task { await CycleNudgeScheduler.evaluate(cards: cards) }
+    }
+
     private func consumePendingNotificationTransaction() {
         guard let id = notificationRouter.pendingTransactionId else { return }
         var descriptor = FetchDescriptor<Transaction>(predicate: #Predicate { $0.id == id })
@@ -112,6 +118,9 @@ struct MainTabView: View {
             }
             refreshExchangeRatesIfNeeded()
             consumePendingNotificationTransaction()
+            // Cold launch from a nudge tap: surface the Cards tab so CardsView presents it.
+            if notificationRouter.pendingCardId != nil { selectedTab = 2 }
+            scheduleCycleNudges()
         }
         .onChange(of: cards.count) { writeWidgetData() }
         .onChange(of: selectedTab) { _, newTab in
@@ -130,7 +139,12 @@ struct MainTabView: View {
             if scenePhase == .active {
                 writeWidgetData()
                 refreshExchangeRatesIfNeeded()
+                scheduleCycleNudges()
             }
+        }
+        .onChange(of: notificationRouter.pendingCardId) {
+            // Switch to the Cards tab so CardsView can present the tapped card.
+            if notificationRouter.pendingCardId != nil { selectedTab = 2 }
         }
         .sheet(item: $transactionFromNotification) { tx in
             TransactionDetailView(transaction: tx)

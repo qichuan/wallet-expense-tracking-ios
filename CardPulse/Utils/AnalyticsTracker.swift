@@ -32,6 +32,9 @@ enum AnalyticsTracker {
         static let exportStarted = "export_started"
         static let exportCompleted = "export_completed"
 
+        // Nudges
+        static let nudgeCapFired = "nudge_cap_fired"
+
         // Misc
         static let contactDeveloper = "contact_developer"
         static let onboardingCompleted = "onboarding_completed"

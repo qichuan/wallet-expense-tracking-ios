@@ -18,7 +18,12 @@ final class NotificationRouter: NSObject, ObservableObject {
     /// consume this and reset it to nil after handling.
     @Published var pendingTransactionId: UUID?
 
+    /// Set when the user taps a cycle nudge notification (min-spend / cap).
+    /// Views consume this and reset it to nil after handling.
+    @Published var pendingCardId: UUID?
+
     nonisolated static let transactionIdUserInfoKey = "transactionId"
+    nonisolated static let cardIdUserInfoKey = "cardId"
 
     private override init() { super.init() }
 }
@@ -38,11 +43,16 @@ extension NotificationRouter: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        let raw = userInfo[NotificationRouter.transactionIdUserInfoKey] as? String
-        let id = raw.flatMap(UUID.init(uuidString:))
+        let transactionId = (userInfo[NotificationRouter.transactionIdUserInfoKey] as? String)
+            .flatMap(UUID.init(uuidString:))
+        let cardId = (userInfo[NotificationRouter.cardIdUserInfoKey] as? String)
+            .flatMap(UUID.init(uuidString:))
         Task { @MainActor in
-            if let id = id {
-                NotificationRouter.shared.pendingTransactionId = id
+            if let transactionId {
+                NotificationRouter.shared.pendingTransactionId = transactionId
+            }
+            if let cardId {
+                NotificationRouter.shared.pendingCardId = cardId
             }
             completionHandler()
         }
