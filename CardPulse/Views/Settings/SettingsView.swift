@@ -13,6 +13,7 @@ import UIKit
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("autoSyncWallet") private var autoSyncWallet = true
+    @AppStorage(CycleNudgeScheduler.leadDaysKey) private var nudgeLeadDays = CycleNudgeScheduler.defaultLeadDays
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
@@ -108,6 +109,18 @@ struct SettingsView: View {
                                         AnalyticsTracker.view("troubleshooting")
                                         showingTroubleshooting = true
                                     }
+                                )
+                            }
+
+                            // REMINDERS
+                            SettingsSection(title: "Reminders") {
+                                SettingsStepperRow(
+                                    title: "Min-spend reminder",
+                                    subtitle: nudgeLeadDays == 1
+                                        ? "1 day before statement"
+                                        : "\(nudgeLeadDays) days before statement",
+                                    value: $nudgeLeadDays,
+                                    range: 1...14
                                 )
                             }
 
@@ -564,6 +577,32 @@ struct SettingsToggleRow: View {
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
             Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .tint(AppColors.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+}
+
+struct SettingsStepperRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Text(subtitle)
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            Spacer()
+            Stepper("", value: $value, in: range)
                 .labelsHidden()
                 .tint(AppColors.accent)
         }

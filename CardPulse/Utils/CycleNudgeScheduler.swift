@@ -24,8 +24,20 @@ import UserNotifications
 @MainActor
 enum CycleNudgeScheduler {
 
-    /// Days before the statement date that the min-spend reminder fires.
-    static let leadDays = 3
+    /// Default days before the statement date that the min-spend reminder fires,
+    /// used when the user hasn't chosen a value.
+    static let defaultLeadDays = 3
+
+    /// UserDefaults key backing the user-configurable lead time. Settings writes this
+    /// via `@AppStorage`, so the two stay in sync.
+    static let leadDaysKey = "cycleNudgeLeadDays"
+
+    /// User-configured days before the statement to fire the reminder, clamped to a
+    /// sane range. Falls back to `defaultLeadDays` when unset.
+    static var leadDays: Int {
+        let stored = UserDefaults.standard.integer(forKey: leadDaysKey)
+        return (1...30).contains(stored) ? stored : defaultLeadDays
+    }
 
     private static let minSpendPrefix = "nudge.minspend."
     private static let capLedgerKey = "cycleNudge.capFiredCycle"
