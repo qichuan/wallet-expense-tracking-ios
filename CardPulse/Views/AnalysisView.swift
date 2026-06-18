@@ -53,6 +53,7 @@ struct AnalysisView: View {
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedTransaction: Transaction?
     @State private var showingRecap = false
+    @State private var showingCardFilter = false
     /// Custom-range bounds, used only when `selectedGranularity == .custom`.
     @State private var customStartDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
     @State private var customEndDate: Date = Date()
@@ -483,6 +484,9 @@ struct AnalysisView: View {
             .sheet(isPresented: $showingRecap) {
                 SpendingRecapView(recap: spendingRecap)
             }
+            .sheet(isPresented: $showingCardFilter) {
+                CardFilterSheet(cards: cards, selectedCardIDs: $selectedCardIDs)
+            }
             .onChange(of: cards.map { $0.id }) {
                 // Drop any filter selection whose card was deleted.
                 selectedCardIDs = selectedCardIDs.intersection(Set(cards.map { $0.id }))
@@ -532,57 +536,66 @@ struct AnalysisView: View {
 
     @ViewBuilder
     private var customDateNavigator: some View {
-        HStack(spacing: 12) {
-            customDatePill(title: "From", selection: $customStartDate)
-            customDatePill(title: "To", selection: $customEndDate)
+        HStack(spacing: 10) {
+            customDatePill(selection: $customStartDate)
+            Text("–")
+                .font(AppTypography.navLabel)
+                .foregroundColor(AppColors.textSecondary)
+            customDatePill(selection: $customEndDate)
         }
     }
 
     @ViewBuilder
-    private func customDatePill(title: String, selection: Binding<Date>) -> some View {
-        HStack(spacing: 8) {
-            Text(title)
-                .font(AppTypography.rowMeta)
-                .foregroundColor(AppColors.textSecondary)
-            // Capped at today (no lower bound, so the range can't invert); an inverted
-            // From/To pick is normalised in `currentRange`.
-            DatePicker("", selection: selection, in: ...Date(), displayedComponents: .date)
-                .labelsHidden()
-                .tint(AppColors.accent)
+    private func customDatePill(selection: Binding<Date>) -> some View {
+        // Capped at today (no lower bound, so the range can't invert); an inverted
+        // start/end pick is normalised in `currentRange`.
+        DatePicker("", selection: selection, in: ...Date(), displayedComponents: .date)
+            .labelsHidden()
+            .tint(AppColors.accent)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(AppColors.backgroundCard)
+            )
+    }
+
+    /// Compact summary of the active card filter for the filter button.
+    private var cardFilterSummary: String {
+        if selectedCardIDs.isEmpty { return "All cards" }
+        if selectedCardIDs.count == 1, let card = cards.first(where: { selectedCardIDs.contains($0.id) }) {
+            return card.name
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(AppColors.backgroundCard)
-        )
+        return "\(selectedCardIDs.count) cards"
     }
 
     @ViewBuilder
     private var cardFilterBar: some View {
         if cards.count >= 2 {
-            ScrollView(.horizontal, showsIndicators: false) {
+            Button(action: { showingCardFilter = true }) {
                 HStack(spacing: 8) {
-                    FilterChip(label: "All cards", selected: selectedCardIDs.isEmpty) {
-                        selectedCardIDs = []
-                    }
-                    ForEach(cards) { card in
-                        FilterChip(label: card.name, selected: selectedCardIDs.contains(card.id)) {
-                            toggleCard(card.id)
-                        }
-                    }
+                    Image(systemName: "creditcard")
+                        .font(AppTypography.iconMedium)
+                        .foregroundColor(AppColors.accent)
+                    Text(cardFilterSummary)
+                        .font(AppTypography.filterChip)
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(AppTypography.chevronSmall)
+                        .foregroundColor(AppColors.textSecondary)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(AppColors.backgroundCard)
+                )
             }
-        }
-    }
-
-    private func toggleCard(_ id: UUID) {
-        if selectedCardIDs.contains(id) {
-            selectedCardIDs.remove(id)
-        } else {
-            selectedCardIDs.insert(id)
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
         }
     }
 
