@@ -532,31 +532,29 @@ struct AnalysisView: View {
 
     @ViewBuilder
     private var customDateNavigator: some View {
-        HStack(spacing: 12) {
-            customDatePill(title: "From", selection: $customStartDate)
-            customDatePill(title: "To", selection: $customEndDate)
+        HStack(spacing: 10) {
+            customDatePill(selection: $customStartDate)
+            Text("–")
+                .font(AppTypography.navLabel)
+                .foregroundColor(AppColors.textSecondary)
+            customDatePill(selection: $customEndDate)
         }
     }
 
     @ViewBuilder
-    private func customDatePill(title: String, selection: Binding<Date>) -> some View {
-        HStack(spacing: 8) {
-            Text(title)
-                .font(AppTypography.rowMeta)
-                .foregroundColor(AppColors.textSecondary)
-            // Capped at today (no lower bound, so the range can't invert); an inverted
-            // From/To pick is normalised in `currentRange`.
-            DatePicker("", selection: selection, in: ...Date(), displayedComponents: .date)
-                .labelsHidden()
-                .tint(AppColors.accent)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(AppColors.backgroundCard)
-        )
+    private func customDatePill(selection: Binding<Date>) -> some View {
+        // Capped at today (no lower bound, so the range can't invert); an inverted
+        // start/end pick is normalised in `currentRange`.
+        DatePicker("", selection: selection, in: ...Date(), displayedComponents: .date)
+            .labelsHidden()
+            .tint(AppColors.accent)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(AppColors.backgroundCard)
+            )
     }
 
     @ViewBuilder
