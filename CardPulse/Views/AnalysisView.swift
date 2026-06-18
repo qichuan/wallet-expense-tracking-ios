@@ -36,13 +36,14 @@ struct AnalysisView: View {
     }
 
     enum Granularity: String, CaseIterable, Hashable {
-        case day, week, month, year
+        case day, week, month, year, custom
         var title: String {
             switch self {
             case .day: return "Day"
             case .week: return "Week"
             case .month: return "Month"
             case .year: return "Year"
+            case .custom: return "Custom"
             }
         }
     }
@@ -52,6 +53,11 @@ struct AnalysisView: View {
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedTransaction: Transaction?
     @State private var showingRecap = false
+    /// Custom-range bounds, used only when `selectedGranularity == .custom`.
+    @State private var customStartDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+    @State private var customEndDate: Date = Date()
+    /// Cards included in the analysis. Empty means "all cards".
+    @State private var selectedCardIDs: Set<UUID> = []
 
     // MARK: - Ranges
 
@@ -71,6 +77,13 @@ struct AnalysisView: View {
         case .year:
             let interval = cal.dateInterval(of: .year, for: date) ?? DateInterval(start: date, duration: 365 * 24 * 3600)
             return (interval.start, interval.end)
+        case .custom:
+            // Inclusive of both picked days; normalised so an inverted pick still works.
+            let lower = min(customStartDate, customEndDate)
+            let upper = max(customStartDate, customEndDate)
+            let start = cal.startOfDay(for: lower)
+            let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: upper)) ?? upper
+            return (start, end)
         }
     }
 
@@ -82,43 +95,60 @@ struct AnalysisView: View {
     private func previousDate(from date: Date, granularity: Granularity) -> Date {
         let cal = Calendar.current
         switch granularity {
-        case .day:   return cal.date(byAdding: .day, value: -1, to: date) ?? date
-        case .week:  return cal.date(byAdding: .weekOfYear, value: -1, to: date) ?? date
-        case .month: return cal.date(byAdding: .month, value: -1, to: date) ?? date
-        case .year:  return cal.date(byAdding: .year, value: -1, to: date) ?? date
+        case .day:    return cal.date(byAdding: .day, value: -1, to: date) ?? date
+        case .week:   return cal.date(byAdding: .weekOfYear, value: -1, to: date) ?? date
+        case .month:  return cal.date(byAdding: .month, value: -1, to: date) ?? date
+        case .year:   return cal.date(byAdding: .year, value: -1, to: date) ?? date
+        case .custom: return date // unused; custom uses `previousRange` directly
         }
     }
 
-    private var currentTotal: Double {
+    /// The equal-length window immediately preceding the current one, for the delta.
+    private var previousRange: (Date, Date) {
         let (start, end) = currentRange(for: selectedDate, granularity: selectedGranularity)
-        return transactions
-            .filter { $0.date >= start && $0.date < end }
-            .reduce(0.0) { $0 + amountInDefault($1) }
+        if selectedGranularity == .custom {
+            let duration = end.timeIntervalSince(start)
+            return (start.addingTimeInterval(-duration), start)
+        }
+        let prevDate = previousDate(from: selectedDate, granularity: selectedGranularity)
+        return currentRange(for: prevDate, granularity: selectedGranularity)
+    }
+
+    /// True when `tx` belongs to the active card filter (empty selection = all cards).
+    private func matchesCardFilter(_ tx: Transaction) -> Bool {
+        guard !selectedCardIDs.isEmpty else { return true }
+        guard let id = tx.card?.id else { return false }
+        return selectedCardIDs.contains(id)
+    }
+
+    private var currentTotal: Double {
+        filteredTransactions.reduce(0.0) { $0 + amountInDefault($1) }
     }
 
     private var previousTotal: Double {
-        let prevDate = previousDate(from: selectedDate, granularity: selectedGranularity)
-        let (start, end) = currentRange(for: prevDate, granularity: selectedGranularity)
+        let (start, end) = previousRange
         return transactions
-            .filter { $0.date >= start && $0.date < end }
+            .filter { $0.date >= start && $0.date < end && matchesCardFilter($0) }
             .reduce(0.0) { $0 + amountInDefault($1) }
     }
 
     private var previousPeriodLabel: String {
+        if selectedGranularity == .custom { return "previous period" }
         let df = DateFormatter()
         let prevDate = previousDate(from: selectedDate, granularity: selectedGranularity)
         switch selectedGranularity {
-        case .day:   df.dateFormat = "d MMM"
-        case .week:  df.dateFormat = "d MMM"
-        case .month: df.dateFormat = "MMMM"
-        case .year:  df.dateFormat = "yyyy"
+        case .day:    df.dateFormat = "d MMM"
+        case .week:   df.dateFormat = "d MMM"
+        case .month:  df.dateFormat = "MMMM"
+        case .year:   df.dateFormat = "yyyy"
+        case .custom: return "previous period" // unreachable
         }
         return df.string(from: prevDate)
     }
 
     private var filteredTransactions: [Transaction] {
         let (start, end) = currentRange(for: selectedDate, granularity: selectedGranularity)
-        return transactions.filter { $0.date >= start && $0.date < end }
+        return transactions.filter { $0.date >= start && $0.date < end && matchesCardFilter($0) }
     }
 
     private var sortedFilteredTransactions: [Transaction] {
@@ -223,72 +253,89 @@ struct AnalysisView: View {
         let amount: Double
     }
 
-    private var stackedSeries: [StackedItem] {
+    /// Time buckets for the stacked bar, as `(start, end, label)`. The aggregation loop
+    /// is shared across granularities; only the bucketing differs.
+    private func bucketDefinitions() -> [(start: Date, end: Date, label: String)] {
         let cal = Calendar.current
-        let (start, _) = currentRange(for: selectedDate, granularity: selectedGranularity)
+        let (rangeStart, rangeEnd) = currentRange(for: selectedDate, granularity: selectedGranularity)
+        let formatter = DateFormatter()
+        var defs: [(start: Date, end: Date, label: String)] = []
 
-        var bucketDates: [Date] = []
         switch selectedGranularity {
         case .day:
-            if let dayStart = cal.dateInterval(of: .day, for: start)?.start {
-                for h in 0..<24 {
-                    if let d = cal.date(byAdding: .hour, value: h, to: dayStart) { bucketDates.append(d) }
-                }
+            formatter.dateFormat = "HH"
+            let dayStart = cal.dateInterval(of: .day, for: rangeStart)?.start ?? rangeStart
+            for h in 0..<24 {
+                guard let s = cal.date(byAdding: .hour, value: h, to: dayStart) else { continue }
+                let e = cal.date(byAdding: .hour, value: 1, to: s) ?? s
+                defs.append((s, e, formatter.string(from: s)))
             }
         case .week:
-            if let week = cal.dateInterval(of: .weekOfYear, for: start) {
-                for d in 0..<7 {
-                    if let date = cal.date(byAdding: .day, value: d, to: week.start) { bucketDates.append(date) }
-                }
+            formatter.dateFormat = "EEE"
+            let weekStart = cal.dateInterval(of: .weekOfYear, for: rangeStart)?.start ?? rangeStart
+            for d in 0..<7 {
+                guard let s = cal.date(byAdding: .day, value: d, to: weekStart) else { continue }
+                let e = cal.date(byAdding: .day, value: 1, to: s) ?? s
+                defs.append((s, e, formatter.string(from: s)))
             }
         case .month:
-            if let month = cal.dateInterval(of: .month, for: start) {
-                for w in 0..<4 {
-                    let weekStart = cal.date(byAdding: .weekOfYear, value: w, to: month.start) ?? month.start
-                    bucketDates.append(weekStart)
-                }
+            let monthStart = cal.dateInterval(of: .month, for: rangeStart)?.start ?? rangeStart
+            for w in 0..<4 {
+                let s = cal.date(byAdding: .weekOfYear, value: w, to: monthStart) ?? monthStart
+                let e = cal.date(byAdding: .weekOfYear, value: 1, to: s) ?? s
+                defs.append((s, e, "W\(w + 1)"))
             }
         case .year:
-            if let year = cal.dateInterval(of: .year, for: start) {
-                for m in 0..<12 {
-                    if let d = cal.date(byAdding: .month, value: m, to: year.start) { bucketDates.append(d) }
-                }
+            formatter.dateFormat = "MMM"
+            let yearStart = cal.dateInterval(of: .year, for: rangeStart)?.start ?? rangeStart
+            for m in 0..<12 {
+                guard let s = cal.date(byAdding: .month, value: m, to: yearStart) else { continue }
+                let e = cal.date(byAdding: .month, value: 1, to: s) ?? s
+                defs.append((s, e, formatter.string(from: s)))
             }
+        case .custom:
+            defs = customBucketDefinitions(start: rangeStart, end: rangeEnd, calendar: cal)
+        }
+        return defs
+    }
+
+    /// Buckets a custom range into day/week/month bars depending on its span, so the bar
+    /// count stays readable.
+    private func customBucketDefinitions(start: Date, end: Date, calendar cal: Calendar) -> [(start: Date, end: Date, label: String)] {
+        let days = cal.dateComponents([.day], from: start, to: end).day ?? 0
+        let formatter = DateFormatter()
+        let step: Calendar.Component
+        let stepValue: Int
+        if days <= 14 {
+            formatter.dateFormat = "d MMM"; step = .day; stepValue = 1
+        } else if days <= 92 {
+            formatter.dateFormat = "d MMM"; step = .day; stepValue = 7
+        } else {
+            formatter.dateFormat = "MMM yy"; step = .month; stepValue = 1
         }
 
-        let formatter = DateFormatter()
-        switch selectedGranularity {
-        case .day: formatter.dateFormat = "HH"
-        case .week: formatter.dateFormat = "EEE"
-        case .month: formatter.dateFormat = "EEE"
-        case .year: formatter.dateFormat = "MMM"
+        var defs: [(start: Date, end: Date, label: String)] = []
+        var s = cal.startOfDay(for: start)
+        while s < end {
+            let next = cal.date(byAdding: step, value: stepValue, to: s) ?? end
+            defs.append((s, min(next, end), formatter.string(from: s)))
+            s = next
         }
+        return defs
+    }
+
+    private var stackedSeries: [StackedItem] {
+        let seriesCategories = categoryRecords.isEmpty
+            ? MerchantUtils.defaultCategories
+            : categoryRecords.map { $0.name }
 
         var result: [StackedItem] = []
-        for (index, bucketStart) in bucketDates.enumerated() {
-            let bucketEnd: Date
-            switch selectedGranularity {
-            case .day: bucketEnd = cal.date(byAdding: .hour, value: 1, to: bucketStart) ?? bucketStart
-            case .week: bucketEnd = cal.date(byAdding: .day, value: 1, to: bucketStart) ?? bucketStart
-            case .month: bucketEnd = cal.date(byAdding: .weekOfYear, value: 1, to: bucketStart) ?? bucketStart
-            case .year: bucketEnd = cal.date(byAdding: .month, value: 1, to: bucketStart) ?? bucketStart
-            }
-
-            let label: String
-            switch selectedGranularity {
-            case .month: label = "W\(index + 1)"
-            default: label = formatter.string(from: bucketStart)
-            }
-
-            let bucketTx = filteredTransactions.filter { $0.date >= bucketStart && $0.date < bucketEnd }
+        for def in bucketDefinitions() {
+            let bucketTx = filteredTransactions.filter { $0.date >= def.start && $0.date < def.end }
             let byCategory = Dictionary(grouping: bucketTx) { groupingCategory(for: $0) }
-
-            let seriesCategories = categoryRecords.isEmpty
-                ? MerchantUtils.defaultCategories
-                : categoryRecords.map { $0.name }
             for cat in seriesCategories {
                 let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
-                result.append(StackedItem(bucketLabel: label, category: cat, amount: total))
+                result.append(StackedItem(bucketLabel: def.label, category: cat, amount: total))
             }
         }
         return result
@@ -304,6 +351,7 @@ struct AnalysisView: View {
         case .week: return "By Day"
         case .month: return "By Week"
         case .year: return "By Month"
+        case .custom: return "Over Time"
         }
     }
 
@@ -317,6 +365,7 @@ struct AnalysisView: View {
             case .week: return cal.date(byAdding: .weekOfYear, value: delta, to: selectedDate) ?? selectedDate
             case .month: return cal.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
             case .year: return cal.date(byAdding: .year, value: delta, to: selectedDate) ?? selectedDate
+            case .custom: return selectedDate // custom mode doesn't use prev/next
             }
         }()
         selectedDate = candidate
@@ -337,6 +386,8 @@ struct AnalysisView: View {
             df.dateFormat = "MMMM yyyy"
         case .year:
             df.dateFormat = "yyyy"
+        case .custom:
+            return "" // custom mode shows date pickers instead of this label
         }
         return df.string(from: selectedDate)
     }
@@ -386,6 +437,8 @@ struct AnalysisView: View {
                         dateNavigator
                             .padding(.horizontal, 20)
 
+                        cardFilterBar
+
                         totalSpendCard
                             .padding(.horizontal, 20)
 
@@ -430,11 +483,24 @@ struct AnalysisView: View {
             .sheet(isPresented: $showingRecap) {
                 SpendingRecapView(recap: spendingRecap)
             }
+            .onChange(of: cards.map { $0.id }) {
+                // Drop any filter selection whose card was deleted.
+                selectedCardIDs = selectedCardIDs.intersection(Set(cards.map { $0.id }))
+            }
         }
     }
 
     @ViewBuilder
     private var dateNavigator: some View {
+        if selectedGranularity == .custom {
+            customDateNavigator
+        } else {
+            presetDateNavigator
+        }
+    }
+
+    @ViewBuilder
+    private var presetDateNavigator: some View {
         HStack(spacing: 12) {
             Button(action: { step(-1) }) {
                 Image(systemName: "chevron.left")
@@ -461,6 +527,62 @@ struct AnalysisView: View {
             .buttonStyle(.plain)
             .disabled(!canGoForward)
             .opacity(canGoForward ? 1.0 : 0.3)
+        }
+    }
+
+    @ViewBuilder
+    private var customDateNavigator: some View {
+        HStack(spacing: 12) {
+            customDatePill(title: "From", selection: $customStartDate)
+            customDatePill(title: "To", selection: $customEndDate)
+        }
+    }
+
+    @ViewBuilder
+    private func customDatePill(title: String, selection: Binding<Date>) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(AppTypography.rowMeta)
+                .foregroundColor(AppColors.textSecondary)
+            // Capped at today (no lower bound, so the range can't invert); an inverted
+            // From/To pick is normalised in `currentRange`.
+            DatePicker("", selection: selection, in: ...Date(), displayedComponents: .date)
+                .labelsHidden()
+                .tint(AppColors.accent)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundCard)
+        )
+    }
+
+    @ViewBuilder
+    private var cardFilterBar: some View {
+        if cards.count >= 2 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    FilterChip(label: "All cards", selected: selectedCardIDs.isEmpty) {
+                        selectedCardIDs = []
+                    }
+                    ForEach(cards) { card in
+                        FilterChip(label: card.name, selected: selectedCardIDs.contains(card.id)) {
+                            toggleCard(card.id)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private func toggleCard(_ id: UUID) {
+        if selectedCardIDs.contains(id) {
+            selectedCardIDs.remove(id)
+        } else {
+            selectedCardIDs.insert(id)
         }
     }
 
