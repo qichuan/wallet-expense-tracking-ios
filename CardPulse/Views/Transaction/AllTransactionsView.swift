@@ -13,6 +13,9 @@ struct AllTransactionsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query private var cards: [Card]
     
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+
     @State private var selectedTransaction: Transaction?
     @State private var searchText = ""
     @State private var selectedCardIDs: Set<UUID> = []
@@ -20,7 +23,25 @@ struct AllTransactionsView: View {
     @State private var startDate: Date?
     @State private var endDate: Date?
     @State private var useDateRange = false
-    
+
+    private var cachedRates: [String: Double] {
+        (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
+    }
+
+    /// Transaction amount converted to the default currency using cached FX rates;
+    /// falls back to the raw amount when no rate is available so spend is never dropped.
+    private func amountInDefault(_ tx: Transaction) -> Double {
+        let code = tx.resolvedCurrency
+        let raw = Double(truncating: tx.amount as NSDecimalNumber)
+        guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return raw }
+        return raw * rate
+    }
+
+    /// Total of the currently shown transactions, in the default currency.
+    private var resultsTotal: Double {
+        filteredTransactions.reduce(0.0) { $0 + amountInDefault($1) }
+    }
+
     private var filteredTransactions: [Transaction] {
         let filtered = transactions.filter { transaction in
             // Filter by search text
@@ -90,6 +111,20 @@ struct AllTransactionsView: View {
             .padding(.vertical, 10)
             .background(AppColors.backgroundCard)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            // Results summary: count + total (converted to default currency)
+            if !filteredTransactions.isEmpty {
+                HStack {
+                    Text("\(filteredTransactions.count) \(filteredTransactions.count == 1 ? "transaction" : "transactions")")
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textSecondary)
+                    Spacer()
+                    Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(resultsTotal, specifier: "%.2f")")
+                        .font(AppTypography.amountTransaction)
+                        .foregroundColor(AppColors.textPrimary)
+                }
+                .padding(.horizontal, 4)
+            }
 
             // Transactions List
             if filteredTransactions.isEmpty {
