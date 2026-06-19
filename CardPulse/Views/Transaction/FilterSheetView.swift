@@ -39,24 +39,15 @@ struct FilterSheetView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Card Filter Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Card Filter")
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.textPrimary)
-
-                        CardMultiSelectList(cards: cards, selectedCardIDs: $selectedCardIDs)
-                    }
-                    
                     // Date Range Filter Section
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("Date Range Filter")
                                 .font(AppTypography.headline)
                                 .foregroundColor(AppColors.textPrimary)
-                            
+
                             Spacer()
-                            
+
                             Toggle("", isOn: $useDateRange)
                                 .labelsHidden()
                                 .onChange(of: useDateRange) { _, newValue in
@@ -75,7 +66,7 @@ struct FilterSheetView: View {
                                     }
                                 }
                         }
-                        
+
                         if useDateRange {
                             VStack(spacing: 12) {
                                 HStack {
@@ -91,7 +82,7 @@ struct FilterSheetView: View {
                                             }
                                     }
                                 }
-                                
+
                                 HStack {
                                     DatePicker("End Date", selection: $localEndDate, displayedComponents: .date)
                                         .datePickerStyle(.compact)
@@ -111,7 +102,16 @@ struct FilterSheetView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
-                    
+
+                    // Card Filter Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Card Filter")
+                            .font(AppTypography.headline)
+                            .foregroundColor(AppColors.textPrimary)
+
+                        CardMultiSelectList(cards: cards, selectedCardIDs: $selectedCardIDs)
+                    }
+
                     // Clear All Filters Button
                     if !selectedCardIDs.isEmpty || useDateRange {
                         Button(action: {
