@@ -9,28 +9,28 @@ import SwiftUI
 
 struct FilterSheetView: View {
     let cards: [Card]
-    @Binding var selectedCard: Card?
+    @Binding var selectedCardIDs: Set<UUID>
     @Binding var useDateRange: Bool
     @Binding var startDate: Date?
     @Binding var endDate: Date?
-    
+
     @Environment(\.dismiss) private var dismiss
-    
+
     // Local state for date pickers (need non-optional dates)
     @State private var localStartDate: Date
     @State private var localEndDate: Date
-    
-    init(cards: [Card], selectedCard: Binding<Card?>, useDateRange: Binding<Bool>, startDate: Binding<Date?>, endDate: Binding<Date?>) {
+
+    init(cards: [Card], selectedCardIDs: Binding<Set<UUID>>, useDateRange: Binding<Bool>, startDate: Binding<Date?>, endDate: Binding<Date?>) {
         self.cards = cards
-        self._selectedCard = selectedCard
+        self._selectedCardIDs = selectedCardIDs
         self._useDateRange = useDateRange
         self._startDate = startDate
         self._endDate = endDate
-        
+
         // Initialize local dates from bindings or defaults
         let defaultStartDate = startDate.wrappedValue ?? Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         let defaultEndDate = endDate.wrappedValue ?? Date()
-        
+
         _localStartDate = State(initialValue: defaultStartDate)
         _localEndDate = State(initialValue: defaultEndDate)
     }
@@ -44,18 +44,8 @@ struct FilterSheetView: View {
                         Text("Card Filter")
                             .font(AppTypography.headline)
                             .foregroundColor(AppColors.textPrimary)
-                        
-                        Picker("Card", selection: $selectedCard) {
-                            Text("All Cards").tag(nil as Card?)
-                            ForEach(cards) { card in
-                                Text(card.name).tag(card as Card?)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(AppColors.backgroundCard)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                        CardMultiSelectList(cards: cards, selectedCardIDs: $selectedCardIDs)
                     }
                     
                     // Date Range Filter Section
@@ -123,9 +113,9 @@ struct FilterSheetView: View {
                     }
                     
                     // Clear All Filters Button
-                    if selectedCard != nil || useDateRange {
+                    if !selectedCardIDs.isEmpty || useDateRange {
                         Button(action: {
-                            selectedCard = nil
+                            selectedCardIDs = []
                             useDateRange = false
                             startDate = nil
                             endDate = nil
@@ -175,7 +165,7 @@ struct FilterSheetView: View {
     
     FilterSheetView(
         cards: [card1, card2],
-        selectedCard: .constant(nil),
+        selectedCardIDs: .constant([]),
         useDateRange: .constant(false),
         startDate: .constant(nil),
         endDate: .constant(nil)

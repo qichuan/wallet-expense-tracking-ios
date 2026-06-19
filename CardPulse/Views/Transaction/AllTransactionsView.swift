@@ -15,7 +15,7 @@ struct AllTransactionsView: View {
     
     @State private var selectedTransaction: Transaction?
     @State private var searchText = ""
-    @State private var selectedCard: Card?
+    @State private var selectedCardIDs: Set<UUID> = []
     @State private var showingFilterSheet = false
     @State private var startDate: Date?
     @State private var endDate: Date?
@@ -30,9 +30,9 @@ struct AllTransactionsView: View {
                 }
             }
             
-            // Filter by selected card
-            if let selectedCard = selectedCard {
-                if transaction.card?.id != selectedCard.id {
+            // Filter by selected cards (empty == all cards)
+            if !selectedCardIDs.isEmpty {
+                guard let cardID = transaction.card?.id, selectedCardIDs.contains(cardID) else {
                     return false
                 }
             }
@@ -66,7 +66,7 @@ struct AllTransactionsView: View {
     }
     
     private var hasActiveFilters: Bool {
-        selectedCard != nil || useDateRange
+        !selectedCardIDs.isEmpty || useDateRange
     }
     
     var body: some View {
@@ -123,13 +123,17 @@ struct AllTransactionsView: View {
         .sheet(isPresented: $showingFilterSheet) {
             FilterSheetView(
                 cards: cards,
-                selectedCard: $selectedCard,
+                selectedCardIDs: $selectedCardIDs,
                 useDateRange: $useDateRange,
                 startDate: $startDate,
                 endDate: $endDate
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+        }
+        .onChange(of: cards.map { $0.id }) {
+            // Drop any filter selection whose card was deleted.
+            selectedCardIDs = selectedCardIDs.intersection(Set(cards.map { $0.id }))
         }
     }
 }

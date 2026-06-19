@@ -18,22 +18,8 @@ struct CardFilterSheet: View {
             ZStack {
                 AppColors.backgroundPrimary.ignoresSafeArea()
                 ScrollView {
-                    VStack(spacing: 8) {
-                        filterRow(title: "All cards", isSelected: selectedCardIDs.isEmpty) {
-                            selectedCardIDs = []
-                        }
-
-                        Divider()
-                            .background(AppColors.divider)
-                            .padding(.vertical, 4)
-
-                        ForEach(cards) { card in
-                            filterRow(title: card.name, isSelected: selectedCardIDs.contains(card.id)) {
-                                toggle(card.id)
-                            }
-                        }
-                    }
-                    .padding()
+                    CardMultiSelectList(cards: cards, selectedCardIDs: $selectedCardIDs)
+                        .padding()
                 }
             }
             .navigationTitle("Filter cards")
@@ -46,40 +32,6 @@ struct CardFilterSheet: View {
             }
         }
         .preferredColorScheme(.dark)
-    }
-
-    @ViewBuilder
-    private func filterRow(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Text(title)
-                    .font(AppTypography.rowTitle)
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 12)
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(AppTypography.iconMedium)
-                        .foregroundColor(AppColors.accent)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(AppColors.backgroundCard)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func toggle(_ id: UUID) {
-        if selectedCardIDs.contains(id) {
-            selectedCardIDs.remove(id)
-        } else {
-            selectedCardIDs.insert(id)
-        }
     }
 }
 

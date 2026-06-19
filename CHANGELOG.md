@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Filter the transactions list by multiple cards at once
+- [CHANGED] - Tidy up transaction rows by removing the per-row date and time
 - [ADDED] - Analyse a custom date range and filter the Analysis tab to specific cards
 - [ADDED] - Get a reminder before your statement when a card still needs spend to hit its min-spend goal (choose how many days ahead in Settings), and a heads-up when a card's reward cap is reached
 - [ADDED] - Share a monthly or yearly spending recap — total spent, miles and cashback earned, top categories, your top spot, and a map — as an image, with a link for others to download CardPulse
