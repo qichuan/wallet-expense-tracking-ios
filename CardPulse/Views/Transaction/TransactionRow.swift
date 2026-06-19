@@ -15,18 +15,6 @@ struct TransactionRow: View {
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
     @Query(sort: \SpendingCategory.sortOrder) private var categoryRecords: [SpendingCategory]
 
-    private static let dateFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "d MMM"
-        return df
-    }()
-
-    private static let timeFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "HH:mm"
-        return df
-    }()
-
     private var merchantIcon: String {
         MerchantUtils.icon(for: transaction.category, in: categoryRecords)
     }
@@ -43,28 +31,6 @@ struct TransactionRow: View {
         let code = transaction.resolvedCurrency
         guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return nil }
         return Double(truncating: transaction.amount as NSDecimalNumber) * rate
-    }
-
-    private var subtitle: String {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        let txDay = cal.startOfDay(for: transaction.date)
-        let daysAgo = cal.dateComponents([.day], from: txDay, to: today).day ?? 0
-
-        let dayLabel: String
-        switch daysAgo {
-        case 0: dayLabel = "Today"
-        case 1: dayLabel = "Yesterday"
-        default: dayLabel = Self.dateFormatter.string(from: transaction.date)
-        }
-
-        let time = Self.timeFormatter.string(from: transaction.date)
-        let label = "\(dayLabel) \(time)"
-
-        if let card = transaction.card {
-            return "\(card.name)  ·  \(label)"
-        }
-        return label
     }
 
     private var primaryAmountText: String {
@@ -141,10 +107,12 @@ struct TransactionRow: View {
                     }
                 }
 
-                Text(subtitle)
-                    .font(AppTypography.rowMeta)
-                    .foregroundColor(AppColors.textSecondary)
-                    .lineLimit(1)
+                if let card = transaction.card {
+                    Text(card.name)
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
+                }
 
                 if let note = transaction.note, !note.isEmpty {
                     Text(note)
