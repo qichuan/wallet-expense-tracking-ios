@@ -53,7 +53,9 @@ Completion sets `hasCompletedOnboarding = true` and logs `AnalyticsTracker.Event
 ```
 Views/
   MainTabView.swift
-  AnalysisView.swift           # Charts: donut by category, stacked bar over time
+  AnalysisView.swift           # Donut + stacked bar; Day/Week/Month/Year + Custom range; multi-card filter; location map; shareable recap
+  CardFilterSheet.swift        # Sheet wrapper around CardMultiSelectList (Analysis card filter)
+  CardMultiSelectList.swift    # Reusable card multi-select checklist (Analysis + transactions filter)
   Home/
     HomeView.swift             # Latest 10 transactions, shortcut banner
     NotificationBanner.swift
@@ -79,7 +81,11 @@ Views/
     CategoriesStepView.swift
     NotificationsStepView.swift
     AutomationStepView.swift
+  Recap/
+    SpendingRecapView.swift       # Shareable recap sheet (renders to image + share CTA)
+    SpendingRecapCard.swift       # Recap card UI + SpendingRecap model
   Components/                  # Reusable UI components
+    ActivityShareSheet.swift      # UIActivityViewController wrapper (image + link share)
     DonutChartView.swift
     FilterChip.swift
     FormComponents.swift
@@ -90,6 +96,7 @@ Views/
     SpendingDeltaLabel.swift
     StatusPill.swift
     SummaryHeroCard.swift
+    TransactionLocationMapCard.swift  # Embedded clustering map for Analysis
   CSV/
     DocumentPickerView.swift
     ExportOptionsView.swift
@@ -112,10 +119,17 @@ The `Theme/` folder is the single source of truth for all visual tokens:
 ### App Intent (Wallet Automation)
 `WalletTransactionIntent.swift` implements `AppIntent` for Shortcuts automation. When triggered from Apple Wallet, it creates a `Transaction` by opening its own `ModelContainer` (not the shared one), parses the amount string via `CurrencyUtils.parseCurrencyAndAmount(from:)` to extract currency and amount, guesses category via `NLEmbedding` (with keyword heuristic fallback), logs to Firebase Analytics via `AnalyticsTracker`, and fires a `UNUserNotificationCenter` notification.
 
+### Notifications & Nudges
+`NotificationRouter` (`Utils/NotificationRouter.swift`) is the `UNUserNotificationCenter` delegate set at launch; it publishes `pendingTransactionId` (transaction-added taps) and `pendingCardId` (cycle-nudge taps), which `MainTabView`/`CardsView` consume to present the right screen. `CycleNudgeScheduler` (`Utils/CycleNudgeScheduler.swift`), run on app foreground from `MainTabView`, schedules proactive local notifications from the cycle/cap math: a min-spend reminder a configurable number of days before the statement (`cycleNudgeLeadDays` in Settings, default 3) and a once-per-cycle cap-reached alert. It only schedules when notification permission is already authorized.
+
 ### Utilities
 - **MerchantUtils** (`Utils/MerchantUtils.swift`): Single source of truth for categories (7 canonical values), SF Symbol icons, and color hex values per category. Used by `CategorySeeding` to seed `SpendingCategory` records. Always use `MerchantUtils.normalizedCategory(for:)` when storing/displaying categories.
 - **ImportExportUtils** (`Utils/ImportExportUtils.swift`): CSV parsing helpers (RFC 4180 compliant, handles quoted fields).
 - **RewardCalculator** (`Utils/RewardCalculator.swift`): Computes miles/cashback as `floor(amount / roundingBlock) × roundingBlock × rate`. `convertedReward(for:)` is the canonical per-transaction reward (FX-converts to the default currency first); `aggregate(_:)` and `cycleRewardStatus(for:)` build on it. `breakdown(for:)` feeds the transaction detail's explanation table. The raw-amount primitive `reward(amount:category:card:)` exists for previews/tests only.
+- **TransactionMapClustering** (`Utils/TransactionMapClustering.swift`): Pure geometry for the Analysis location map — greedy distance-based clustering of located transactions and a bounding `MKCoordinateRegion`. Unit-tested; used by `TransactionLocationMapCard` and the recap map.
+- **MapSnapshotRenderer** (`Utils/MapSnapshotRenderer.swift`): Renders a static `MKMapSnapshotter` image with cluster dots for the recap (since `ImageRenderer` can't capture a live `Map`).
+- **CycleNudgeScheduler** (`Utils/CycleNudgeScheduler.swift`): Schedules min-spend and reward-cap local notifications (see Notifications & Nudges). Pure helpers (`resolvedLeadDays`, `reminderFireComponents`, `shouldFireCapNudge`) are unit-tested.
+- **AppLinks** (`Utils/AppLinks.swift`): Centralised external links (e.g. the App Store URL used in the recap share CTA).
 - **CurrencyUtils** (`Utils/CurrencyUtils.swift`): Multi-currency support. Holds the built-in currency list (`allCurrencies`, 15 currencies), user-defined custom currencies, enabled/default currency preferences (all in `UserDefaults`), and exchange-rate cache (via [Frankfurter API](https://www.frankfurter.app), 5-day TTL). Key methods: `parseCurrencyAndAmount(from:)` parses raw Wallet strings like `"S$12.50"` or `"MYR 8.00"`; `fetchRates(for:to:)` fetches and inverts rates; `rateToDefault(from:)` returns the cached conversion rate.
 
 ## Key Conventions
