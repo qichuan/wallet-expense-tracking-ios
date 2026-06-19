@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Show the total spend of the transactions matching your current search and filters
 - [CHANGED] - Filter the transactions list by multiple cards at once
 - [CHANGED] - Tidy up transaction rows by removing the per-row date and time
 - [ADDED] - Analyse a custom date range and filter the Analysis tab to specific cards
