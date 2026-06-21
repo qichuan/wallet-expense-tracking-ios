@@ -19,6 +19,15 @@ CardPulse takes the mental load off.
 
 # What's New in This Version
 
+v3.0
+- Spending recap — Share a monthly or yearly recap (total spent, miles and cashback earned, top categories, your top spot, and a map) as an image, with a link for others to download CardPulse.
+- Spending map — See where you spent on a map below the Analysis chart, with nearby purchases grouped and totalled in your main currency.
+- Min-spend & reward-cap reminders — Get a reminder before your statement when a card still needs spend to hit its goal (choose how many days ahead in Settings), plus a heads-up when a card's reward cap is reached.
+- Custom ranges & card filters in Analysis — Analyse any date range and focus the Analysis tab on specific cards.
+- Better transaction filtering — Filter the list by multiple cards at once and see the total spend for your current search and filters.
+- Smarter rewards abroad — Miles and cashback are now calculated on the amount converted to your main currency, so foreign purchases no longer show inflated rewards.
+- Some performance improvements and bug fixes
+
 v2.6
 - Reward caps — Set per-cycle limits for miles/cashback on each card, and watch your progress toward the cap.
 - Japanese yen support — Yen purchases from Apple Pay now import with the right currency and amount.

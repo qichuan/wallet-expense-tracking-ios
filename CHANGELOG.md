@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+
+## 3.0 - 2026-06-21
 - [CHANGED] - Show the total spend of the transactions matching your current search and filters
 - [CHANGED] - Filter the transactions list by multiple cards at once
 - [CHANGED] - Tidy up transaction rows by removing the per-row date and time
