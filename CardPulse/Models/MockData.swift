@@ -85,7 +85,7 @@ extension ModelContainer {
             rules.append(CardRewardRule(card: first, categoryName: "Travel", rate: 3))
         }
         if let miles = cards.first(where: { $0.rewardType == .miles }) {
-            rules.append(CardRewardRule(card: miles, categoryName: "Travel", rate: 4))
+            rules.append(CardRewardRule(card: miles, categoryName: "Travel", rate: 4, maxRewardCap: 4000))
         }
         return rules
     }

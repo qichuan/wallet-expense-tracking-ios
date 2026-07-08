@@ -241,7 +241,7 @@ struct TransactionDetailView: View {
         // Amounts in the breakdown are denominated in `breakdown.currencyCode` — for
         // foreign-currency spend that is the default currency, not the transaction's own.
         let breakdownSymbol = CurrencyUtils.symbol(for: breakdown.currencyCode)
-        let earnedText = RewardFormatter.format(breakdown.reward, type: breakdown.rewardType, currencySymbol: breakdownSymbol)
+        let earnedText = RewardFormatter.format(breakdown.cappedReward, type: breakdown.rewardType, currencySymbol: breakdownSymbol)
         let earnedColor: Color = {
             switch breakdown.rewardType {
             case .miles:    return AppColors.rewardMiles
@@ -268,6 +268,13 @@ struct TransactionDetailView: View {
                         value: format(rate: breakdown.bonusRate, type: breakdown.rewardType))
             }
 
+            if breakdown.monthlyCategoryCap > 0 {
+                FormDivider()
+                calcRow(label: "Monthly \(breakdown.bonusCategory ?? "category") cap",
+                        value: RewardFormatter.format(breakdown.monthlyCategoryCap, type: breakdown.rewardType, currencySymbol: breakdownSymbol),
+                        valueColor: breakdown.isCategoryCapReached ? AppColors.statusBehind : AppColors.textSecondary)
+            }
+
             FormDivider()
             HStack(spacing: 12) {
                 Text("* Earned")
@@ -280,6 +287,15 @@ struct TransactionDetailView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
+
+            if breakdown.isCategoryCapReached {
+                Text("Monthly \(disclaimerUnit(for: breakdown.rewardType)) cap for this category was reached — earning is limited for the rest of the calendar month.")
+                    .font(AppTypography.caption)
+                    .foregroundColor(AppColors.statusBehind)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
 
             Text("* For estimation only. Refer to your card statement for the final \(disclaimerUnit(for: breakdown.rewardType)) earned.")
                 .font(AppTypography.caption)

@@ -62,12 +62,63 @@ enum RewardCalculator {
         }
     }
 
-    /// Uncapped total reward across the card's current billing cycle.
-    private static func uncappedCycleReward(for card: Card) -> Decimal {
+    /// Total reward across the card's current billing cycle **after** applying each
+    /// category's per-calendar-month cap (but before the card-wide cycle cap).
+    private static func categoryCappedCycleReward(for card: Card) -> Decimal {
         guard card.rewardType != .none else { return 0 }
-        return card.cycleTransactions
-            .compactMap { convertedReward(for: $0) }
-            .reduce(0, +)
+        let effective = categoryCappedRewards(for: card)
+        return card.cycleTransactions.reduce(0) { $0 + (effective[$1.id] ?? 0) }
+    }
+
+    /// The per-category calendar-month cap for `category` on this card, or `nil` when the
+    /// category has no rule or its rule sets no cap (`maxRewardCap <= 0`). Case-insensitive.
+    static func monthlyCategoryCap(for card: Card, category: String?) -> Decimal? {
+        guard let raw = category?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty,
+              let rule = card.rewardRules.first(where: { $0.categoryName.caseInsensitiveCompare(raw) == .orderedSame }),
+              rule.maxRewardCap > 0
+        else { return nil }
+        return rule.maxRewardCap
+    }
+
+    /// Effective reward per transaction after applying per-category **calendar-month**
+    /// caps, keyed by transaction `id`. Transactions in categories with no monthly cap
+    /// pass through their uncapped `convertedReward`. Capped categories are bucketed by
+    /// (category, calendar-month) and allocated chronologically, so earlier spend in the
+    /// month consumes the cap first — this makes a cycle boundary that falls mid-month
+    /// account correctly for spend earlier in the same month.
+    ///
+    /// Computed across the card's full transaction history (not just the current cycle).
+    static func categoryCappedRewards(for card: Card) -> [UUID: Decimal] {
+        guard card.rewardType != .none else { return [:] }
+        var effective: [UUID: Decimal] = [:]
+        var buckets: [String: [Transaction]] = [:]
+        for tx in card.transactions {
+            guard convertedReward(for: tx) != nil else { continue }
+            if monthlyCategoryCap(for: card, category: tx.category) != nil {
+                buckets[monthlyBucketKey(category: tx.category, date: tx.date), default: []].append(tx)
+            } else {
+                effective[tx.id] = convertedReward(for: tx) ?? 0
+            }
+        }
+        for (_, txs) in buckets {
+            let cap = monthlyCategoryCap(for: card, category: txs.first?.category) ?? 0
+            var running: Decimal = 0
+            for tx in txs.sorted(by: { $0.date < $1.date }) {
+                let raw = convertedReward(for: tx) ?? 0
+                let granted = min(raw, max(0, cap - running))
+                effective[tx.id] = granted
+                running += granted
+            }
+        }
+        return effective
+    }
+
+    /// Groups transactions for per-category monthly capping: a case-insensitive category
+    /// key plus the transaction's calendar year and month.
+    private static func monthlyBucketKey(category: String?, date: Date) -> String {
+        let comps = Calendar.current.dateComponents([.year, .month], from: date)
+        let cat = (category ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return "\(cat)|\(comps.year ?? 0)-\(comps.month ?? 0)"
     }
 
     /// Snapshot of a card's cycle reward standing against its cap, computed in a
@@ -78,7 +129,8 @@ enum RewardCalculator {
         let earned: Decimal
         /// The active cap; `0` means no cap.
         let cap: Decimal
-        /// Uncapped earned reward — used to decide whether the cap is reached.
+        /// Earned reward after per-category monthly caps but before the card-wide cycle
+        /// cap — used to decide whether the card-wide cap is reached.
         let uncapped: Decimal
 
         var hasCap: Bool { cap > 0 }
@@ -96,7 +148,9 @@ enum RewardCalculator {
 
     static func cycleRewardStatus(for card: Card) -> CycleRewardStatus {
         let cap = activeCap(for: card)
-        let uncapped = uncappedCycleReward(for: card)
+        // Per-category monthly caps are applied first; the card-wide cycle cap then
+        // clamps the category-capped total on top.
+        let uncapped = categoryCappedCycleReward(for: card)
         let earned = cap > 0 ? min(uncapped, cap) : uncapped
         return CycleRewardStatus(earned: earned, cap: cap, uncapped: uncapped)
     }
@@ -105,12 +159,28 @@ enum RewardCalculator {
     /// Both buckets are computed on amounts converted to the default currency, so
     /// mixed-currency spend rolls up correctly: the cashback sum is denominated in
     /// the default currency.
+    ///
+    /// Per-category monthly caps are honoured: each transaction contributes its
+    /// effective (category-capped) reward. Because a capped category's allowance is
+    /// consumed by that card+category's spend across the whole calendar month, the
+    /// effective value is computed against each card's full history — so a filtered
+    /// range (a single day/week) reflects what those transactions actually earned once
+    /// the monthly cap is taken into account.
     static func aggregate(_ transactions: [Transaction]) -> (miles: Decimal, cashback: Decimal) {
         var miles: Decimal = 0
         var cashback: Decimal = 0
+        // Memoise each card's capped-reward map so it's computed once per card.
+        var cappedByCard: [UUID: [UUID: Decimal]] = [:]
         for tx in transactions {
-            guard let card = tx.card,
-                  let value = convertedReward(for: tx) else { continue }
+            guard let card = tx.card, card.rewardType != .none else { continue }
+            let capped: [UUID: Decimal]
+            if let cached = cappedByCard[card.id] {
+                capped = cached
+            } else {
+                capped = categoryCappedRewards(for: card)
+                cappedByCard[card.id] = capped
+            }
+            guard let value = capped[tx.id] else { continue }
             switch card.rewardType {
             case .miles: miles += value
             case .cashback: cashback += value
@@ -131,7 +201,15 @@ enum RewardCalculator {
         let bonusRate: Decimal
         let bonusCategory: String?
         let rewardType: RewardType
+        /// Raw reward from the rate formula, before any per-category monthly cap.
         let reward: Decimal
+        /// Reward after this transaction's category monthly cap has been applied.
+        /// Equals `reward` when the category has no cap or the cap wasn't reached.
+        let cappedReward: Decimal
+        /// The category's per-calendar-month cap; `0` when the category has no cap.
+        let monthlyCategoryCap: Decimal
+        /// True when the monthly category cap limited this transaction's reward.
+        var isCategoryCapReached: Bool { monthlyCategoryCap > 0 && cappedReward < reward }
         /// Currency the breakdown's amounts are denominated in: the default currency
         /// (the amount is FX-converted before the rate is applied), or the
         /// transaction's own currency when no rate is cached.
@@ -164,6 +242,9 @@ enum RewardCalculator {
             case .none:     return 0
             }
         }()
+        // The effective reward after this transaction's category monthly cap. Falls back
+        // to the raw reward if the transaction isn't found in the capped map (e.g. no cap).
+        let cappedReward = categoryCappedRewards(for: card)[transaction.id] ?? reward
         return Breakdown(
             amount: amount,
             rounded: rounded,
@@ -174,6 +255,8 @@ enum RewardCalculator {
             bonusCategory: bonus.map { $0.categoryName },
             rewardType: card.rewardType,
             reward: reward,
+            cappedReward: cappedReward,
+            monthlyCategoryCap: monthlyCategoryCap(for: card, category: transaction.category) ?? 0,
             currencyCode: currencyCode,
             transactionCurrency: transaction.resolvedCurrency
         )

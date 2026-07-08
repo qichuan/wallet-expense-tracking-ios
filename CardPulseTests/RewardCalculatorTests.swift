@@ -42,10 +42,23 @@ final class RewardCalculatorTests: XCTestCase {
         return card
     }
 
-    private func makeTxn(amount: Decimal, category: String? = nil, card: Card?, in context: ModelContext) -> Transaction {
-        let tx = Transaction(merchant: "Test", amount: amount, date: Date(), category: category, card: card)
+    private func makeTxn(amount: Decimal, category: String? = nil, date: Date = Date(), card: Card?, in context: ModelContext) -> Transaction {
+        let tx = Transaction(merchant: "Test", amount: amount, date: date, category: category, card: card)
         context.insert(tx)
         return tx
+    }
+
+    /// A miles card with one capped category bonus rule (base + bonus mpd, capped at
+    /// `cap` miles per calendar month).
+    private func makeCappedMilesCard(base: Decimal, category: String, bonus: Decimal, cap: Decimal, in context: ModelContext) -> Card {
+        let card = makeCard(rewardType: .miles, baseRate: base, in: context)
+        let rule = CardRewardRule(card: card, categoryName: category, rate: bonus, maxRewardCap: cap)
+        context.insert(rule)
+        return card
+    }
+
+    private func date(year: Int, month: Int, day: Int) -> Date {
+        Calendar.current.date(from: DateComponents(year: year, month: month, day: day, hour: 12)) ?? Date()
     }
 
     // MARK: - Cashback
@@ -360,5 +373,107 @@ final class RewardCalculatorTests: XCTestCase {
         XCTAssertNil(status.remaining)
         XCTAssertEqual(status.progress, 0)
         XCTAssertEqual(status.earned, Decimal(100))
+    }
+
+    // MARK: - Per-category monthly caps
+
+    func testCategoryCap_LimitsMonthlyRewardForCategory() throws {
+        let ctx = try makeContext()
+        // base 1 + bonus 3 = 4 mpd on Travel, capped at 100 miles/month.
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        _ = makeTxn(amount: Decimal(20), category: "Travel", card: card, in: ctx) // 80 miles
+        _ = makeTxn(amount: Decimal(20), category: "Travel", card: card, in: ctx) // +80 = 160 uncapped
+
+        // Category cap clamps the Travel total to 100 (no card-wide cap set).
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(100))
+    }
+
+    func testCategoryCap_DoesNotAffectUncappedCategories() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        _ = makeTxn(amount: Decimal(50), category: "Travel", card: card, in: ctx)  // 200 → capped 100
+        _ = makeTxn(amount: Decimal(30), category: "Groceries", card: card, in: ctx) // 30 (base only), uncapped
+
+        // Travel capped at 100, Groceries adds its full 30.
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(130))
+    }
+
+    func testCategoryCap_ResetsPerCalendarMonth() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        // Two months of Travel spend, each exceeding the cap.
+        let june = makeTxn(amount: Decimal(50), category: "Travel", date: date(year: 2026, month: 6, day: 10), card: card, in: ctx)
+        let july = makeTxn(amount: Decimal(50), category: "Travel", date: date(year: 2026, month: 7, day: 10), card: card, in: ctx)
+
+        let effective = RewardCalculator.categoryCappedRewards(for: card)
+        // Each calendar month's Travel reward is independently clamped to 100.
+        XCTAssertEqual(effective[june.id], Decimal(100))
+        XCTAssertEqual(effective[july.id], Decimal(100))
+    }
+
+    func testCategoryCap_AllocatesChronologically() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        // Same month: first tx earns 80, second is clipped to the remaining 20.
+        let first = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 1), card: card, in: ctx)
+        let second = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 2), card: card, in: ctx)
+
+        let effective = RewardCalculator.categoryCappedRewards(for: card)
+        XCTAssertEqual(effective[first.id], Decimal(80))
+        XCTAssertEqual(effective[second.id], Decimal(20))
+    }
+
+    func testCategoryCap_ComposesWithCardWideCap() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        card.maxMilesCap = 60 // card-wide cycle cap, applied on top of the category cap
+        _ = makeTxn(amount: Decimal(50), category: "Travel", card: card, in: ctx) // 200 → category-capped 100
+
+        let status = RewardCalculator.cycleRewardStatus(for: card)
+        XCTAssertEqual(status.uncapped, Decimal(100)) // after category cap, before card-wide cap
+        XCTAssertEqual(status.earned, Decimal(60))     // card-wide cap clamps further
+        XCTAssertTrue(status.isCapReached)
+    }
+
+    func testCategoryCap_ZeroCapMeansUncapped() throws {
+        let ctx = try makeContext()
+        // maxRewardCap 0 = no cap → behaves exactly as before.
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 0, in: ctx)
+        let tx = makeTxn(amount: Decimal(50), category: "Travel", card: card, in: ctx) // 200 miles
+
+        XCTAssertEqual(RewardCalculator.categoryCappedRewards(for: card)[tx.id], Decimal(200))
+        XCTAssertEqual(RewardCalculator.cycleReward(for: card), Decimal(200))
+    }
+
+    func testBreakdown_ReflectsCategoryCap() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        _ = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 1), card: card, in: ctx) // 80, fills toward cap
+        let second = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 2), card: card, in: ctx)
+
+        let breakdown = try XCTUnwrap(RewardCalculator.breakdown(for: second))
+        XCTAssertEqual(breakdown.reward, Decimal(80))          // raw
+        XCTAssertEqual(breakdown.cappedReward, Decimal(20))    // clipped to remaining allowance
+        XCTAssertEqual(breakdown.monthlyCategoryCap, Decimal(100))
+        XCTAssertTrue(breakdown.isCategoryCapReached)
+    }
+
+    func testAggregate_HonoursCategoryCap() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        let a = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 1), card: card, in: ctx) // 80
+        let b = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 2), card: card, in: ctx) // +80 → clipped to 20
+
+        // Even aggregating just the two Travel transactions, the monthly cap clamps the total to 100.
+        XCTAssertEqual(RewardCalculator.aggregate([a, b]).miles, Decimal(100))
+        // A single-day view of only the second transaction reflects its capped earn (20), not 80.
+        XCTAssertEqual(RewardCalculator.aggregate([b]).miles, Decimal(20))
+    }
+
+    func testMonthlyCategoryCap_LookupIsCaseInsensitive() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        XCTAssertEqual(RewardCalculator.monthlyCategoryCap(for: card, category: "travel"), Decimal(100))
+        XCTAssertNil(RewardCalculator.monthlyCategoryCap(for: card, category: "Groceries"))
     }
 }

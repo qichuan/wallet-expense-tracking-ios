@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - Set a monthly miles or cashback cap per category (e.g. UOB Lady's Solitaire), so rewards stop accruing in that category once its calendar-month limit is reached
 
 ## 3.0 - 2026-06-21
 - [CHANGED] - Show the total spend of the transactions matching your current search and filters

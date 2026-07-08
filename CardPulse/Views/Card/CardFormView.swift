@@ -50,7 +50,7 @@ struct CardFormView: View {
             _maxMilesCap = State(initialValue: Self.format(rate: card.maxMilesCap))
             _maxCashbackCap = State(initialValue: Self.format(rate: card.maxCashbackCap))
             _draftRules = State(initialValue: card.rewardRules.map {
-                DraftRule(existingId: $0.id, categoryName: $0.categoryName, rate: Self.format(rate: $0.rate))
+                DraftRule(existingId: $0.id, categoryName: $0.categoryName, rate: Self.format(rate: $0.rate), cap: Self.format(rate: $0.maxRewardCap))
             })
         } else {
             _cardName = State(initialValue: "")
@@ -413,9 +413,16 @@ struct CardFormView: View {
                     Circle().fill(MerchantUtils.color(for: rule.categoryName, in: categoryRecords).opacity(0.15))
                 )
 
-            Text(rule.categoryName)
-                .font(AppTypography.rowTitle)
-                .foregroundColor(AppColors.textPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(rule.categoryName)
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                if !rule.cap.isEmpty {
+                    Text("Cap \(rule.cap) \(rewardType == .miles ? "miles" : CurrencyUtils.symbol(for: defaultCurrencyCode))/mo")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
 
             Spacer()
 
@@ -627,7 +634,7 @@ struct CardFormView: View {
             )
             modelContext.insert(card)
             for draft in validRules() {
-                let rule = CardRewardRule(card: card, categoryName: draft.categoryName, rate: parseRate(draft.rate))
+                let rule = CardRewardRule(card: card, categoryName: draft.categoryName, rate: parseRate(draft.rate), maxRewardCap: parseRate(draft.cap))
                 modelContext.insert(rule)
             }
             do {
@@ -665,8 +672,9 @@ struct CardFormView: View {
                let rule = card.rewardRules.first(where: { $0.id == existingId }) {
                 rule.categoryName = draft.categoryName
                 rule.rate = parseRate(draft.rate)
+                rule.maxRewardCap = parseRate(draft.cap)
             } else {
-                let rule = CardRewardRule(card: card, categoryName: draft.categoryName, rate: parseRate(draft.rate))
+                let rule = CardRewardRule(card: card, categoryName: draft.categoryName, rate: parseRate(draft.rate), maxRewardCap: parseRate(draft.cap))
                 modelContext.insert(rule)
             }
         }
@@ -697,12 +705,15 @@ struct DraftRule: Identifiable, Hashable {
     let existingId: UUID?
     var categoryName: String
     var rate: String
+    /// Per-calendar-month reward cap for this category, as entered text. Empty = no cap.
+    var cap: String
 
-    init(id: UUID = UUID(), existingId: UUID? = nil, categoryName: String, rate: String) {
+    init(id: UUID = UUID(), existingId: UUID? = nil, categoryName: String, rate: String, cap: String = "") {
         self.id = id
         self.existingId = existingId
         self.categoryName = categoryName
         self.rate = rate
+        self.cap = cap
     }
 }
 
@@ -719,7 +730,11 @@ private struct RewardRuleEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var categoryName: String
     @State private var rate: String
+    @State private var cap: String
     @FocusState private var rateFocused: Bool
+    @FocusState private var capFocused: Bool
+
+    @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
 
     init(rule: DraftRule?,
          rewardType: RewardType,
@@ -735,12 +750,21 @@ private struct RewardRuleEditor: View {
         self.onDelete = onDelete
         _categoryName = State(initialValue: rule?.categoryName ?? availableCategories.first(where: { !existingCategories.contains($0) }) ?? "")
         _rate = State(initialValue: rule?.rate ?? "")
+        _cap = State(initialValue: rule?.cap ?? "")
     }
 
     private var rateUnitLabel: String {
         switch rewardType {
         case .cashback: return "%"
         case .miles: return "mpd"
+        case .none: return ""
+        }
+    }
+
+    private var capUnitLabel: String {
+        switch rewardType {
+        case .cashback: return CurrencyUtils.symbol(for: defaultCurrencyCode)
+        case .miles: return "miles"
         case .none: return ""
         }
     }
@@ -762,6 +786,17 @@ private struct RewardRuleEditor: View {
                         }
                         FormSection("Bonus Rate") {
                             rateRow
+                        }
+                        FormSection("Monthly Cap") {
+                            capRow
+
+                            Text("Maximum \(rewardType == .miles ? "miles" : "cashback") earned in this category each calendar month. Leave blank for no cap.")
+                                .font(AppTypography.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
+                                .padding(.bottom, 14)
                         }
                         if rule != nil, let onDelete {
                             DestructiveButton(title: "Remove Bonus") {
@@ -845,6 +880,42 @@ private struct RewardRuleEditor: View {
         .onAppear { rateFocused = rule == nil }
     }
 
+    @ViewBuilder
+    private var capRow: some View {
+        HStack(spacing: 12) {
+            Text("Cap")
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            if rewardType == .cashback {
+                Text(capUnitLabel)
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textSecondary)
+                capField
+            } else {
+                capField
+                Text(capUnitLabel)
+                    .font(AppTypography.rowTitle)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var capField: some View {
+        TextField("None", text: $cap, prompt: Text("None").foregroundColor(AppColors.textTertiary))
+            .keyboardType(.decimalPad)
+            .focused($capFocused)
+            .foregroundColor(AppColors.textPrimary)
+            .multilineTextAlignment(.trailing)
+            .frame(maxWidth: 100)
+            .onChange(of: cap) { _, newValue in
+                cap = sanitise(newValue)
+            }
+    }
+
     private func sanitise(_ raw: String) -> String {
         var seenDot = false
         var result = ""
@@ -864,7 +935,8 @@ private struct RewardRuleEditor: View {
             id: rule?.id ?? UUID(),
             existingId: rule?.existingId,
             categoryName: categoryName,
-            rate: rate
+            rate: rate,
+            cap: cap
         )
         onSave(updated)
         dismiss()
