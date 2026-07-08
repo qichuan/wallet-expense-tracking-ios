@@ -24,6 +24,7 @@ struct ParsedRewardRuleEntry {
     let cardName: String
     let categoryName: String
     let rate: Decimal
+    let maxRewardCap: Decimal
 }
 
 struct ParsedCategoryEntry {
@@ -297,6 +298,7 @@ struct ImportExportUtils {
         let iCard     = idx(["card", "cardname"]) ?? 0
         let iCategory = idx(["category", "categoryname"]) ?? 1
         let iRate     = idx(["rate"]) ?? 2
+        let iCap      = idx(["cap", "maxrewardcap", "monthlycap"])
 
         var result: [ParsedRewardRuleEntry] = []
         for line in lines.dropFirst() {
@@ -304,10 +306,15 @@ struct ImportExportUtils {
             guard f.indices.contains(iCard), f.indices.contains(iCategory),
                   !f[iCard].isEmpty, !f[iCategory].isEmpty else { continue }
             let rate = Decimal(string: f.indices.contains(iRate) ? f[iRate] : "0") ?? 0
+            let cap: Decimal = {
+                guard let iCap, f.indices.contains(iCap) else { return 0 }
+                return Decimal(string: f[iCap]) ?? 0
+            }()
             result.append(ParsedRewardRuleEntry(
                 cardName: f[iCard],
                 categoryName: f[iCategory],
-                rate: rate
+                rate: rate,
+                maxRewardCap: cap
             ))
         }
         return result
@@ -535,7 +542,7 @@ struct ImportExportUtils {
                 $0.categoryName.lowercased() == categoryKey
             }
             guard !exists else { continue }
-            let rule = CardRewardRule(card: card, categoryName: parsed.categoryName, rate: parsed.rate)
+            let rule = CardRewardRule(card: card, categoryName: parsed.categoryName, rate: parsed.rate, maxRewardCap: parsed.maxRewardCap)
             modelContext.insert(rule)
             rulesAdded += 1
         }
@@ -613,10 +620,10 @@ struct ImportExportUtils {
 
         // REWARDRULES
         out += "\(sectionMarkerPrefix)REWARDRULES\n"
-        out += "Card,Category,Rate\n"
+        out += "Card,Category,Rate,Cap\n"
         for card in cards {
             for rule in card.rewardRules {
-                out += "\(escapeCSVField(card.name)),\(escapeCSVField(rule.categoryName)),\(formatRate(rule.rate))\n"
+                out += "\(escapeCSVField(card.name)),\(escapeCSVField(rule.categoryName)),\(formatRate(rule.rate)),\(formatRate(rule.maxRewardCap))\n"
             }
         }
         out += "\n"
