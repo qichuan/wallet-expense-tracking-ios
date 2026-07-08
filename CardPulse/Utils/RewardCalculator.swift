@@ -159,12 +159,28 @@ enum RewardCalculator {
     /// Both buckets are computed on amounts converted to the default currency, so
     /// mixed-currency spend rolls up correctly: the cashback sum is denominated in
     /// the default currency.
+    ///
+    /// Per-category monthly caps are honoured: each transaction contributes its
+    /// effective (category-capped) reward. Because a capped category's allowance is
+    /// consumed by that card+category's spend across the whole calendar month, the
+    /// effective value is computed against each card's full history — so a filtered
+    /// range (a single day/week) reflects what those transactions actually earned once
+    /// the monthly cap is taken into account.
     static func aggregate(_ transactions: [Transaction]) -> (miles: Decimal, cashback: Decimal) {
         var miles: Decimal = 0
         var cashback: Decimal = 0
+        // Memoise each card's capped-reward map so it's computed once per card.
+        var cappedByCard: [UUID: [UUID: Decimal]] = [:]
         for tx in transactions {
-            guard let card = tx.card,
-                  let value = convertedReward(for: tx) else { continue }
+            guard let card = tx.card, card.rewardType != .none else { continue }
+            let capped: [UUID: Decimal]
+            if let cached = cappedByCard[card.id] {
+                capped = cached
+            } else {
+                capped = categoryCappedRewards(for: card)
+                cappedByCard[card.id] = capped
+            }
+            guard let value = capped[tx.id] else { continue }
             switch card.rewardType {
             case .miles: miles += value
             case .cashback: cashback += value

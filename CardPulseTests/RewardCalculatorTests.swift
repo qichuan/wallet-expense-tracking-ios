@@ -458,6 +458,18 @@ final class RewardCalculatorTests: XCTestCase {
         XCTAssertTrue(breakdown.isCategoryCapReached)
     }
 
+    func testAggregate_HonoursCategoryCap() throws {
+        let ctx = try makeContext()
+        let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)
+        let a = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 1), card: card, in: ctx) // 80
+        let b = makeTxn(amount: Decimal(20), category: "Travel", date: date(year: 2026, month: 7, day: 2), card: card, in: ctx) // +80 → clipped to 20
+
+        // Even aggregating just the two Travel transactions, the monthly cap clamps the total to 100.
+        XCTAssertEqual(RewardCalculator.aggregate([a, b]).miles, Decimal(100))
+        // A single-day view of only the second transaction reflects its capped earn (20), not 80.
+        XCTAssertEqual(RewardCalculator.aggregate([b]).miles, Decimal(20))
+    }
+
     func testMonthlyCategoryCap_LookupIsCaseInsensitive() throws {
         let ctx = try makeContext()
         let card = makeCappedMilesCard(base: 1, category: "Travel", bonus: 3, cap: 100, in: ctx)

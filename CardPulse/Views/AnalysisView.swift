@@ -211,7 +211,8 @@ struct AnalysisView: View {
     // MARK: - Rewards summary
 
     /// Aggregate miles + cashback earned in the selected range, both computed on
-    /// amounts FX-converted to the default currency (see `RewardCalculator.aggregate`).
+    /// amounts FX-converted to the default currency and honouring per-category monthly
+    /// caps (see `RewardCalculator.aggregate`).
     /// Recomputed on rate changes via the `exchangeRatesData` @AppStorage observation.
     private var rewardSummary: (miles: Decimal, cashback: Decimal) {
         RewardCalculator.aggregate(filteredTransactions)
