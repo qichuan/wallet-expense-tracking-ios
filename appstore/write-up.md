@@ -19,6 +19,10 @@ CardPulse takes the mental load off.
 
 # What's New in This Version
 
+v3.1
+- Per-category reward caps — Set a monthly miles or cashback cap for individual categories on a card, so rewards stop accruing there once you hit the limit.
+- Some performance improvements and bug fixes
+
 v3.0
 - Spending recap — Share a monthly or yearly recap (total spent, miles and cashback earned, top categories, your top spot, and a map) as an image, with a link for others to download CardPulse.
 - Spending map — See where you spent on a map below the Analysis chart, with nearby purchases grouped and totalled in your main currency.
