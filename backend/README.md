@@ -98,6 +98,33 @@ curl -s localhost:3000/api/categorize \
   }' | jq
 ```
 
+## Logging
+
+Every Jev call writes structured JSON lines through `lib/log.ts` — one object per
+`console.*` call, which is the shape Vercel Runtime Logs can search on. Look for the
+event names:
+
+| Event | Stream | Contents |
+| --- | --- | --- |
+| `systemone.request` | stdout | The exact `params` object passed to `client.systemOne`, logged **before** the call so a request that hangs or times out still leaves its parameters behind. |
+| `systemone.response` | stdout | `requestId`, `durationMs`, `model`, token `usage`, and the full `result`. |
+| `systemone.error` | stderr | `durationMs`, the `params`, plus `errorType`, `errorMessage`, `status`, `requestId` and the upstream `body` when it's an `APIError`. |
+
+Searching `systemone` in the Vercel Logs tab finds all three; errors go to stderr so they
+can also be filtered by level without a text search.
+
+`requestId` is the `x-typesafe-request-id` header, obtained via `.withResponse()`. It is
+the identifier TypeSafe support can look a call up by, so quote it in any bug report.
+
+Error details are logged field by field rather than by dumping the error object: `APIError`
+carries a `Headers` instance, and naming what goes in is a more reliable way to keep
+`TYPESAFE_API_KEY` out of the logs than trusting what doesn't.
+
+Note that these lines contain the merchant name, amount, currency, card name and the user's
+own category names. That is the point — it's what makes categorisation quality reviewable —
+but it does mean Vercel log retention now holds user transaction data, so set the project's
+retention window accordingly.
+
 ## Deploying to Vercel
 
 ```bash
