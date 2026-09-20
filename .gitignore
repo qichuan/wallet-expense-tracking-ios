@@ -65,3 +65,15 @@ appstore/mockdata_appstore.csv
 
 # Firebase — contains API keys, never commit
 GoogleService-Info.plist
+
+# Category API config (endpoint host + shared token) — never commit
+Config/Secrets.xcconfig
+
+# Backend (Next.js)
+backend/node_modules/
+backend/.next/
+backend/.env
+backend/.env*.local
+backend/.vercel
+backend/next-env.d.ts
+backend/*.tsbuildinfo

@@ -1,0 +1,26 @@
+{
+  "name": "cardpulse-category-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Category inference API for the CardPulse iOS app, backed by TypeSafe Jev.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.8",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,10 @@
+//
+//  App.xcconfig
+//  CardPulse
+//
+//  Base configuration for the app target. Secrets.xcconfig is gitignored and
+//  holds the category API host and token; the `?` makes the include optional,
+//  so a fresh clone builds without it (the category API is simply disabled).
+//
+
+#include? "Secrets.xcconfig"
