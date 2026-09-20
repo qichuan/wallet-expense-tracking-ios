@@ -39,6 +39,23 @@ enum CategoryInference {
     private static let requestTimeout: TimeInterval = 4
     private static let resourceTimeout: TimeInterval = 6
 
+    /// One category as the API sees it: the stored name plus a descriptive hint
+    /// derived from its SF Symbol.
+    ///
+    /// A value type on purpose. `SpendingCategory` is a SwiftData model and not
+    /// `Sendable`, so callers snapshot their records into these *before*
+    /// suspending — nothing reaches across the await into the store.
+    struct CategoryOption: Sendable, Hashable {
+        let name: String
+        let hint: String?
+    }
+
+    /// Snapshots stored categories for `remoteCategory`. Call on whichever actor
+    /// owns the records (the main actor, for a SwiftUI form).
+    static func options(from categories: [SpendingCategory]) -> [CategoryOption] {
+        categories.map { CategoryOption(name: $0.name, hint: iconKeywords($0.icon)) }
+    }
+
     // MARK: - Entry point
 
     /// Runs the cascade. Never throws and never returns an uncategorised
@@ -63,7 +80,7 @@ enum CategoryInference {
             amount: amount,
             currency: currency,
             cardName: cardName,
-            categories: categories
+            options: options(from: categories)
         ) {
             return (fromRemote, .remote)
         }
@@ -105,7 +122,7 @@ enum CategoryInference {
 
     // MARK: - Tier 2: remote
 
-    /// Asks the category API to pick one of `categories`.
+    /// Asks the category API to pick one of `options`.
     ///
     /// Returns nil — meaning "fall through to the heuristic" — when the app was
     /// built without API config, the request fails or times out, the response is
@@ -116,19 +133,17 @@ enum CategoryInference {
         amount: Decimal?,
         currency: String?,
         cardName: String?,
-        categories: [SpendingCategory]
+        options: [CategoryOption]
     ) async -> String? {
         let trimmedMerchant = merchantName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMerchant.isEmpty, !categories.isEmpty else { return nil }
+        guard !trimmedMerchant.isEmpty, !options.isEmpty else { return nil }
         guard let url = AppConfig.categoryAPIURL, let token = AppConfig.categoryAPIToken else { return nil }
 
-        // Snapshot what we need from the models before suspending, so nothing
-        // reaches across the await into SwiftData.
-        let names = categories.map(\.name)
+        let names = options.map(\.name)
         let payload = RequestBody(
             merchant: trimmedMerchant,
-            categories: categories.map {
-                RequestBody.Category(name: $0.name, hint: iconKeywords($0.icon))
+            categories: options.map {
+                RequestBody.Category(name: $0.name, hint: $0.hint)
             },
             amount: amount.map { NSDecimalNumber(decimal: $0).doubleValue },
             currency: currency,
