@@ -52,6 +52,19 @@ struct TransactionFormView: View {
     @State private var appliedLocationText: String?
     @StateObject private var locationSearch = LocationSearchCompleter()
 
+    /// True once the user picks a category from the menu themselves. A manual
+    /// choice is never overwritten by a guess.
+    @State private var categoryWasEdited = false
+    @State private var isGuessingCategory = false
+    /// Which tier produced the current category, or nil when the user picked it
+    /// themselves. Not surfaced in the UI — the guess fills in silently; this
+    /// only feeds `category_source` and the override event.
+    @State private var categoryGuessSource: CategoryInference.Source?
+    /// Lowercased merchant the cascade last ran for, so focusing and blurring an
+    /// unchanged field doesn't re-hit the network.
+    @State private var lastGuessedMerchant: String?
+    @State private var guessTask: Task<Void, Never>?
+
     @FocusState private var merchantFocused: Bool
     @FocusState private var amountFocused: Bool
     @FocusState private var noteFocused: Bool
@@ -182,7 +195,13 @@ struct TransactionFormView: View {
         let categoryAutoFilled = (s.category?.isEmpty == false)
 
         merchant = s.name
-        if let cat = s.category, !cat.isEmpty { category = cat }
+        if let cat = s.category, !cat.isEmpty {
+            category = cat
+            categoryGuessSource = .history
+        }
+        // The suggestion already carries the merchant's own category, so the
+        // blur that follows has nothing left to work out.
+        lastGuessedMerchant = s.name.lowercased()
         merchantFocused = false
 
         AnalyticsTracker.log(AnalyticsTracker.Event.merchantSuggestionSelected, [
@@ -224,6 +243,9 @@ struct TransactionFormView: View {
             .navigationTitle(transactionToEdit == nil ? "Add Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
+            .onChange(of: merchantFocused) { _, focused in
+                if !focused { guessCategoryIfNeeded() }
+            }
             .onAppear {
                 if transactionToEdit == nil {
                     merchantFocused = true
@@ -341,13 +363,13 @@ struct TransactionFormView: View {
     @ViewBuilder
     private var detailsSection: some View {
         FormSection("Details") {
+            categoryRow
+            FormDivider()
+
             FormDateRow(title: "Date", date: $transactionDate)
             FormDivider()
 
             cardRow
-            FormDivider()
-
-            categoryRow
         }
     }
 
@@ -413,36 +435,42 @@ struct TransactionFormView: View {
                 .font(AppTypography.rowTitle)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
-            Menu {
+            if isGuessingCategory {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(AppColors.accent)
+                    Text("Guessing…")
+                        .font(AppTypography.rowValue)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            } else {
+                categoryMenu
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .animation(.easeInOut(duration: 0.2), value: isGuessingCategory)
+    }
+
+    @ViewBuilder
+    private var categoryMenu: some View {
+        Menu {
+            ForEach(categoryNames, id: \.self) { cat in
+                Button {
+                    selectCategory(cat)
+                } label: {
+                    Label(cat, systemImage: MerchantUtils.icon(for: cat, in: categoryRecords))
+                }
+            }
+        } label: {
+            ZStack {
                 ForEach(categoryNames, id: \.self) { cat in
-                    Button {
-                        category = cat
-                    } label: {
-                        Label(cat, systemImage: MerchantUtils.icon(for: cat, in: categoryRecords))
-                    }
-                }
-            } label: {
-                ZStack {
-                    ForEach(categoryNames, id: \.self) { cat in
-                        HStack(spacing: 6) {
-                            Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
-                                .font(AppTypography.rowMeta)
-                                .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
-                            Text(cat)
-                                .foregroundColor(AppColors.accent)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(AppTypography.chevronTiny)
-                                .foregroundColor(AppColors.accent)
-                        }
-                    }
-                }
-                .hidden()
-                .overlay(alignment: .trailing) {
                     HStack(spacing: 6) {
                         Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
                             .font(AppTypography.rowMeta)
                             .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
-                        Text(category)
+                        Text(cat)
                             .foregroundColor(AppColors.accent)
                         Image(systemName: "chevron.up.chevron.down")
                             .font(AppTypography.chevronTiny)
@@ -450,9 +478,35 @@ struct TransactionFormView: View {
                     }
                 }
             }
+            .hidden()
+            .overlay(alignment: .trailing) {
+                HStack(spacing: 6) {
+                    Image(systemName: MerchantUtils.icon(for: category, in: categoryRecords))
+                        .font(AppTypography.rowMeta)
+                        .foregroundColor(MerchantUtils.color(for: category, in: categoryRecords))
+                    Text(category)
+                        .foregroundColor(AppColors.accent)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(AppTypography.chevronTiny)
+                        .foregroundColor(AppColors.accent)
+                }
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+    }
+
+    /// A hand-picked category is final: it locks out every later guess,
+    /// including the one an in-flight request is about to apply.
+    private func selectCategory(_ cat: String) {
+        if let overridden = categoryGuessSource, cat != category {
+            AnalyticsTracker.log(AnalyticsTracker.Event.categoryGuessOverridden, [
+                "source": overridden.rawValue,
+                "guessed_category": category,
+                "chosen_category": cat
+            ])
+        }
+        category = cat
+        categoryWasEdited = true
+        categoryGuessSource = nil
     }
 
     @ViewBuilder
@@ -627,6 +681,64 @@ struct TransactionFormView: View {
         }
     }
 
+    // MARK: - Category inference
+
+    /// Runs the shared `CategoryInference` cascade when the merchant field loses
+    /// focus while adding. Editing is left alone — a stored category is the
+    /// user's own decision, not something to second-guess.
+    private func guessCategoryIfNeeded() {
+        guard transactionToEdit == nil, !categoryWasEdited else { return }
+        let name = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        let key = name.lowercased()
+        guard key.count >= 2, key != lastGuessedMerchant else { return }
+        lastGuessedMerchant = key
+        // Whatever we decide below supersedes any request still in the air for
+        // the previous merchant.
+        guessTask?.cancel()
+
+        // Tier 1 is a local SwiftData fetch, so run it inline: a merchant the
+        // user has categorised before fills instantly, with no spinner and no
+        // network round-trip.
+        if let known = CategoryInference.categoryFromHistory(merchantName: name, in: modelContext) {
+            category = known
+            categoryGuessSource = .history
+            isGuessingCategory = false
+            return
+        }
+
+        // Snapshot the categories on the main actor — SwiftData models must not
+        // cross the await into the request.
+        let options = CategoryInference.options(from: categoryRecords)
+        let amountValue = Decimal(string: amount)
+        let currencyCode = currency.isEmpty ? defaultCurrencyCode : currency
+        let cardName = selectedCard?.name
+
+        isGuessingCategory = true
+        guessTask = Task { @MainActor in
+            let remote = await CategoryInference.remoteCategory(
+                merchantName: name,
+                amount: amountValue,
+                currency: currencyCode,
+                cardName: cardName,
+                options: options
+            )
+            // A newer blur superseded us; that task owns the spinner now.
+            guard !Task.isCancelled else { return }
+            isGuessingCategory = false
+            // The user picked a category while we were waiting — theirs wins.
+            guard !categoryWasEdited else { return }
+
+            let source: CategoryInference.Source = remote == nil ? .heuristic : .remote
+            category = remote ?? CategoryInference.heuristicCategory(for: name)
+            categoryGuessSource = source
+            AnalyticsTracker.log(AnalyticsTracker.Event.categoryGuessed, [
+                "source": source.rawValue,
+                "merchant": name,
+                "category": category
+            ])
+        }
+    }
+
     // MARK: - Actions
 
     private func formatAmountInput(_ input: String) -> String {
@@ -669,18 +781,26 @@ struct TransactionFormView: View {
             }
         } else {
             let trimmedPlace = locationQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmedPlace.isEmpty {
-                // User picked/typed a location — honour it and skip the GPS capture entirely.
-                persistNewTransaction(
-                    amount: amountDecimal,
-                    latitude: locationLatitude,
-                    longitude: locationLongitude,
-                    placeName: trimmedPlace
-                )
-            } else {
-                // Capture where the transaction was made (best-effort) before persisting. Returns
-                // nil quickly when location permission is off or no fix is available in time.
-                Task {
+            // A toolbar tap doesn't resign first responder, so Save can be hit
+            // without the merchant field ever blurring. Kick the cascade off now
+            // if it hasn't run; it's a no-op once it has.
+            guessCategoryIfNeeded()
+            Task {
+                // Let an in-flight guess land rather than persisting the "Other"
+                // default — bounded by CategoryInference's own timeouts.
+                await guessTask?.value
+
+                if !trimmedPlace.isEmpty {
+                    // User picked/typed a location — honour it and skip the GPS capture entirely.
+                    persistNewTransaction(
+                        amount: amountDecimal,
+                        latitude: locationLatitude,
+                        longitude: locationLongitude,
+                        placeName: trimmedPlace
+                    )
+                } else {
+                    // Capture where the transaction was made (best-effort) before persisting. Returns
+                    // nil quickly when location permission is off or no fix is available in time.
                     let location = await LocationManager.capture()
                     persistNewTransaction(
                         amount: amountDecimal,
@@ -714,7 +834,8 @@ struct TransactionFormView: View {
             "merchant": merchant,
             "amount": amount,
             "currency": currency,
-            "has_location": latitude != nil
+            "has_location": latitude != nil,
+            "category_source": categoryGuessSource?.rawValue ?? "manual"
         ])
         do {
             try modelContext.save()

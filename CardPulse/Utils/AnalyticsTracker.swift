@@ -40,6 +40,8 @@ enum AnalyticsTracker {
         static let onboardingCompleted = "onboarding_completed"
         static let merchantSuggestionSelected = "merchant_suggestion_selected"
         static let locationSuggestionSelected = "location_suggestion_selected"
+        static let categoryGuessed = "category_guessed"
+        static let categoryGuessOverridden = "category_guess_overridden"
     }
 
     /// Logs an event with optional sanitised parameters.
