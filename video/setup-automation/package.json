@@ -26,7 +26,8 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
+    "lint": "eslint src && tsc",
+    "footage": "ffmpeg -y -i public/Setup-Automation.mp4 -an -vf \"fps=30,scale=720:1558\" -c:v libx264 -crf 16 -g 15 -pix_fmt yuv420p public/Setup-Automation.30fps.mp4"
   },
   "sideEffects": [
     "*.css"
