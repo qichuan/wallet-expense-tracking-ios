@@ -19,6 +19,10 @@ CardPulse takes the mental load off.
 
 # What's New in This Version
 
+v3.2
+- Smarter categories — CardPulse now uses a language model to categorise your Apple Wallet purchases more accurately, and it can pick your own custom categories too.
+- Some performance improvements and bug fixes
+
 v3.1
 - Per-category reward caps — Set a monthly miles or cashback cap for individual categories on a card, so rewards stop accruing there once you hit the limit.
 - Some performance improvements and bug fixes
