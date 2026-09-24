@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**CardPulse** is an iOS app (iOS 17.0+, Xcode 15.0+, Swift 5.9+) for tracking Apple Wallet transactions and monitoring credit card spending goals. The app is built with SwiftUI, SwiftData, App Intents, Firebase Analytics, and Apple Charts.
+**CardLah!** (formerly CardPulse) is an iOS app (iOS 17.0+, Xcode 15.0+, Swift 5.9+) for tracking Apple Wallet transactions and monitoring credit card spending goals. The app is built with SwiftUI, SwiftData, App Intents, Firebase Analytics, and Apple Charts. The rename is user-facing only: the Xcode project, targets, Swift module, folders, bundle IDs and App Group keep their `CardPulse` / `TapTrack` names — renaming the module would break users' existing Shortcuts automations that reference the App Intent.
 
 ## Build & Development Commands
 

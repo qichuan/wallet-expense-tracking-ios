@@ -90,7 +90,7 @@ const STEPS: Step[] = [
   },
   {
     num: 6,
-    text: "Search “CardPulse” and add Log Wallet Transaction",
+    text: "Search “CardLah!” and add Log Wallet Transaction",
     action: "tap",
     fromSec: 12.6,
     toSec: 21.3,

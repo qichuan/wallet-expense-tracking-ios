@@ -18,7 +18,7 @@ const ROW_Y = 560;
 const ROW_W = 968;
 const ROW_H = 176;
 
-const CardPulseIcon: React.FC<{ size: number }> = ({ size }) => (
+const CardLahIcon: React.FC<{ size: number }> = ({ size }) => (
   <div
     style={{
       width: size,
@@ -146,13 +146,13 @@ export const S6AddAction: React.FC = () => {
             fontFamily,
           }}
         >
-          <CardPulseIcon size={92} />
+          <CardLahIcon size={92} />
           <div style={{ flex: 1 }}>
             <div style={{ color: "#fff", fontSize: 40, fontWeight: 600 }}>
               Log Transaction
             </div>
             <div style={{ color: ios.textSecondary, fontSize: 30, marginTop: 8 }}>
-              CardPulse
+              CardLah!
             </div>
           </div>
           <div
@@ -177,7 +177,7 @@ export const S6AddAction: React.FC = () => {
       <Highlight x={ROW_X} y={ROW_Y} width={ROW_W} height={ROW_H} radius={28} at={RESULT_AT + 6} color={brand.gold} />
       <TapRing x={540} y={ROW_Y + ROW_H / 2} at={TAP} />
 
-      <Caption step={6} total={7} text='Search "Log Transaction" and add the CardPulse action' />
+      <Caption step={6} total={7} text='Search "Log Transaction" and add the CardLah! action' />
     </Screen>
   );
 };

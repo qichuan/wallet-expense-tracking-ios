@@ -90,7 +90,7 @@ export const Outro: React.FC = () => {
           lineHeight: 1.4,
         }}
       >
-        Every Apple Wallet tap is now logged automatically in CardPulse.
+        Every Apple Wallet tap is now logged automatically in CardLah!
       </div>
     </AbsoluteFill>
   );

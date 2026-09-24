@@ -16,7 +16,7 @@ export const ios = {
   fieldBg: "#1C1C1E",
 };
 
-// CardPulse brand palette (from AppColors.swift)
+// CardLah! brand palette (from AppColors.swift)
 export const brand = {
   bgPrimary: "#0A1428",
   bgCard: "#152238",

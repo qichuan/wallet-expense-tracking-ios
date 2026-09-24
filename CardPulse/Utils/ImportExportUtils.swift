@@ -97,7 +97,7 @@ private struct TransactionSignature: Hashable {
 }
 
 struct ImportExportUtils {
-    static let exportHeader = "# CARDPULSE_BACKUP,v2"
+    static let exportHeader = "# CARDLAH_BACKUP,v2"
     private static let sectionMarkerPrefix = "# SECTION,"
 
     // MARK: - Helpers

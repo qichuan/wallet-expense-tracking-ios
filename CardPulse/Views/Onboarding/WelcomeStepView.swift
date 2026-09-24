@@ -40,7 +40,7 @@ struct WelcomeStepView: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 24)
 
-                Text("CardPulse")
+                Text("CardLah!")
                     .font(.system(size: 44, weight: .heavy, design: .default))
                     .foregroundColor(AppColors.textPrimary)
 
@@ -58,7 +58,7 @@ struct WelcomeStepView: View {
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("CardPulse automatically tracks your Apple Wallet transactions and help you monitor credit card spending goals.")
+                    Text("CardLah! automatically tracks your Apple Wallet transactions and help you monitor credit card spending goals.")
                         .font(AppTypography.subheadline)
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
