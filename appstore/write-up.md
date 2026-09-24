@@ -19,6 +19,10 @@ CardLah! takes the mental load off.
 
 # What's New in This Version
 
+v3.3
+- New name, same app — CardPulse is now CardLah! Everything you've tracked stays right where it is, and your Wallet automations keep working.
+- Some performance improvements and bug fixes
+
 v3.2
 - Smarter categories — CardLah! now uses a language model to categorise your Apple Wallet purchases more accurately, and it can pick your own custom categories too.
 - Some performance improvements and bug fixes

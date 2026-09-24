@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+
+## 3.3 - 2026-09-25
 - [CHANGED] - Renamed the app to CardLah!
 
 ## 3.2 - 2026-09-20
