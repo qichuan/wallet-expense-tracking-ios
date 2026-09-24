@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Renamed the app to CardLah!
 
 ## 3.2 - 2026-09-20
 - [CHANGED] - Categorise Wallet transactions more accurately using a language model, which can now also pick your own custom categories; falls back to local matching when offline

@@ -39,9 +39,9 @@ struct SpendingRecap {
     var hasRewards: Bool { miles > 0 || cashback > 0 }
 
     /// Caption shared alongside the recap image. Includes a download CTA + App Store
-    /// link so anyone who sees the post can tap through and install CardPulse.
+    /// link so anyone who sees the post can tap through and install CardLah!
     var shareCaption: String {
-        "My \(periodTitle) spending recap, tracked with CardPulse 📊\n"
+        "My \(periodTitle) spending recap, tracked with CardLah! 📊\n"
         + "Track your cards, spending and rewards: \(AppLinks.appStore.absoluteString)"
     }
 }
@@ -77,7 +77,7 @@ struct SpendingRecapCard: View {
     private var header: some View {
         HStack(spacing: 10) {
             BrandMark(size: 26)
-            Text("CardPulse")
+            Text("CardLah!")
                 .font(AppTypography.cardTitle)
                 .foregroundColor(AppColors.textPrimary)
             Spacer()
@@ -189,7 +189,7 @@ struct SpendingRecapCard: View {
     }
 
     private var footer: some View {
-        Text("Tracked with CardPulse")
+        Text("Tracked with CardLah!")
             .font(AppTypography.caption2)
             .foregroundColor(AppColors.textTertiary)
             .frame(maxWidth: .infinity, alignment: .center)

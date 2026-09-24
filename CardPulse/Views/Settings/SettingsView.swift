@@ -316,7 +316,7 @@ private extension SettingsView {
 private extension SettingsView {
     func openEmail() {
         let email = "qichuan@zhangqichuan.com"
-        let subject = "Feedback for CardPulse"
+        let subject = "Feedback for CardLah!"
         let subjectEncoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let mailtoURLString = "mailto:\(email)?subject=\(subjectEncoded)"
         
@@ -438,7 +438,7 @@ private extension SettingsView {
             enabledCurrencyCodes: enabledCurrenciesRaw.components(separatedBy: ",").filter { !$0.isEmpty },
             customCurrenciesRaw: customCurrenciesRaw
         )
-        exportFilename = "cardpulse_backup_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
+        exportFilename = "cardlah_backup_\(ImportExportUtils.formatDate(startDate))_to_\(ImportExportUtils.formatDate(endDate)).csv"
 
         // Verify CSV was generated
         guard !csvToExport.isEmpty else {

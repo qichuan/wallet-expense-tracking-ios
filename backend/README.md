@@ -1,7 +1,7 @@
-# CardPulse Category API
+# CardLah! Category API
 
 A single-endpoint Next.js service that decides which spending category a new transaction
-belongs to. The CardPulse iOS app calls it from `WalletTransactionIntent` when a Wallet
+belongs to. The CardLah! iOS app calls it from `WalletTransactionIntent` when a Wallet
 tap-to-pay is logged, sending the merchant name plus the user's own category list; the
 service asks [TypeSafe Jev](https://docs.typesafe.ai) a `choice` question and returns the
 selected category with a calibrated confidence.

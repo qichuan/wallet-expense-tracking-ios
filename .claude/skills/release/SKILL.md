@@ -5,7 +5,7 @@ description: Prepares an App Store release for a given version number — stamps
 
 # release
 
-Prepare a CardPulse App Store release from a single version number. The skill stamps the
+Prepare a CardLah! App Store release from a single version number. The skill stamps the
 unreleased CHANGELOG section, rewrites the App Store "What's New" copy, increments the build
 number, and sets the marketing version across the Xcode project — leaving everything staged
 for your review (it does **not** build, commit, tag, or upload).

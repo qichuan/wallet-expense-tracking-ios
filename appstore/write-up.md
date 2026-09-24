@@ -7,20 +7,20 @@ For credit card experts who refuse to miss a reward.
 
 If you're juggling a few cards at once, you know the pain. Every card has its own min-spend, its own deadline, and missing one means kissing the rewards goodbye.
 
-CardPulse takes the mental load off.
+CardLah! takes the mental load off.
 
 - One screen, all your cards. See your total min-spend for the month, which cards you've hit, which are falling behind, and how many days you've got left.
 - Auto-track tap-to-pay. Pay with Apple Wallet and the transaction lands in the right card. Nothing to type, nothing to remember.
 - Foreign currency, handled. Spend abroad and it gets converted to your home currency, so your progress stays accurate.
 - See where your money goes. Transactions get sorted into categories automatically. Switch between day, week, month, and year views.
-- No bank logins, ever. CardPulse only reads what's already on your phone via Apple Wallet.
+- No bank logins, ever. CardLah! only reads what's already on your phone via Apple Wallet.
 - Plus the basics: custom categories, quick edits, full history, and CSV import/export.
 
 
 # What's New in This Version
 
 v3.2
-- Smarter categories — CardPulse now uses a language model to categorise your Apple Wallet purchases more accurately, and it can pick your own custom categories too.
+- Smarter categories — CardLah! now uses a language model to categorise your Apple Wallet purchases more accurately, and it can pick your own custom categories too.
 - Some performance improvements and bug fixes
 
 v3.1
@@ -28,7 +28,7 @@ v3.1
 - Some performance improvements and bug fixes
 
 v3.0
-- Spending recap — Share a monthly or yearly recap (total spent, miles and cashback earned, top categories, your top spot, and a map) as an image, with a link for others to download CardPulse.
+- Spending recap — Share a monthly or yearly recap (total spent, miles and cashback earned, top categories, your top spot, and a map) as an image, with a link for others to download CardLah!
 - Spending map — See where you spent on a map below the Analysis chart, with nearby purchases grouped and totalled in your main currency.
 - Min-spend & reward-cap reminders — Get a reminder before your statement when a card still needs spend to hit its goal (choose how many days ahead in Settings), plus a heads-up when a card's reward cap is reached.
 - Custom ranges & card filters in Analysis — Analyse any date range and focus the Analysis tab on specific cards.
@@ -57,7 +57,7 @@ v2.2
 - Recurring transactions — Mark a transaction as recurring and it continues every month automatically 
 - Re-arrange your cards — Drag cards into the order you want on the Cards screen.
 - Merchant name auto-complete — Start typing and pick from your past merchants. 
-- Smart category suggestions — CardPulse remembers the category you used for each merchant and fills it in for you next time.
+- Smart category suggestions — CardLah! remembers the category you used for each merchant and fills it in for you next time.
 - Some performace improvments and bug fixes
 
 v2.1
