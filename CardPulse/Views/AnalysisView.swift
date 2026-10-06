@@ -347,20 +347,6 @@ struct AnalysisView: View {
         stackedSeries.map { $0.bucketLabel }.uniqued()
     }
 
-    /// The selected card's minimum spend, drawn as a reference line on the Year chart.
-    /// Only shown when exactly one card is filtered and it has a minimum set. The minimum
-    /// is held in the default currency, matching the converted bar amounts. Bars are
-    /// calendar months, so for cards whose statement day isn't month-end this is an
-    /// approximation of the billing cycle.
-    private var yearMinimumSpendLine: Double? {
-        guard selectedGranularity == .year,
-              selectedCardIDs.count == 1,
-              let card = cards.first(where: { selectedCardIDs.contains($0.id) }),
-              card.hasMinimumSpending,
-              card.minimumSpendingAmount > 0 else { return nil }
-        return Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)
-    }
-
     private var stackedTitle: String {
         switch selectedGranularity {
         case .day: return "By Hour"
@@ -719,32 +705,13 @@ struct AnalysisView: View {
                     .padding(.vertical, 30)
                     .frame(maxWidth: .infinity)
             } else {
-                Chart {
-                    ForEach(stackedSeries) { item in
-                        BarMark(
-                            x: .value("Bucket", item.bucketLabel),
-                            y: .value("Amount", item.amount)
-                        )
-                        .foregroundStyle(MerchantUtils.color(for: item.category, in: categoryRecords))
-                        .opacity(item.amount > 0 ? 1.0 : 0.0)
-                    }
-                    // The rule's value is part of the automatic y-domain, so it stays
-                    // visible even when every month is below the minimum.
-                    if let minimum = yearMinimumSpendLine {
-                        RuleMark(y: .value("Minimum", minimum))
-                            .foregroundStyle(AppColors.textSecondary)
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                            .annotation(
-                                position: .top,
-                                alignment: .trailing,
-                                spacing: 2,
-                                overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
-                            ) {
-                                Text("Min \(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Int(minimum))")
-                                    .font(AppTypography.caption2)
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-                    }
+                Chart(stackedSeries) { item in
+                    BarMark(
+                        x: .value("Bucket", item.bucketLabel),
+                        y: .value("Amount", item.amount)
+                    )
+                    .foregroundStyle(MerchantUtils.color(for: item.category, in: categoryRecords))
+                    .opacity(item.amount > 0 ? 1.0 : 0.0)
                 }
                 .chartLegend(.hidden)
                 .frame(height: 170)

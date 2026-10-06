@@ -1,7 +1,6 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
-- [ADDED] - Show a card's minimum spend as a line on the Analysis year chart, so you can see at a glance which months met it
 
 ## 3.3 - 2026-09-25
 - [CHANGED] - Renamed the app to CardLah!
