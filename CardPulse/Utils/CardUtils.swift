@@ -62,19 +62,7 @@ extension Card {
 
     /// Gets the statement date for a given month, handling months with fewer days
     func statementDate(for date: Date, calendar: Calendar) -> Date {
-        let components = calendar.dateComponents([.year, .month], from: date)
-        let daysInMonth = calendar.range(of: .day, in: .month, for: date)?.count ?? 31
-
-        // If the statement day exceeds days in month, use the last day of the month
-        let actualDay = min(effectiveStatementDay, daysInMonth)
-
-        var comps = components
-        comps.day = actualDay
-        comps.hour = 23
-        comps.minute = 59
-        comps.second = 59
-
-        return calendar.date(from: comps) ?? date
+        MinimumSpendHistory.statementDate(day: effectiveStatementDay, for: date, calendar: calendar)
     }
     
     var currentCycleStart: Date {

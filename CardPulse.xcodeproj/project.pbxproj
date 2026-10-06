@@ -19,6 +19,7 @@
 		ABCDEF1234567890ABCDEF05 /* TransactionMapClusteringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF06 /* TransactionMapClusteringTests.swift */; };
 		ABCDEF1234567890ABCDEF07 /* CycleNudgeSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF08 /* CycleNudgeSchedulerTests.swift */; };
 		ABCDEF1234567890ABCDEF13 /* CategoryInferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF14 /* CategoryInferenceTests.swift */; };
+		ABCDEF1234567890ABCDEF15 /* MinimumSpendHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF1234567890ABCDEF16 /* MinimumSpendHistoryTests.swift */; };
 		E4D816A7AF2B6A593682EDE1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C3ADE3BAF41D282E245C402 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
@@ -68,6 +69,7 @@
 		ABCDEF1234567890ABCDEF11 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		ABCDEF1234567890ABCDEF12 /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
 		ABCDEF1234567890ABCDEF14 /* CategoryInferenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryInferenceTests.swift; sourceTree = "<group>"; };
+		ABCDEF1234567890ABCDEF16 /* MinimumSpendHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MinimumSpendHistoryTests.swift; sourceTree = "<group>"; };
 		D9F6661E8A51D40F9A0D507F /* CardPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CardPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9E254CC39D44B966F05895 /* CurrencyParsingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrencyParsingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -207,6 +209,7 @@
 				ABCDEF1234567890ABCDEF06 /* TransactionMapClusteringTests.swift */,
 				ABCDEF1234567890ABCDEF08 /* CycleNudgeSchedulerTests.swift */,
 				ABCDEF1234567890ABCDEF14 /* CategoryInferenceTests.swift */,
+				ABCDEF1234567890ABCDEF16 /* MinimumSpendHistoryTests.swift */,
 			);
 			path = CardPulseTests;
 			sourceTree = "<group>";
@@ -371,6 +374,7 @@
 				ABCDEF1234567890ABCDEF05 /* TransactionMapClusteringTests.swift in Sources */,
 				ABCDEF1234567890ABCDEF07 /* CycleNudgeSchedulerTests.swift in Sources */,
 				ABCDEF1234567890ABCDEF13 /* CategoryInferenceTests.swift in Sources */,
+				ABCDEF1234567890ABCDEF15 /* MinimumSpendHistoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - See which past billing cycles hit a card's minimum spend, as a grid of badges at the bottom of the card detail screen
 
 ## 3.3 - 2026-09-25
 - [CHANGED] - Renamed the app to CardLah!
