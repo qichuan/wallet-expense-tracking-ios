@@ -19,6 +19,10 @@ CardLah! takes the mental load off.
 
 # What's New in This Version
 
+v3.4
+- Minimum-spend history — See at a glance which past billing cycles hit a card's minimum spend, with a grid of badges at the bottom of the card detail screen.
+- Some performance improvements and bug fixes
+
 v3.3
 - New name, same app — CardPulse is now CardLah! Everything you've tracked stays right where it is, and your Wallet automations keep working.
 - Some performance improvements and bug fixes
