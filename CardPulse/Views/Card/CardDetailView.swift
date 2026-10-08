@@ -91,6 +91,14 @@ struct CardDetailView: View {
                             }
                         }
                         cycleSection
+                        if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
+                            MinimumSpendHistoryGrid(
+                                cycles: card.minimumSpendHistory,
+                                minimum: card.minimumSpendingAmount,
+                                currencySymbol: currencySymbol
+                            )
+                            .padding(.horizontal, 20)
+                        }
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 40)
