@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+
+## 3.5 - 2026-10-10
 - [ADDED] - Tap a badge in the minimum spend history grid to see the miles or cashback you earned in that billing cycle
 
 ## 3.4 - 2026-10-08

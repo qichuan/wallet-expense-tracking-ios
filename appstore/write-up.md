@@ -19,6 +19,9 @@ CardLah! takes the mental load off.
 
 # What's New in This Version
 
+v3.5
+- Rewards per cycle — Tap a badge in the minimum-spend history grid to see the miles or cashback you earned in that billing cycle.
+
 v3.4
 - Minimum-spend history — See at a glance which past billing cycles hit a card's minimum spend, with a grid of badges at the bottom of the card detail screen.
 - Some performance improvements and bug fixes
