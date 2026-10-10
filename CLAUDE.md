@@ -65,7 +65,7 @@ Views/
     CardDetailView.swift
     CardFormView.swift
     CardRow.swift
-    MinimumSpendHistoryGrid.swift  # Badge grid of past cycles' min-spend outcome
+    MinimumSpendHistoryGrid.swift  # Badge grid of past cycles' min-spend outcome; tap for rewards earned
   Transaction/
     AllTransactionsView.swift
     TransactionFormView.swift
@@ -138,7 +138,7 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **RewardCalculator** (`Utils/RewardCalculator.swift`): Computes miles/cashback as `floor(amount / roundingBlock) × roundingBlock × rate`. `convertedReward(for:)` is the canonical per-transaction reward (FX-converts to the default currency first); `aggregate(_:)` and `cycleRewardStatus(for:)` build on it. `breakdown(for:)` feeds the transaction detail's explanation table. The raw-amount primitive `reward(amount:category:card:)` exists for previews/tests only.
 - **TransactionMapClustering** (`Utils/TransactionMapClustering.swift`): Pure geometry for the Analysis location map — greedy distance-based clustering of located transactions and a bounding `MKCoordinateRegion`. Unit-tested; used by `TransactionLocationMapCard` and the recap map.
 - **MapSnapshotRenderer** (`Utils/MapSnapshotRenderer.swift`): Renders a static `MKMapSnapshotter` image with cluster dots for the recap (since `ImageRenderer` can't capture a live `Map`).
-- **MinimumSpendHistory** (`Utils/MinimumSpendHistory.swift`): Pure billing-cycle bucketing for the card detail's minimum-spend badge grid (`Views/Card/MinimumSpendHistoryGrid.swift`) — last 12 completed cycles, newest first, each met / missed / no spend, starting from the cycle with the card's first spend. Also owns `statementDate(day:for:calendar:)`, which `Card.statementDate` delegates to. Unit-tested.
+- **MinimumSpendHistory** (`Utils/MinimumSpendHistory.swift`): Pure billing-cycle bucketing for the card detail's minimum-spend badge grid (`Views/Card/MinimumSpendHistoryGrid.swift`) — last 12 completed cycles, newest first, each met / missed / no spend with the rewards earned in it (category-capped, clamped to the card-wide cycle cap), starting from the cycle with the card's first spend. Tapping a badge shows that cycle's spend and rewards in a panel under the grid. Also owns `statementDate(day:for:calendar:)`, which `Card.statementDate` delegates to. Unit-tested.
 - **CycleNudgeScheduler** (`Utils/CycleNudgeScheduler.swift`): Schedules min-spend and reward-cap local notifications (see Notifications & Nudges). Pure helpers (`resolvedLeadDays`, `reminderFireComponents`, `shouldFireCapNudge`) are unit-tested.
 - **AppLinks** (`Utils/AppLinks.swift`): Centralised external links (e.g. the App Store URL used in the recap share CTA).
 - **CurrencyUtils** (`Utils/CurrencyUtils.swift`): Multi-currency support. Holds the built-in currency list (`allCurrencies`, 15 currencies), user-defined custom currencies, enabled/default currency preferences (all in `UserDefaults`), and exchange-rate cache (via [Frankfurter API](https://www.frankfurter.app), 5-day TTL). Key methods: `parseCurrencyAndAmount(from:)` parses raw Wallet strings like `"S$12.50"` or `"MYR 8.00"`; `fetchRates(for:to:)` fetches and inverts rates; `rateToDefault(from:)` returns the cached conversion rate.

@@ -27,6 +27,9 @@ enum MinimumSpendHistory {
         let statementDate: Date
         let spent: Decimal
         let outcome: Outcome
+        /// Rewards (miles or cashback) earned in this cycle, after per-category monthly
+        /// caps and the card-wide cycle cap. `0` when the card earns no rewards.
+        var earned: Decimal = 0
 
         var id: Date { start }
     }
@@ -46,10 +49,16 @@ enum MinimumSpendHistory {
     /// Completed billing cycles, newest first, up to `limit`. The in-progress cycle is excluded.
     /// Cycles that end before the earliest spend are dropped, so a new card doesn't
     /// show a run of "missed" badges; with no spend at all the result is empty.
+    ///
+    /// `rewards` are per-transaction rewards (already category-capped) bucketed into the
+    /// same cycles; each cycle's total is clamped to `rewardCap` when it is above zero,
+    /// matching how `RewardCalculator.cycleRewardStatus` treats the current cycle.
     static func pastCycles(
         statementDay: Int,
         minimum: Decimal,
         spends: [(date: Date, amount: Decimal)],
+        rewards: [(date: Date, amount: Decimal)] = [],
+        rewardCap: Decimal = 0,
         now: Date = Date(),
         calendar: Calendar = .current,
         limit: Int = defaultLimit
@@ -86,7 +95,12 @@ enum MinimumSpendHistory {
             } else {
                 outcome = .missed
             }
-            cycles.append(Cycle(start: start, end: end, statementDate: closing, spent: spent, outcome: outcome))
+            let rawEarned = rewards
+                .filter { $0.date >= start && $0.date < end }
+                .reduce(Decimal(0)) { $0 + $1.amount }
+            let earned = rewardCap > 0 ? min(rawEarned, rewardCap) : rawEarned
+            cycles.append(Cycle(start: start, end: end, statementDate: closing,
+                                spent: spent, outcome: outcome, earned: earned))
         }
         return cycles
     }
@@ -94,13 +108,21 @@ enum MinimumSpendHistory {
 
 extension Card {
     /// Completed billing cycles judged against the card's minimum spend, newest first.
-    /// Spend is converted to the default currency, as with `monthlySpent`.
+    /// Spend is converted to the default currency, as with `monthlySpent`. Each cycle also
+    /// carries the rewards it earned, using the same category-capped per-transaction values
+    /// as the rest of the app, clamped to the card-wide cycle cap.
     var minimumSpendHistory: [MinimumSpendHistory.Cycle] {
         guard hasMinimumSpending else { return [] }
+        let capped = RewardCalculator.categoryCappedRewards(for: self)
+        let rewards = transactions.compactMap { tx -> (date: Date, amount: Decimal)? in
+            capped[tx.id].map { (date: tx.date, amount: $0) }
+        }
         return MinimumSpendHistory.pastCycles(
             statementDay: effectiveStatementDay,
             minimum: minimumSpendingAmount,
-            spends: transactions.map { (date: $0.date, amount: $0.amountInDefaultCurrency) }
+            spends: transactions.map { (date: $0.date, amount: $0.amountInDefaultCurrency) },
+            rewards: rewards,
+            rewardCap: RewardCalculator.activeCap(for: self)
         )
     }
 }

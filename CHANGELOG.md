@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [ADDED] - Tap a badge in the minimum spend history grid to see the miles or cashback you earned in that billing cycle
 
 ## 3.4 - 2026-10-08
 - [ADDED] - See which past billing cycles hit a card's minimum spend, as a grid of badges at the bottom of the card detail screen
