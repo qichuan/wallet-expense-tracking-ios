@@ -95,7 +95,8 @@ struct CardDetailView: View {
                             MinimumSpendHistoryGrid(
                                 cycles: card.minimumSpendHistory,
                                 minimum: card.minimumSpendingAmount,
-                                currencySymbol: currencySymbol
+                                currencySymbol: currencySymbol,
+                                rewardType: card.rewardType
                             )
                             .padding(.horizontal, 20)
                         }

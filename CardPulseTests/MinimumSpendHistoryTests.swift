@@ -107,4 +107,47 @@ final class MinimumSpendHistoryTests: XCTestCase {
         XCTAssertEqual(result.first?.end, date(2026, 9, 16, 0))
         XCTAssertEqual(result.last?.start, date(2025, 9, 16, 0))
     }
+    // MARK: - Rewards earned per cycle (issue #71)
+
+    func testRewardsAreBucketedIntoTheirCycles() {
+        // Statement day 15: cycles 16 Jul–15 Aug and 16 Aug–15 Sep.
+        let result = MinimumSpendHistory.pastCycles(
+            statementDay: 15, minimum: 500,
+            spends: [(date(2026, 7, 20), 300), (date(2026, 8, 20), 600)],
+            rewards: [(date(2026, 7, 20), 420), (date(2026, 8, 14), 30), (date(2026, 8, 20), 840)],
+            now: date(2026, 9, 20), calendar: calendar
+        )
+
+        XCTAssertEqual(result.map(\.earned), [840, 450])
+    }
+
+    func testRewardsAreClampedToTheCycleCap() {
+        let result = MinimumSpendHistory.pastCycles(
+            statementDay: 15, minimum: 500,
+            spends: [(date(2026, 8, 20), 900)],
+            rewards: [(date(2026, 8, 20), 60), (date(2026, 8, 25), 40)],
+            rewardCap: 80,
+            now: date(2026, 9, 20), calendar: calendar
+        )
+
+        XCTAssertEqual(result.first?.earned, 80)
+    }
+
+    func testCycleWithoutRewardsEarnsZero() {
+        let result = MinimumSpendHistory.pastCycles(
+            statementDay: 15, minimum: 500,
+            spends: [(date(2026, 7, 20), 300)],
+            rewards: [(date(2026, 7, 20), 3)],
+            now: date(2026, 9, 20), calendar: calendar
+        )
+
+        XCTAssertEqual(result.map(\.outcome), [.noSpend, .missed])
+        XCTAssertEqual(result.map(\.earned), [0, 3])
+    }
+
+    func testRewardsDefaultToZeroWhenNotSupplied() {
+        let result = cycles(spends: [(date(2026, 8, 20), 600)], now: date(2026, 9, 20))
+
+        XCTAssertEqual(result.first?.earned, 0)
+    }
 }
