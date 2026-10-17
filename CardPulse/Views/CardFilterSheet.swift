@@ -31,7 +31,6 @@ struct CardFilterSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
 

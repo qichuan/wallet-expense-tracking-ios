@@ -28,6 +28,23 @@ extension Card {
     var remainingAmount: Decimal {
         return max(0, minimumSpendingAmount - monthlySpent)
     }
+
+    /// True when the card has an active minimum-spend target.
+    var hasSpendGoal: Bool {
+        hasMinimumSpending && minimumSpendingAmount > 0
+    }
+
+    /// Fraction of the current billing cycle that has elapsed (0...1).
+    var cyclePacing: Double? {
+        let total = currentCycleEnd.timeIntervalSince(currentCycleStart)
+        guard total > 0 else { return nil }
+        return max(0, min(1, Date().timeIntervalSince(currentCycleStart) / total))
+    }
+
+    /// Goal status for the current cycle, weighted by how far into the cycle we are.
+    var cycleStatus: CardStatus {
+        CardStatus.derive(progress: progressPercentage, pacing: cyclePacing)
+    }
     
     var daysRemaining: Int {
         let calendar = Calendar.current

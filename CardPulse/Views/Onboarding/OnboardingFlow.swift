@@ -38,7 +38,6 @@ struct OnboardingFlow: View {
                     ))
             }
         }
-        .preferredColorScheme(.dark)
         .onAppear {
             if currencySelectedCode.isEmpty {
                 currencySelectedCode = CurrencyStepView.defaultLocaleCode()

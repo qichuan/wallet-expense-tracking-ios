@@ -40,21 +40,26 @@ struct WelcomeStepView: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 24)
 
-                Text("CardLah!")
-                    .font(.system(size: 44, weight: .heavy, design: .default))
-                    .foregroundColor(AppColors.textPrimary)
+                (Text("CardLah").foregroundColor(AppColors.textPrimary)
+                    + Text("!").foregroundColor(AppColors.accent))
+                    .font(AppTypography.welcomeTitle)
 
-                Spacer().frame(height: 18)
+                Spacer().frame(height: 12)
+
+                Mascot(mood: .excited, size: 120, motion: .jump)
+
+                Spacer().frame(height: 12)
 
                 deviceMockup
-                    .frame(maxHeight: .infinity)
-                    .padding(.horizontal, 40)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .clipped()
+                    .padding(.horizontal, 32)
 
                 Spacer().frame(height: 20)
 
                 VStack(spacing: 12) {
                     Text("Your Spending.\nClearly understood.")
-                        .font(.system(size: 28, weight: .heavy, design: .default))
+                        .font(AppTypography.welcomeHeadline)
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
@@ -72,7 +77,6 @@ struct WelcomeStepView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
@@ -85,10 +89,7 @@ struct WelcomeStepView: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(AppColors.backgroundCard.opacity(0.6))
-        )
+        .background(ChunkyBackground(cornerRadius: 30))
     }
 
     @ViewBuilder
@@ -122,8 +123,8 @@ struct WelcomeStepView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(AppColors.backgroundCardSoft)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppColors.backgroundPrimary)
         )
     }
 }

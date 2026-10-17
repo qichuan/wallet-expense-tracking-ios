@@ -74,7 +74,6 @@ private struct RootView: View {
         Group {
             if shouldShowOnboarding {
                 OnboardingFlow()
-                    .preferredColorScheme(.dark)
             } else {
                 MainTabView()
             }

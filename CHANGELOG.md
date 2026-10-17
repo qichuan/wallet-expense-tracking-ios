@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - Fresh, playful look: a warm cream theme with chunky cards, rounded Fredoka and Nunito fonts, and a card mascot that cheers you on (or sweats a little when a card is behind)
+- [CHANGED] - The app now follows your device's light or dark appearance instead of always being dark
+- [CHANGED] - Tabs are now Today, Cards, Recap and Me; Analysis is now Recap and Settings lives under Me
+- [ADDED] - Day streak and a weekly flame strip on Today, based on the days you've logged a tap
+- [ADDED] - Me tab with your streaks, taps logged, targets hit, a monthly activity calendar and unlockable badges
+- [ADDED] - Pick the mascot's colour (Gold, Pink or Mint) and add your name under Me
 
 ## 3.5 - 2026-10-10
 - [ADDED] - Tap a badge in the minimum spend history grid to see the miles or cashback you earned in that billing cycle

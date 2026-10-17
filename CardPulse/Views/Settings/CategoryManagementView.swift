@@ -23,7 +23,6 @@ struct CategoryManagementView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
 

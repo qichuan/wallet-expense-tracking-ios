@@ -111,8 +111,7 @@ struct CategoryListView: View {
                             }
                         }
                     }
-                    .background(AppColors.backgroundCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .chunkySurface(cornerRadius: 20)
                 }
             }
             .padding(.horizontal, 20)
@@ -212,8 +211,7 @@ struct AddCategorySheet: View {
                                 .focused($nameFocused)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .background(AppColors.backgroundCard)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .chunkySurface(cornerRadius: 18)
                         }
 
                         iconPickerSection(selected: $icon, search: $iconSearch, searchFocused: $iconSearchFocused)
@@ -247,7 +245,6 @@ struct AddCategorySheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func save() {
@@ -325,8 +322,7 @@ struct EditCategorySheet: View {
                                 .focused($nameFocused)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .background(AppColors.backgroundCard)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .chunkySurface(cornerRadius: 18)
                         }
 
                         iconPickerSection(selected: $icon, search: $iconSearch, searchFocused: $iconSearchFocused)
@@ -365,7 +361,6 @@ struct EditCategorySheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .alert("Delete Category", isPresented: $showingDeleteAlert) {
             Button("Delete", role: .destructive) { deleteCategory() }
             Button("Cancel", role: .cancel) { }
@@ -446,8 +441,7 @@ private func iconPickerSection(
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .chunkySurface(cornerRadius: 16)
 
         let filtered = search.wrappedValue.isEmpty
             ? categoryIconOptions
@@ -497,7 +491,7 @@ private func colorPickerSection(selected: Binding<Int>) -> some View {
                         if hex == selected.wrappedValue {
                             Image(systemName: "checkmark")
                                 .font(AppTypography.iconMedium)
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.onAccent)
                         }
                     }
                     .frame(width: 40, height: 40)

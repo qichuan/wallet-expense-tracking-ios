@@ -25,8 +25,7 @@ struct FormSection<Content: View>: View {
             VStack(spacing: 0) {
                 content()
             }
-            .background(AppColors.backgroundCard)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .chunkySurface(cornerRadius: 20)
             .padding(.horizontal, 20)
         }
     }
@@ -72,7 +71,7 @@ struct FormDivider: View {
     var body: some View {
         Rectangle()
             .fill(AppColors.divider)
-            .frame(height: 1)
+            .frame(height: 2)
             .padding(.leading, 16)
     }
 }

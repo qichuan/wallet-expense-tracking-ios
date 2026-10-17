@@ -246,13 +246,18 @@ struct AnalysisView: View {
         .sorted { $0.amount > $1.amount }
     }
 
-    // MARK: - Stacked chart
+    // MARK: - Bar chart
 
-    struct StackedItem: Identifiable {
-        let id = UUID()
-        let bucketLabel: String
-        let category: String
+    /// One bar of the "By week / By day …" chart, colored like the design: the
+    /// bucket containing today in accent, earlier buckets soft blue, the cheapest
+    /// earlier bucket green ("THRIFTY!"), later buckets as empty track.
+    struct BucketBar: Identifiable {
+        enum Role { case past, current, thrifty, future }
+
+        let id: Int
+        let label: String
         let amount: Double
+        let role: Role
     }
 
     /// Time buckets for the stacked bar, as `(start, end, label)`. The aggregation loop
@@ -326,34 +331,60 @@ struct AnalysisView: View {
         return defs
     }
 
-    private var stackedSeries: [StackedItem] {
-        let seriesCategories = categoryRecords.isEmpty
-            ? MerchantUtils.defaultCategories
-            : categoryRecords.map { $0.name }
-
-        var result: [StackedItem] = []
-        for def in bucketDefinitions() {
-            let bucketTx = filteredTransactions.filter { $0.date >= def.start && $0.date < def.end }
-            let byCategory = Dictionary(grouping: bucketTx) { groupingCategory(for: $0) }
-            for cat in seriesCategories {
-                let total = byCategory[cat]?.reduce(0.0) { $0 + amountInDefault($1) } ?? 0.0
-                result.append(StackedItem(bucketLabel: def.label, category: cat, amount: total))
-            }
+    private var bucketBars: [BucketBar] {
+        let now = Date()
+        let defs = bucketDefinitions()
+        let totals = defs.map { def in
+            filteredTransactions
+                .filter { $0.date >= def.start && $0.date < def.end }
+                .reduce(0.0) { $0 + amountInDefault($1) }
         }
-        return result
+        let currentIndex = defs.firstIndex { $0.start <= now && now < $0.end }
+        // Buckets before today (or every bucket, for a range entirely in the past).
+        let pastIndices = defs.indices.filter { defs[$0].end <= now }
+        let pastNonZero = pastIndices.filter { totals[$0] > 0 }
+        let thriftyIndex = pastNonZero.count >= 2 ? pastNonZero.min { totals[$0] < totals[$1] } : nil
+
+        return defs.indices.map { i in
+            let role: BucketBar.Role
+            if i == currentIndex {
+                role = .current
+            } else if i == thriftyIndex {
+                role = .thrifty
+            } else if defs[i].start > now {
+                role = .future
+            } else {
+                role = .past
+            }
+            return BucketBar(id: i, label: defs[i].label, amount: totals[i], role: role)
+        }
     }
 
-    private var stackedXAxisValues: [String] {
-        stackedSeries.map { $0.bucketLabel }.uniqued()
+    private func barColor(_ role: BucketBar.Role) -> Color {
+        switch role {
+        case .current: return AppColors.accent
+        case .thrifty: return AppColors.statusHit
+        case .past:    return AppColors.accentSoftBorder
+        case .future:  return AppColors.track
+        }
+    }
+
+    /// Mascot line for the selected period, from the same totals as the delta pill.
+    private var recapLine: MascotCopy.Line {
+        MascotCopy.recap(
+            current: Decimal(currentTotal),
+            previous: Decimal(previousTotal),
+            previousLabel: selectedGranularity == .custom ? "the previous period" : previousPeriodLabel
+        )
     }
 
     private var stackedTitle: String {
         switch selectedGranularity {
-        case .day: return "By Hour"
-        case .week: return "By Day"
-        case .month: return "By Week"
-        case .year: return "By Month"
-        case .custom: return "Over Time"
+        case .day: return "By hour"
+        case .week: return "By day"
+        case .month: return "By week"
+        case .year: return "By month"
+        case .custom: return "Over time"
         }
     }
 
@@ -416,59 +447,61 @@ struct AnalysisView: View {
                 AppColors.backgroundPrimary.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        BrandHeader(title: "Analysis") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        BrandHeader(title: "Recap") {
                             if canShareRecap {
                                 Button(action: { showingRecap = true }) {
                                     Image(systemName: "square.and.arrow.up")
                                         .font(AppTypography.iconLarge)
                                         .foregroundColor(AppColors.accent)
+                                        .frame(width: 38, height: 38)
+                                        .background(Circle().fill(AppColors.accentSoft))
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Share spending recap")
                             }
                         }
 
-                        SegmentedPillControl(
-                            selection: $selectedGranularity,
-                            options: Granularity.allCases,
-                            title: { $0.title }
-                        )
-                        .padding(.horizontal, 20)
+                        Group {
+                            SegmentedPillControl(
+                                selection: $selectedGranularity,
+                                options: Granularity.allCases,
+                                title: { $0.title }
+                            )
 
-                        dateNavigator
-                            .padding(.horizontal, 20)
+                            dateNavigator
 
-                        cardFilterBar
+                            cardFilterBar
 
-                        totalSpendCard
-                            .padding(.horizontal, 20)
+                            MascotSays(mood: recapLine.mood, mascotSize: 84,
+                                       motion: recapLine.mood == .excited ? .jump : .bob) {
+                                Text(recapLine.text)
+                            }
 
-                        if rewardSummary.miles > 0 || rewardSummary.cashback > 0 {
-                            rewardsCard
-                                .padding(.horizontal, 20)
-                        }
+                            totalSpendCard
 
-                        donutCard
-                            .padding(.horizontal, 20)
+                            if rewardSummary.miles > 0 || rewardSummary.cashback > 0 {
+                                rewardsCard
+                            }
 
-                        if selectedGranularity == .day {
-                            dayTransactionsCard
-                                .padding(.horizontal, 20)
-                        } else {
-                            stackedBarCard
-                                .padding(.horizontal, 20)
+                            donutCard
 
-                            if !mapPoints.isEmpty {
-                                TransactionLocationMapCard(
-                                    points: mapPoints,
-                                    currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode)
-                                )
-                                .padding(.horizontal, 20)
+                            if selectedGranularity == .day {
+                                dayTransactionsCard
+                            } else {
+                                stackedBarCard
+
+                                if !mapPoints.isEmpty {
+                                    TransactionLocationMapCard(
+                                        points: mapPoints,
+                                        currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode)
+                                    )
+                                }
                             }
                         }
+                        .padding(.horizontal, 18)
                     }
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 28)
                 }
             }
             .navigationBarHidden(true)
@@ -557,8 +590,12 @@ struct AnalysisView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(AppColors.backgroundCard)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(AppColors.border, lineWidth: 2)
             )
     }
 
@@ -588,31 +625,35 @@ struct AnalysisView: View {
                         .font(AppTypography.chevronSmall)
                         .foregroundColor(AppColors.textSecondary)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(AppColors.backgroundCard)
-                )
+                .chunkyRow(padding: 10)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
         }
+    }
+
+    private var totalSpendLabel: String {
+        selectedGranularity == .custom ? "Total spend" : "Total spend · \(centralDateLabel)"
     }
 
     @ViewBuilder
     private var totalSpendCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(text: "Total Spend")
-            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(currentTotal, specifier: "%.2f")")
+        VStack(alignment: .leading, spacing: 8) {
+            Text(totalSpendLabel.uppercased())
+                .font(AppTypography.sectionLabel)
+                .tracking(1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(CurrencyUtils.display(Decimal(currentTotal), code: defaultCurrencyCode, fractionDigits: 2))
                 .font(AppTypography.amountHero)
-                .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-            SpendingDeltaLabel(current: currentTotal, previous: previousTotal, previousLabel: previousPeriodLabel)
+            if previousTotal > 0 {
+                SpendingDeltaLabel(current: currentTotal, previous: previousTotal, previousLabel: previousPeriodLabel)
+            }
         }
+        .foregroundColor(AppColors.onAccent)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(padding: 18)
+        .chunkyFill(AppColors.accent, edge: AppColors.accentEdge)
     }
 
     @ViewBuilder
@@ -620,7 +661,9 @@ struct AnalysisView: View {
         let summary = rewardSummary
         let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Rewards Earned")
+            Text("Rewards earned")
+                .font(AppTypography.sectionTitle)
+                .foregroundColor(AppColors.textPrimary)
             HStack(spacing: 16) {
                 if summary.miles > 0 {
                     rewardTile(
@@ -639,7 +682,7 @@ struct AnalysisView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardSurface(padding: 18)
+        .cardSurface()
     }
 
     @ViewBuilder
@@ -663,41 +706,57 @@ struct AnalysisView: View {
         if filteredTransactions.isEmpty {
             emptyCard(message: "No transactions in this range")
         } else {
-            HStack(alignment: .center, spacing: 16) {
-                DonutChartView(slices: donutSlices, lineWidth: 14)
-                    .frame(width: 130, height: 130)
-
-                VStack(spacing: 8) {
-                    ForEach(donutSlices.prefix(6)) { slice in
-                        categoryRow(slice)
-                    }
+            let maxAmount = donutSlices.map { Double(truncating: $0.amount as NSDecimalNumber) }.max() ?? 0
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 16) {
+                    Text("Where it went")
+                        .font(AppTypography.sectionTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    DonutChartView(slices: donutSlices, lineWidth: 10)
+                        .frame(width: 64, height: 64)
                 }
-                .frame(maxWidth: .infinity)
+                ForEach(donutSlices.prefix(6)) { slice in
+                    categoryRow(slice, maxAmount: maxAmount)
+                }
             }
-            .cardSurface(padding: 18)
+            .cardSurface()
         }
     }
 
     @ViewBuilder
-    private func categoryRow(_ slice: DonutSlice) -> some View {
-        HStack(spacing: 8) {
-            Circle()
+    private func categoryRow(_ slice: DonutSlice, maxAmount: Double) -> some View {
+        let amount = Double(truncating: slice.amount as NSDecimalNumber)
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(slice.color)
-                .frame(width: 8, height: 8)
-            Text(slice.category)
-                .font(AppTypography.bannerBody)
+                .frame(width: 34, height: 34)
+                .overlay(
+                    Image(systemName: MerchantUtils.icon(for: slice.category, in: categoryRecords))
+                        .font(AppTypography.iconMedium)
+                        .foregroundColor(AppColors.onAccent)
+                )
+            VStack(alignment: .leading, spacing: 5) {
+                HStack {
+                    Text(slice.category)
+                    Spacer(minLength: 8)
+                    Text(CurrencyUtils.display(slice.amount, code: defaultCurrencyCode))
+                }
+                .font(AppTypography.rowValue)
                 .foregroundColor(AppColors.textPrimary)
-            Spacer()
-            Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Double(truncating: slice.amount as NSDecimalNumber), specifier: "%.0f")")
-                .font(AppTypography.bannerCTA)
-                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                ChunkyProgressBar(progress: maxAmount > 0 ? amount / maxAmount : 0, color: slice.color)
+            }
         }
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
     private var stackedBarCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel(text: stackedTitle)
+            Text(stackedTitle)
+                .font(AppTypography.sectionTitle)
+                .foregroundColor(AppColors.textPrimary)
             if filteredTransactions.isEmpty {
                 Text("No transactions in this range")
                     .font(AppTypography.footnote)
@@ -705,42 +764,65 @@ struct AnalysisView: View {
                     .padding(.vertical, 30)
                     .frame(maxWidth: .infinity)
             } else {
-                Chart(stackedSeries) { item in
+                let bars = bucketBars
+                let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
+                Chart(bars) { bar in
                     BarMark(
-                        x: .value("Bucket", item.bucketLabel),
-                        y: .value("Amount", item.amount)
+                        x: .value("Bucket", bar.label),
+                        y: .value("Amount", bar.amount),
+                        width: .ratio(0.7)
                     )
-                    .foregroundStyle(MerchantUtils.color(for: item.category, in: categoryRecords))
-                    .opacity(item.amount > 0 ? 1.0 : 0.0)
+                    .foregroundStyle(barColor(bar.role))
+                    .cornerRadius(bars.count > 12 ? 3 : 8, style: .continuous)
+                    .annotation(position: .top, spacing: 4) {
+                        if bar.role == .thrifty {
+                            Text("THRIFTY!")
+                                .font(AppTypography.badgeTiny)
+                                .foregroundColor(AppColors.statusHitText)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.statusHitSoft))
+                                .fixedSize()
+                        }
+                    }
                 }
                 .chartLegend(.hidden)
-                .frame(height: 170)
+                .frame(height: 190)
                 .chartYAxis {
                     AxisMarks(position: .leading) { value in
                         AxisGridLine().foregroundStyle(AppColors.divider)
                         AxisValueLabel {
                             if let v = value.as(Double.self) {
-                                Text("\(CurrencyUtils.symbol(for: defaultCurrencyCode))\(Int(v))")
+                                Text("\(symbol)\(Int(v))")
+                                    .font(AppTypography.caption2)
                             }
                         }
                         .foregroundStyle(AppColors.textTertiary)
                     }
                 }
                 .chartXAxis {
-                    AxisMarks(values: stackedXAxisValues) { _ in
-                        AxisValueLabel()
-                            .foregroundStyle(AppColors.textTertiary)
+                    AxisMarks(values: bars.map(\.label).uniqued()) { value in
+                        AxisValueLabel {
+                            if let label = value.as(String.self) {
+                                Text(label)
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(bars.first { $0.label == label }?.role == .current
+                                                     ? AppColors.accent : AppColors.textSecondary)
+                            }
+                        }
                     }
                 }
             }
         }
-        .cardSurface(padding: 18)
+        .cardSurface()
     }
 
     @ViewBuilder
     private var dayTransactionsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel(text: "Transactions")
+            Text("Transactions")
+                .font(AppTypography.sectionTitle)
+                .foregroundColor(AppColors.textPrimary)
             if sortedFilteredTransactions.isEmpty {
                 Text("No transactions in this range")
                     .font(AppTypography.footnote)
@@ -774,7 +856,13 @@ struct AnalysisView: View {
     }
 }
 
-#Preview {
+#Preview("Light") {
     AnalysisView()
         .modelContainer(ModelContainer.createMockContainer())
+}
+
+#Preview("Dark") {
+    AnalysisView()
+        .modelContainer(ModelContainer.createMockContainer())
+        .preferredColorScheme(.dark)
 }

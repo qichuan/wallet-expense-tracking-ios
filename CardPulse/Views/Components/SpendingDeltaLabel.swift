@@ -17,9 +17,9 @@ struct SpendingDeltaLabel: View {
 
     private var color: Color {
         guard let d = delta else { return AppColors.textSecondary }
-        // "Spent less" is green (good), "spent more" is red (bad).
-        if d < 0 { return AppColors.statusHit }
-        if d > 0 { return AppColors.destructive }
+        // "Spent less" is green (good), "spent more" is amber (careful).
+        if d < 0 { return AppColors.statusHitText }
+        if d > 0 { return AppColors.statusBehindText }
         return AppColors.textSecondary
     }
 
@@ -34,8 +34,9 @@ struct SpendingDeltaLabel: View {
         guard let d = delta else {
             return previousLabel.isEmpty ? "" : "No data for \(previousLabel)"
         }
-        let pct = Int(abs(d) * 100)
-        return "\(pct)% vs \(previousLabel)"
+        let pct = Int((abs(d) * 100).rounded())
+        if pct == 0 { return "Same as \(previousLabel)" }
+        return "\(pct)% \(d < 0 ? "less" : "more") than \(previousLabel)"
     }
 
     var body: some View {
@@ -48,6 +49,9 @@ struct SpendingDeltaLabel: View {
                 .font(AppTypography.deltaText)
         }
         .foregroundColor(color)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(AppColors.backgroundCard))
     }
 }
 
@@ -58,5 +62,5 @@ struct SpendingDeltaLabel: View {
         SpendingDeltaLabel(current: 1000, previous: 0, previousLabel: "October")
     }
     .padding()
-    .background(AppColors.backgroundCard)
+    .background(AppColors.accent)
 }

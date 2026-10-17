@@ -117,7 +117,6 @@ struct CardFormView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .alert("Delete Card", isPresented: $showingDeleteAlert) {
             Button("Delete", role: .destructive) { deleteCard() }
             Button("Cancel", role: .cancel) { }
@@ -825,7 +824,6 @@ private struct RewardRuleEditor: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder

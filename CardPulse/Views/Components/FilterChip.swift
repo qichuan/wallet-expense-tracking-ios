@@ -26,16 +26,21 @@ struct FilterChip: View {
                 if let count = count {
                     Text("\(count)")
                         .font(AppTypography.filterChip)
-                        .foregroundColor(selected ? AppColors.backgroundPrimary.opacity(0.7) : AppColors.textSecondary)
+                        .opacity(0.6)
                 }
             }
-            .foregroundColor(selected ? AppColors.backgroundPrimary : AppColors.textPrimary)
+            .foregroundColor(selected ? AppColors.onSurfaceHigh : AppColors.textPrimary)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(
-                Capsule(style: .continuous)
-                    .fill(selected ? AppColors.surfaceHigh : AppColors.backgroundCard)
+                ChunkyBackground(
+                    fill: selected ? AppColors.surfaceHigh : AppColors.backgroundCard,
+                    edge: selected ? AppColors.surfaceHigh : AppColors.border,
+                    cornerRadius: 999,
+                    lip: 2
+                )
             )
+            .padding(.bottom, 2)
         }
         .buttonStyle(.plain)
     }
