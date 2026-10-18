@@ -2,7 +2,10 @@
 # Turns a raw device recording into an App Store app preview:
 # intro card → recording with caption banners → outro card, joined with dissolves.
 #
-#   scripts/app-store/make_preview.sh <raw.mp4> [out dir]
+#   appstore/make_preview.sh [raw.mp4]
+#
+# Reads appstore/app_preview/raw-preview.mp4 (from record_preview.sh) unless given
+# another recording, and writes appstore/app_preview/app-preview.mp4.
 #
 # Env:
 #   START=1.0   seconds to skip at the start of the recording
@@ -13,12 +16,16 @@
 # every Face ID / Dynamic Island iPhone size), 30 fps, H.264 High@4.0 ~11 Mbps,
 # AAC stereo 256 kbps 48 kHz.
 set -euo pipefail
+# Resolve a recording passed relative to the caller's directory before moving.
+RAW="${1:-}"
+[[ -n "$RAW" ]] && RAW="$(cd "$(dirname "$RAW")" && pwd)/$(basename "$RAW")"
 cd "$(dirname "$0")"
 
-RAW="${1:?usage: make_preview.sh <raw.mp4> [out dir]}"
-OUT="${2:-./output}"
+OUT="./app_preview"
+RAW="${RAW:-$OUT/raw-preview.mp4}"
+[[ -f "$RAW" ]] || { echo "No recording at $RAW; run record_preview.sh first." >&2; exit 1; }
 START="${START:-1.0}"
-CARDS="$OUT/preview-cards"
+CARDS="$OUT/cards"
 mkdir -p "$OUT"
 
 swift StoreArt.swift preview-cards "$CARDS" > /dev/null
@@ -80,4 +87,4 @@ ffmpeg -hide_banner -loglevel error -y \
   -movflags +faststart \
   "$OUT/app-preview.mp4"
 
-echo "Wrote $OUT/app-preview.mp4 (${TOTAL}s)"
+echo "Wrote appstore/app_preview/app-preview.mp4 (${TOTAL}s)"

@@ -3,7 +3,7 @@
 //  CardPulse
 //
 //  DEBUG-only demo store for App Store screenshots and previews. Launch with
-//  `-StoreDemo` (see `scripts/app-store/README.md`) to run on an in-memory
+//  `-StoreDemo` (see `appstore/README.md`) to run on an in-memory
 //  container instead of the real store, so captures never show real spending.
 //  Cards are popular Singapore cards so the screens feel familiar; merchants are made up.
 //

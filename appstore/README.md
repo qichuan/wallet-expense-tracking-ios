@@ -11,15 +11,26 @@ and the screenshot/preview specs in App Store Connect Help.
 | `record_preview.sh` | Records the iPhone's screen while you drive the demo app. |
 | `make_preview.sh` | Builds the final app preview from that recording. |
 
-Output goes to `scripts/app-store/output/` (gitignored).
+Everything is written straight into this folder:
+
+| Path | Contents |
+| --- | --- |
+| `original_screenshots/` | Raw device captures (`1-today.png` … `5-today-dark.png`). |
+| `appstore_screenshots/iPhone <size> (<w>x<h>)/` | Framed screenshots ready for App Store Connect. |
+| `app_preview/app-preview.mp4` | The finished app preview. |
+| `app_preview/raw-preview.mp4`, `app_preview/cards/` | The raw recording and the intro, outro and caption images it's built from. |
+
+Re-running a script replaces files of the same name. Older assets in these folders (e.g.
+`Apple iPhone 11 (1242x2688)`, `home.png`) are left alone.
 
 ## Demo data
 
 Debug builds accept `-StoreDemo`, which swaps the real store for an in-memory one
 (`CardPulse/Models/StoreDemoData.swift`): popular Singapore cards (Citi Cashback,
 UOB Lady's, DBS Woman's World, HSBC Revolution), made-up merchants, a 12-day streak,
-one goal hit and two ahead of pace, so the mascot smiles throughout. The real store, widget and notifications are
-left alone, and every other launch argument only lasts for that launch.
+one goal hit and two ahead of pace, so the mascot smiles throughout. The real store,
+widget and notifications are left alone, and every other launch argument only lasts
+for that launch.
 
 ## Steps
 
@@ -28,18 +39,19 @@ left alone, and every other launch argument only lasts for that launch.
 2. Get iPhone UDID by using `xcrun devicectl list devices`
 3. Screenshots:
    ```bash
-   DEVICE="My iPhone UDID" scripts/app-store/capture_screenshots.sh
+   DEVICE="My iPhone UDID" appstore/capture_screenshots.sh
    ```
-   Produces `output/screenshots/6.9in` (1320×2868), `6.5in` (1284×2778) and
-   `6.1in` (1206×2622): five PNGs each, no alpha.
+   Saves the raw captures to `original_screenshots/` and produces
+   `appstore_screenshots/iPhone 6.9in (1320x2868)`, `iPhone 6.5in (1284x2778)` and
+   `iPhone 6.1in (1206x2622)`: five PNGs each, no alpha.
 4. App preview:
    ```bash
-   DEVICE="My iPhone UDID" scripts/app-store/record_preview.sh 28
-   scripts/app-store/make_preview.sh scripts/app-store/output/raw-preview.mp4
+   DEVICE="My iPhone UDID" appstore/record_preview.sh 28
+   appstore/make_preview.sh
    ```
    Follow the path printed by `record_preview.sh` (Today → Cards → Recap → Me,
    about 6s each) so each caption lines up with its screen. Produces
-   `output/app-preview.mp4`: 886×1920, 30 fps, H.264 High@4.0, ~11 Mbps, AAC stereo,
+   `app_preview/app-preview.mp4`: 886×1920, 30 fps, H.264 High@4.0, ~11 Mbps, AAC stereo,
    about 26s.
 
 ## Apple's rules this follows

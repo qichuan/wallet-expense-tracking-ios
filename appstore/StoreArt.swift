@@ -1,10 +1,13 @@
 // Renders App Store marketing art for CardLah! with CoreGraphics + CoreText.
 //
-//   swift scripts/app-store/StoreArt.swift screenshots <raw dir> <out dir>
+//   swift appstore/StoreArt.swift screenshots <raw dir> <out dir>
 //       Frames raw device captures (see `shots` below) on a cream background with a
 //       headline and the mascot, at every iPhone size App Store Connect asks for.
-//   swift scripts/app-store/StoreArt.swift preview-cards <out dir>
+//       Writes one folder per size, e.g. "<out dir>/iPhone 6.9in (1320x2868)".
+//   swift appstore/StoreArt.swift preview-cards <out dir>
 //       Intro/outro cards and caption banners (886×1920) for make_preview.sh.
+//
+// Usually run through capture_screenshots.sh / make_preview.sh rather than directly.
 //
 // Colours mirror Theme/AppColors.swift and the mascot mirrors Theme/Mascot.swift.
 
@@ -61,7 +64,7 @@ func color(_ hex: String, _ a: CGFloat = 1) -> CGColor {
 
 let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 let scriptDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-let fontsDir = scriptDir.appendingPathComponent("../../CardPulse/Resources/Fonts").standardized
+let fontsDir = scriptDir.appendingPathComponent("../CardPulse/Resources/Fonts").standardized
 
 for file in ["Fredoka-Bold.ttf", "Fredoka-SemiBold.ttf", "Nunito-Bold.ttf", "Nunito-Black.ttf"] {
     CTFontManagerRegisterFontsForURL(fontsDir.appendingPathComponent(file) as CFURL, .process, nil)
@@ -287,9 +290,9 @@ func drawDevice(_ ctx: CGContext, screen: CGImage, screenRect: CGRect, dark: Boo
 
 func renderScreenshots(rawDir: URL, outDir: URL) {
     for size in sizes {
-        let dir = outDir.appendingPathComponent(size.name)
+        let dir = outDir.appendingPathComponent("iPhone \(size.name) (\(size.w)x\(size.h))")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        for (index, shot) in shots.enumerated() {
+        for shot in shots {
             guard let raw = loadImage(rawDir.appendingPathComponent(shot.raw)) else {
                 print("skip \(shot.raw): not found in \(rawDir.path)")
                 continue
@@ -324,7 +327,7 @@ func renderScreenshots(rawDir: URL, outDir: URL) {
                                     width: screenWidth, height: screenHeight)
             drawDevice(ctx, screen: raw, screenRect: screenRect, dark: shot.dark)
 
-            writePNG(ctx, dir.appendingPathComponent(String(format: "%02d-%@", index + 1, shot.raw)), opaque: true)
+            writePNG(ctx, dir.appendingPathComponent(shot.raw), opaque: true)
         }
     }
 }

@@ -2,7 +2,10 @@
 # Launches the demo store on each tab of a connected iPhone, captures it, then
 # frames the captures with StoreArt.swift.
 #
-#   DEVICE="My iPhone" scripts/app-store/capture_screenshots.sh [out dir]
+#   DEVICE="My iPhone" appstore/capture_screenshots.sh
+#
+# Writes raw captures to appstore/original_screenshots/ and framed screenshots to
+# appstore/appstore_screenshots/iPhone <size> (<w>x<h>)/, replacing files of the same name.
 #
 # Install a Debug build from Xcode first. Unlock the phone, and turn on Focus/Do Not
 # Disturb so no banners land in the shots.
@@ -10,8 +13,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ./demo_launch_args.sh
 
-OUT="${1:-./output}"
-RAW="$OUT/raw"
+RAW="./original_screenshots"
+OUT="./appstore_screenshots"
 mkdir -p "$RAW"
 
 capture() { # <tab> <appearance> <file>
@@ -27,5 +30,5 @@ capture 2 Light 3-recap.png
 capture 3 Light 4-me.png
 capture 0 Dark  5-today-dark.png
 
-swift StoreArt.swift screenshots "$RAW" "$OUT/screenshots"
-echo "Done: $OUT/screenshots/{6.9in,6.5in,6.1in}"
+swift StoreArt.swift screenshots "$RAW" "$OUT"
+echo "Done: appstore/appstore_screenshots/"
