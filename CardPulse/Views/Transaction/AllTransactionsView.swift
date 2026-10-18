@@ -109,8 +109,7 @@ struct AllTransactionsView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(AppColors.backgroundCard)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .chunkySurface(cornerRadius: 16)
 
             // Results summary: count + total (converted to default currency)
             if !filteredTransactions.isEmpty {

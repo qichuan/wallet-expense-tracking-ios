@@ -53,7 +53,6 @@ struct SpendingRecapView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .task { await prepareShareImage() }
     }
 
@@ -72,8 +71,10 @@ struct SpendingRecapView: View {
 
         let renderer = ImageRenderer(
             content: SpendingRecapCard(recap: recap, mapImage: mapImage)
-                .frame(width: 360)
+                .padding(12)
+                .frame(width: 384)
                 .background(AppColors.backgroundPrimary)
+                .environment(\.colorScheme, .light)
         )
         renderer.scale = 3
         shareImage = renderer.uiImage

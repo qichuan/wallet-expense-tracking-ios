@@ -28,6 +28,9 @@ struct CardPulseApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var sharedModelContainer: ModelContainer = {
+        #if DEBUG
+        if StoreDemo.isEnabled { return ModelContainer.createStoreDemoContainer() }
+        #endif
         let schema = Schema([
             Card.self,
             Transaction.self,
@@ -58,6 +61,7 @@ struct CardPulseApp: App {
 
 private struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.system.rawValue
     
     #if DEBUG
     @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
@@ -74,10 +78,15 @@ private struct RootView: View {
         Group {
             if shouldShowOnboarding {
                 OnboardingFlow()
-                    .preferredColorScheme(.dark)
             } else {
                 MainTabView()
             }
         }
+        .onAppear { applyAppearance() }
+        .onChange(of: appearanceRaw) { applyAppearance() }
+    }
+
+    private func applyAppearance() {
+        (AppAppearance(rawValue: appearanceRaw) ?? .system).apply()
     }
 }

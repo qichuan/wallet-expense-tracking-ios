@@ -9,159 +9,87 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @Binding var selectedTab: Int
+
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query private var cards: [Card]
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
+    // Observed so goal progress recomputes when FX rates are refreshed.
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
 
     @State private var showingAddTransaction = false
     @State private var showingAllTransactions = false
     @State private var selectedTransaction: Transaction?
 
-    private var cachedRates: [String: Double] {
-        (try? JSONDecoder().decode([String: Double].self, from: exchangeRatesData)) ?? [:]
-    }
+    private static let recentLimit = 5
 
-    private func amountInDefault(_ tx: Transaction) -> Double {
-        let code = tx.resolvedCurrency
-        let raw = Double(truncating: tx.amount as NSDecimalNumber)
-        guard code != defaultCurrencyCode, let rate = cachedRates[code] else { return raw }
-        return raw * rate
-    }
-
-    // MARK: - Hero metrics
+    // MARK: - Derived state
 
     private var cardsWithGoals: [Card] {
-        cards.filter { $0.hasMinimumSpending && $0.minimumSpendingAmount > 0 }
-    }
-
-    private var totalMinSpend: Decimal {
-        cardsWithGoals.reduce(0) { $0 + $1.minimumSpendingAmount }
+        cards.filter(\.hasSpendGoal).sorted { $0.name < $1.name }
     }
 
     private var cardsHitCount: Int {
         cardsWithGoals.filter { $0.progressPercentage >= 1.0 }.count
     }
 
-    private var allGoalsMet: Bool {
-        !cardsWithGoals.isEmpty && cardsHitCount == cardsWithGoals.count
-    }
-
-    private var nextDeadlineCard: Card? {
-        cardsWithGoals.min { $0.daysRemaining < $1.daysRemaining }
-    }
-
-    private var nextDeadlineDisplay: String {
-        guard let card = nextDeadlineCard else { return "—" }
-        return "\(card.daysRemaining)d"
-    }
-
-    private var cappedSpentTowardGoals: Double {
-        cardsWithGoals.reduce(0.0) { partial, card in
-            let spent = Double(truncating: card.monthlySpent as NSDecimalNumber)
-            let target = Double(truncating: card.minimumSpendingAmount as NSDecimalNumber)
-            return partial + min(spent, target)
+    private var goals: [MascotCopy.Goal] {
+        cardsWithGoals.map {
+            MascotCopy.Goal(name: $0.name, remaining: $0.remainingAmount,
+                            daysRemaining: $0.daysRemaining, status: $0.cycleStatus)
         }
     }
 
-    private var heroDonutSlices: [DonutSlice] {
-        let totalTarget = Double(truncating: totalMinSpend as NSDecimalNumber)
-        let spentForProgress = min(cappedSpentTowardGoals, totalTarget)
-        let remaining = max(0.0, totalTarget - spentForProgress)
-
-        if allGoalsMet {
-            return [DonutSlice(category: "Spent", amount: Decimal(spentForProgress), color: AppColors.statusHit)]
-        }
-        return [
-            DonutSlice(category: "Spent", amount: Decimal(spentForProgress), color: AppColors.accent),
-            DonutSlice(category: "Remaining", amount: Decimal(remaining), color: AppColors.backgroundCardSoft)
-        ]
+    private var streak: ActivityStreak {
+        ActivityStreak(dates: transactions.map(\.date))
     }
 
-    private var remainingToSpendAmount: Decimal {
-        let totalTarget = Double(truncating: totalMinSpend as NSDecimalNumber)
-        return Decimal(max(0.0, totalTarget - cappedSpentTowardGoals))
+    /// Nearest statement among cards still short of their target (or any goal card when all have hit).
+    private var daysLeft: Int? {
+        let open = cardsWithGoals.filter { $0.progressPercentage < 1.0 }
+        return (open.isEmpty ? cardsWithGoals : open).map(\.daysRemaining).min()
     }
 
-    private var remainingToSpendText: String {
-        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
-        return "\(symbol)\(formatted(remainingToSpendAmount))"
+    private var remainingToSpend: Decimal {
+        cardsWithGoals.reduce(Decimal(0)) { $0 + $1.remainingAmount }
     }
 
-    private var periodLabel: String {
-        let df = DateFormatter()
-        df.dateFormat = "MMMM"
-        return "MIN-SPEND TARGET · \(df.string(from: Date()).uppercased())"
+    private func money(_ amount: Decimal) -> String {
+        CurrencyUtils.display(amount, code: defaultCurrencyCode)
     }
 
-    private var formattedTotalMinSpend: String {
-        let symbol = CurrencyUtils.symbol(for: defaultCurrencyCode)
-        return "\(symbol)\(formatted(totalMinSpend))"
+    private var recentTransactions: [Transaction] {
+        Array(transactions.prefix(Self.recentLimit))
     }
 
-    private func formatted(_ amount: Decimal) -> String {
-        let number = Double(truncating: amount as NSDecimalNumber)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: number)) ?? "0"
+    private func isNew(_ tx: Transaction) -> Bool {
+        Date().timeIntervalSince(tx.date) < 24 * 60 * 60
     }
 
-    private var latestTransactions: [Transaction] {
-        Array(transactions.prefix(10))
-    }
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                AppColors.backgroundPrimary.ignoresSafeArea()
-
-                if transactions.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        BrandHeader(title: "Home") {
-                            Button(action: { showingAddTransaction = true }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(AppTypography.headerAction)
-                                    .foregroundColor(AppColors.accent)
-                            }
-                        }
-                        Spacer()
-                        emptyState
-                        Spacer()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+                    heroCard
+                    if !cardsWithGoals.isEmpty {
+                        minSpendCard
                     }
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            BrandHeader(title: "Home") {
-                                Button(action: { showingAddTransaction = true }) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(AppTypography.headerAction)
-                                        .foregroundColor(AppColors.accent)
-                                }
-                            }
-
-                            if !cardsWithGoals.isEmpty {
-                                SummaryHeroCard(
-                                    periodLabel: periodLabel,
-                                    totalAmount: formattedTotalMinSpend,
-                                    cardsHit: "\(cardsHitCount)/\(cardsWithGoals.count)",
-                                    nextDeadline: nextDeadlineDisplay,
-                                    donutSlices: heroDonutSlices,
-                                    donutCenterLabel: remainingToSpendText,
-                                    remainingAmountText: remainingToSpendText,
-                                    allGoalsMet: allGoalsMet
-                                )
-                                .padding(.horizontal, 20)
-                            }
-
-                            latestActivitySection
-                        }
-                        .padding(.bottom, 32)
+                    if transactions.isEmpty {
+                        emptyState
+                    } else {
+                        recentSection
                     }
                 }
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
             }
+            .screenBackground()
             .navigationBarHidden(true)
         }
         .sheet(isPresented: $showingAddTransaction) {
@@ -184,33 +112,147 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var latestActivitySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionLabel(text: "Recent Transactions")
-                Spacer()
-                Button(action: { showingAllTransactions = true }) {
-                    HStack(spacing: 4) {
-                        Text("View all")
-                            .font(AppTypography.bannerCTA)
-                        Image(systemName: "chevron.right")
-                            .font(AppTypography.chevronSmall)
-                    }
-                    .foregroundColor(AppColors.accent)
-                }
-            }
-            .padding(.horizontal, 20)
+    // MARK: - Header
 
-            GroupedTransactionList(
-                transactions: latestTransactions,
-                onTap: { selectedTransaction = $0 }
-            )
-            .padding(.horizontal, 20)
+    private var header: some View {
+        HStack(spacing: 8) {
+            Wordmark()
+            Spacer(minLength: 4)
+            ChunkyPill {
+                HStack(spacing: 5) {
+                    Image(systemName: "flame.fill")
+                        .font(AppTypography.iconMedium)
+                    Text("\(streak.currentStreak)")
+                        .font(AppTypography.streakBig)
+                }
+                .foregroundColor(AppColors.streak)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(streak.currentStreak) day streak")
+            if !cardsWithGoals.isEmpty {
+                ChunkyPill {
+                    HStack(spacing: 5) {
+                        Image(systemName: "trophy")
+                            .font(AppTypography.iconMedium)
+                        Text("\(cardsHitCount)/\(cardsWithGoals.count)")
+                            .font(AppTypography.streakBig)
+                    }
+                    .foregroundColor(AppColors.goldEdge)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(cardsHitCount) of \(cardsWithGoals.count) targets hit")
+            }
+            HeaderAddButton(accessibilityLabel: "Add transaction") {
+                showingAddTransaction = true
+            }
         }
     }
 
-    @ViewBuilder
+    // MARK: - Hero
+
+    private var heroCard: some View {
+        let line = MascotCopy.today(goals: goals, money: money)
+        return VStack(alignment: .leading, spacing: 16) {
+            MascotSays(mood: line.mood, mascotSize: 112,
+                       motion: line.mood == .excited ? .jump : .bob,
+                       bubbleFill: AppColors.backgroundPrimary) {
+                bubbleText(line)
+            }
+            WeekFlameStrip(days: streak.weekStrip)
+        }
+        .cardSurface()
+    }
+
+    private func bubbleText(_ line: MascotCopy.Line) -> Text {
+        guard let emphasis = line.emphasis else { return Text(line.text) }
+        return Text(emphasis).font(AppTypography.bubbleEmphasis).foregroundColor(AppColors.streak)
+            + Text(line.text)
+    }
+
+    // MARK: - Min-spend
+
+    private var minSpendCard: some View {
+        Button {
+            selectedTab = MainTabView.Tab.cards.rawValue
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Min-spend")
+                        .font(AppTypography.sectionTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    if let daysLeft {
+                        Text(MascotCopy.daysLeftText(daysLeft).uppercased())
+                            .font(AppTypography.pill)
+                            .foregroundColor(AppColors.statusBehindText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(AppColors.statusBehindSoft))
+                    }
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(money(remainingToSpend))
+                        .font(AppTypography.amountLarge)
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text(cardsWithGoals.count == 1 ? "to go on 1 card" : "to go across \(cardsWithGoals.count) cards")
+                        .font(AppTypography.amountTarget)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ForEach(cardsWithGoals) { card in
+                    goalRow(card)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func goalRow(_ card: Card) -> some View {
+        let status = card.cycleStatus
+        return HStack(spacing: 10) {
+            CardArt(card: card)
+            Text(card.name)
+                .font(AppTypography.rowValue)
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+                .frame(width: 96, alignment: .leading)
+            ChunkyProgressBar(progress: card.progressPercentage, color: status.color)
+            Image(systemName: status.icon)
+                .font(AppTypography.iconSmall)
+                .foregroundColor(status.color)
+                .frame(width: 22, alignment: .trailing)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(card.name), \(Int(card.progressPercentage * 100)) percent, \(status.label)")
+    }
+
+    // MARK: - Recent
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Recent taps")
+                    .font(AppTypography.sectionTitle)
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                Button("View all") { showingAllTransactions = true }
+                    .font(AppTypography.bannerCTA)
+                    .foregroundColor(AppColors.accent)
+            }
+            .padding(.horizontal, 4)
+
+            ForEach(recentTransactions) { tx in
+                Button { selectedTransaction = tx } label: {
+                    TransactionRow(transaction: tx, showsTime: true, isNew: isNew(tx))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
     private var emptyState: some View {
         VStack(spacing: 8) {
             Text("No transactions yet")
@@ -218,16 +260,73 @@ struct HomeView: View {
                 .font(AppTypography.headline)
             Text("Set up automation and see your first transaction here, or tap + to manually add one.")
                 .foregroundColor(AppColors.textSecondary)
-                .font(AppTypography.caption)
+                .font(AppTypography.footnote)
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 20)
     }
 }
 
+/// Mon–Sun row of flame circles: filled for days with a tap, dashed for today
+/// before the first tap, outlined for missed days and blank for the future.
+struct WeekFlameStrip: View {
+    let days: [ActivityStreak.WeekDay]
 
-#Preview {
-    HomeView()
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(days) { day in
+                VStack(spacing: 5) {
+                    Text(day.label)
+                        .font(AppTypography.caption)
+                        .foregroundColor(day.isToday ? AppColors.streak : AppColors.textTertiary)
+                    circle(for: day.state)
+                        .frame(width: 34, height: 34)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(days.filter { $0.state == .done }.count) of 7 days logged this week")
+    }
+
+    @ViewBuilder
+    private func circle(for state: ActivityStreak.DayState) -> some View {
+        switch state {
+        case .done:
+            Circle()
+                .fill(AppColors.streak)
+                .overlay(Circle().strokeBorder(AppColors.streakEdge, lineWidth: 2))
+                .overlay(flame(filled: true).foregroundColor(AppColors.onAccent))
+        case .pendingToday:
+            Circle()
+                .fill(AppColors.backgroundCard)
+                .overlay(Circle().strokeBorder(AppColors.streak, style: StrokeStyle(lineWidth: 2, dash: [4, 3])))
+                .overlay(flame(filled: false).foregroundColor(AppColors.streak))
+        case .missed:
+            Circle()
+                .fill(AppColors.backgroundCard)
+                .overlay(Circle().strokeBorder(AppColors.track, lineWidth: 2))
+                .overlay(flame(filled: false).foregroundColor(AppColors.textTertiary))
+        case .future:
+            Circle().fill(AppColors.track)
+        }
+    }
+
+    private func flame(filled: Bool) -> some View {
+        Image(systemName: filled ? "flame.fill" : "flame")
+            .font(AppTypography.iconSmall)
+    }
+}
+
+#Preview("Light") {
+    HomeView(selectedTab: .constant(0))
         .modelContainer(ModelContainer.createMockContainer())
+}
+
+#Preview("Dark") {
+    HomeView(selectedTab: .constant(0))
+        .modelContainer(ModelContainer.createMockContainer())
+        .preferredColorScheme(.dark)
 }

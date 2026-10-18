@@ -21,118 +21,100 @@ struct CardRow: View {
     }
 
     private var resolvedStatus: CardStatus {
-        status ?? CardStatus.derive(progress: card.progressPercentage)
+        status ?? card.cycleStatus
     }
 
-    private var spentAmount: String {
-        "\(currencySymbol)\(formatted(card.monthlySpent))"
+    private func money(_ amount: Decimal) -> String {
+        CurrencyUtils.display(amount, code: defaultCurrencyCode)
     }
 
-    private var targetAmount: String {
-        "\(currencySymbol)\(formatted(card.minimumSpendingAmount))"
+    private var hasGoal: Bool {
+        card.hasSpendGoal
     }
 
-    private func formatted(_ amount: Decimal) -> String {
-        let number = Double(truncating: amount as NSDecimalNumber)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: number)) ?? "0"
+    /// "S$87 to go · about S$22 a day", or the celebration line once the target is hit.
+    private var statusLine: String {
+        guard resolvedStatus != .hit else { return "Target smashed. Rewards unlocked!" }
+        let remaining = card.remainingAmount
+        let perDay = remaining / Decimal(max(1, card.daysRemaining))
+        return "\(money(remaining)) to go · about \(money(perDay)) a day"
+    }
+
+    private var subtitle: String {
+        var parts = [card.spendingPeriodDisplay]
+        if card.rewardType != .none { parts.append(card.rewardType.displayName) }
+        return parts.joined(separator: " · ")
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Left accent bar
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(resolvedStatus.color)
-                .frame(width: 3)
-                .padding(.vertical, 4)
-
-            VStack(alignment: .leading, spacing: 12) {
-                header
-                if card.hasMinimumSpending && card.minimumSpendingAmount > 0 {
-                    goalBlock
-                } else {
-                    spentBlock
-                }
-                if card.rewardType != .none {
-                    rewardsRow
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            if hasGoal {
+                goalBlock
+            } else {
+                spentBlock
             }
-            .padding(.leading, 14)
-            .padding(.trailing, 2)
+            if card.rewardType != .none {
+                rewardsRow
+            }
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .cardSurface(cornerRadius: 22)
     }
 
-    @ViewBuilder
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
+            CardArt(card: card, width: 46, raised: true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(card.name)
                     .font(AppTypography.cardTitle)
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    if showsCycleLabel {
-                        Text(card.spendingPeriodDisplay)
-                    }
-                }
-                .font(AppTypography.bannerBody)
-                .foregroundColor(AppColors.textSecondary)
+                Text(subtitle)
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(1)
             }
-
-            Spacer()
-
-            RewardTypePill(rewardType: card.rewardType)
+            Spacer(minLength: 4)
+            if hasGoal {
+                StatusPill(status: resolvedStatus)
+            }
         }
     }
 
-    @ViewBuilder
     private var goalBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(spentAmount)
-                        .font(AppTypography.amount)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("/ \(targetAmount)")
-                        .font(AppTypography.amountTarget)
-                        .foregroundColor(AppColors.textSecondary)
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(money(card.monthlySpent))
+                    .font(AppTypography.amount)
+                    .foregroundColor(AppColors.textPrimary)
+                Text("/ \(money(card.minimumSpendingAmount))")
+                    .font(AppTypography.amountTarget)
+                    .foregroundColor(AppColors.textSecondary)
                 Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    StatusPill(status: resolvedStatus)
-                    Text("\(card.daysRemaining)d left")
-                        .font(AppTypography.rowMeta)
-                        .foregroundColor(AppColors.textTertiary)
-                }
+                Text(MascotCopy.daysLeftText(card.daysRemaining))
+                    .font(AppTypography.rowMeta)
+                    .foregroundColor(AppColors.textTertiary)
             }
-
-            progressBar
+            ChunkyProgressBar(progress: card.progressPercentage, color: resolvedStatus.color,
+                              height: 14, highlight: true)
+            Text(statusLine)
+                .font(AppTypography.rowValue)
+                .foregroundColor(resolvedStatus.textColor)
         }
-    }
-
-    private var showsCycleLabel: Bool {
-        true
     }
 
     @ViewBuilder
     private var spentBlock: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(spentAmount)
+            Text(money(card.monthlySpent))
                 .font(AppTypography.amount)
                 .foregroundColor(AppColors.textPrimary)
             Text("spent")
                 .font(AppTypography.amountTarget)
                 .foregroundColor(AppColors.textSecondary)
             Spacer()
-            Text("\(card.daysRemaining)d left")
+            Text(MascotCopy.daysLeftText(card.daysRemaining))
                 .font(AppTypography.rowMeta)
                 .foregroundColor(AppColors.textTertiary)
         }
@@ -189,20 +171,6 @@ struct CardRow: View {
 
     private var disclaimerUnit: String {
         card.rewardType == .miles ? "miles" : "cashback"
-    }
-
-    @ViewBuilder
-    private var progressBar: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(AppColors.backgroundCardSoft)
-                Capsule()
-                    .fill(resolvedStatus.color)
-                    .frame(width: geo.size.width * CGFloat(card.progressPercentage))
-            }
-        }
-        .frame(height: 6)
     }
 }
 

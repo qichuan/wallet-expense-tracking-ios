@@ -26,7 +26,7 @@ enum MapSnapshotRenderer {
         let options = MKMapSnapshotter.Options()
         options.region = region
         options.size = size
-        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+        options.traitCollection = UITraitCollection(userInterfaceStyle: .light)
 
         let clusters = TransactionMapClustering.clusters(for: points)
         let markerFill = UIColor(AppColors.accent)

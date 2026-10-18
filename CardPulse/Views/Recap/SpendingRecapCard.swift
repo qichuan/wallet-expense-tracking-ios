@@ -64,22 +64,16 @@ struct SpendingRecapCard: View {
             footer
         }
         .padding(22)
-        .background(
-            LinearGradient(
-                colors: [AppColors.backgroundCard, AppColors.backgroundCardSoft],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(ChunkyBackground(lip: 5))
+        .padding(.bottom, 5)
+        // Shared images always use the light palette, whatever the device appearance.
+        .environment(\.colorScheme, .light)
     }
 
     private var header: some View {
         HStack(spacing: 10) {
-            BrandMark(size: 26)
-            Text("CardLah!")
-                .font(AppTypography.cardTitle)
-                .foregroundColor(AppColors.textPrimary)
+            Mascot(mood: .excited, size: 40, motion: .none)
+            Wordmark()
             Spacer()
             Text(recap.periodTitle)
                 .font(AppTypography.metricValue)
@@ -138,7 +132,7 @@ struct SpendingRecapCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(AppColors.backgroundPrimary.opacity(0.5))
+        .background(AppColors.backgroundPrimary)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 

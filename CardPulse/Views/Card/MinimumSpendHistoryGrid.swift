@@ -80,8 +80,7 @@ struct MinimumSpendHistoryGrid: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .chunkySurface(cornerRadius: 22)
     }
 }
 

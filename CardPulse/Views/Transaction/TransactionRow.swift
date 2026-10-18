@@ -10,6 +10,10 @@ import SwiftData
 
 struct TransactionRow: View {
     let transaction: Transaction
+    /// Appends a short relative time ("Yest. 7:42 PM") to the card line.
+    var showsTime: Bool = false
+    /// Shows the blue "NEW" pill after the merchant name.
+    var isNew: Bool = false
 
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
@@ -82,14 +86,56 @@ struct TransactionRow: View {
         }
     }
 
+    private static let timeFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.timeStyle = .short
+        return df
+    }()
+
+    private static let weekdayFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "EEE"
+        return df
+    }()
+
+    private static let dayFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "d MMM"
+        return df
+    }()
+
+    private var timeText: String {
+        let calendar = Calendar.current
+        let date = transaction.date
+        let time = Self.timeFormatter.string(from: date)
+        if calendar.isDateInToday(date) { return time }
+        if calendar.isDateInYesterday(date) { return "Yest. \(time)" }
+        if let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: Date())).day,
+           days < 7 {
+            return "\(Self.weekdayFormatter.string(from: date)) \(time)"
+        }
+        return Self.dayFormatter.string(from: date)
+    }
+
+    private var metaText: String? {
+        let parts = [transaction.card?.name, showsTime ? timeText : nil].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
                 .fill(iconColor)
-                .frame(width: 40, height: 40)
+                .frame(width: 42, height: 42)
+                .overlay(
+                    // Inset bottom shade from the design's "sticker" icons.
+                    Circle()
+                        .strokeBorder(AppColors.innerShade, lineWidth: 3)
+                        .mask(Rectangle().padding(.top, 30))
+                )
                 .overlay(
                     Image(systemName: merchantIcon)
-                        .font(AppTypography.iconMedium)
+                        .font(AppTypography.iconLarge)
                         .foregroundColor(AppColors.onAccent)
                 )
 
@@ -99,16 +145,26 @@ struct TransactionRow: View {
                         .font(AppTypography.rowTitle)
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
+                    if isNew {
+                        Text("NEW")
+                            .font(AppTypography.badgeTiny)
+                            .tracking(0.5)
+                            .foregroundColor(AppColors.onAccent)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(AppColors.accent))
+                            .fixedSize()
+                    }
                     if transaction.isRecurring {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppTypography.chevronSmall)
                             .foregroundColor(AppColors.textSecondary)
                             .accessibilityLabel("Recurring monthly")
                     }
                 }
 
-                if let card = transaction.card {
-                    Text(card.name)
+                if let metaText {
+                    Text(metaText)
                         .font(AppTypography.rowMeta)
                         .foregroundColor(AppColors.textSecondary)
                         .lineLimit(1)
@@ -141,10 +197,7 @@ struct TransactionRow: View {
                 }
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .chunkyRow()
     }
 }
 
@@ -174,7 +227,7 @@ struct TransactionRow: View {
             date: Date(),
             category: "Food & Drinks",
             card: card
-        ))
+        ), showsTime: true, isNew: true)
 
         TransactionRow(transaction: Transaction(
             merchant: "Grab",

@@ -22,15 +22,7 @@ struct CardDetailView: View {
     }
 
     private var cardStatus: CardStatus {
-        CardStatus.derive(progress: card.progressPercentage, pacing: cyclePacing)
-    }
-
-    private var cyclePacing: Double? {
-        let start = card.currentCycleStart
-        let end = card.currentCycleEnd
-        let total = end.timeIntervalSince(start)
-        guard total > 0 else { return nil }
-        return max(0, min(1, Date().timeIntervalSince(start) / total))
+        card.cycleStatus
     }
 
     private var cycleTransactions: [Transaction] {
@@ -118,7 +110,6 @@ struct CardDetailView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showingEdit) {
             CardFormView(card: card)
         }
@@ -191,8 +182,7 @@ struct CardDetailView: View {
             }
         }
         .padding(20)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .chunkySurface(cornerRadius: 22)
     }
 
     /// Lists the original per-currency amounts beneath the converted total so the
@@ -273,8 +263,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .chunkySurface(cornerRadius: 22)
     }
 
     private var rewardColor: Color {
@@ -307,8 +296,7 @@ struct CardDetailView: View {
             }
         }
         .padding(20)
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .chunkySurface(cornerRadius: 22)
     }
 
     @ViewBuilder

@@ -72,8 +72,7 @@ struct NotificationBanner: View {
                 .buttonStyle(.plain)
                 .padding(10)
             }
-            .background(AppColors.backgroundCard)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .chunkySurface(cornerRadius: 20)
             .padding(.horizontal, 20)
         } else {
             EmptyView()

@@ -53,20 +53,26 @@ private struct CardRowWidgetView: View {
                 Text(card.name)
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
                 Spacer()
                 Text("$\(Int(card.monthlySpent)) / $\(Int(card.minimumSpending))")
                     .font(.caption2)
-                    .foregroundColor(.white.opacity(0.75))
+                    .foregroundColor(AppColors.textSecondary)
             }
-            ProgressView(value: card.progressPercentage)
-                .progressViewStyle(LinearProgressViewStyle(tint: status.color))
-                .scaleEffect(x: 1, y: 1.2, anchor: .center)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(AppColors.track)
+                    Capsule()
+                        .fill(status.color)
+                        .frame(width: geo.size.width * CGFloat(max(0, min(1, card.progressPercentage))))
+                }
+            }
+            .frame(height: 6)
 
             Text("\(card.daysRemaining)d left · \(card.spendingPeriodDisplay)")
                 .font(.caption2)
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(AppColors.textTertiary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
@@ -104,7 +110,7 @@ struct EmptyWidgetView: View {
                 .foregroundColor(AppColors.accent)
             Text("No cards\nselected")
                 .font(.caption2)
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

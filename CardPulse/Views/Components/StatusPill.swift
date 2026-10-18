@@ -9,10 +9,16 @@ struct StatusPill: View {
     let status: CardStatus
 
     var body: some View {
-        Text(status.label)
-            .font(AppTypography.pill)
-            .tracking(0.5)
-            .foregroundColor(status.color)
+        HStack(spacing: 4) {
+            Image(systemName: status.icon)
+                .font(AppTypography.chevronSmall)
+            Text(status.label.uppercased())
+                .font(AppTypography.pill)
+        }
+        .foregroundColor(status.textColor)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(status.softColor))
     }
 }
 

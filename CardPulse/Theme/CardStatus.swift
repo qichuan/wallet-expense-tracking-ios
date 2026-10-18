@@ -12,9 +12,36 @@ enum CardStatus {
 
     var label: String {
         switch self {
-        case .hit:      return "HIT"
-        case .onTrack:  return "ON TRACK"
-        case .behind:   return "BEHIND"
+        case .hit:      return "Hit"
+        case .onTrack:  return "On track"
+        case .behind:   return "Behind"
+        }
+    }
+
+    /// SF Symbol shown in status pills and goal rows.
+    var icon: String {
+        switch self {
+        case .hit:      return "trophy.fill"
+        case .onTrack:  return "bolt.fill"
+        case .behind:   return "clock.fill"
+        }
+    }
+
+    /// Pill background.
+    var softColor: Color {
+        switch self {
+        case .hit:      return AppColors.statusHitSoft
+        case .onTrack:  return AppColors.statusOnTrackSoft
+        case .behind:   return AppColors.statusBehindSoft
+        }
+    }
+
+    /// Text drawn on `softColor`, and status copy lines.
+    var textColor: Color {
+        switch self {
+        case .hit:      return AppColors.statusHitText
+        case .onTrack:  return AppColors.statusOnTrackText
+        case .behind:   return AppColors.statusBehindText
         }
     }
 

@@ -255,7 +255,6 @@ struct TransactionFormView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .alert("Delete Transaction", isPresented: $showingDeleteAlert) {
             Button("Delete", role: .destructive) { deleteTransaction() }
             Button("Cancel", role: .cancel) { }

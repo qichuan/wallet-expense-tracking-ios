@@ -43,8 +43,7 @@ struct ExportOptionsView: View {
                         }
                     }
                     .padding()
-                    .background(AppColors.backgroundCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .chunkySurface(cornerRadius: 18)
                 }
                 
                 // (Buttons moved to bottom)

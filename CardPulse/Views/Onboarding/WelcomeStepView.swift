@@ -19,14 +19,10 @@ struct WelcomeStepView: View {
     }
 
     private let samples: [SampleTx] = [
-        .init(merchant: "Lunch at Starbucks", date: "09 Apr", amount: "12.50",
-              icon: "fork.knife", tint: AppColors.categoryFoodDrinks, isMuted: false),
         .init(merchant: "Groceries", date: "08 Apr", amount: "54.20",
               icon: "cart", tint: AppColors.categoryShopping, isMuted: false),
         .init(merchant: "Movie Ticket", date: "07 Apr", amount: "15.00",
               icon: "ticket", tint: AppColors.categoryEntertainment, isMuted: false),
-        .init(merchant: "Spotify Subscription", date: "3 Apr", amount: "9.99",
-              icon: "music.note", tint: AppColors.categoryServices, isMuted: false),
         .init(merchant: "Taxi", date: "01 Apr", amount: "22.30",
               icon: "car", tint: AppColors.categoryTravel, isMuted: false),
         .init(merchant: "Train", date: "29 Mar", amount: "40.00",
@@ -40,21 +36,26 @@ struct WelcomeStepView: View {
             VStack(spacing: 0) {
                 Spacer().frame(height: 24)
 
-                Text("CardLah!")
-                    .font(.system(size: 44, weight: .heavy, design: .default))
-                    .foregroundColor(AppColors.textPrimary)
+                (Text("CardLah").foregroundColor(AppColors.textPrimary)
+                    + Text("!").foregroundColor(AppColors.accent))
+                    .font(AppTypography.welcomeTitle)
 
-                Spacer().frame(height: 18)
+                Spacer().frame(height: 12)
+
+                Mascot(mood: .excited, size: 120, motion: .jump)
+
+                Spacer().frame(height: 12)
 
                 deviceMockup
-                    .frame(maxHeight: .infinity)
-                    .padding(.horizontal, 40)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .clipped()
+                    .padding(.horizontal, 32)
 
                 Spacer().frame(height: 20)
 
                 VStack(spacing: 12) {
                     Text("Your Spending.\nClearly understood.")
-                        .font(.system(size: 28, weight: .heavy, design: .default))
+                        .font(AppTypography.welcomeHeadline)
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
@@ -72,7 +73,6 @@ struct WelcomeStepView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
@@ -85,10 +85,7 @@ struct WelcomeStepView: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(AppColors.backgroundCard.opacity(0.6))
-        )
+        .background(ChunkyBackground(cornerRadius: 30))
     }
 
     @ViewBuilder
@@ -122,8 +119,8 @@ struct WelcomeStepView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(AppColors.backgroundCardSoft)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppColors.backgroundPrimary)
         )
     }
 }

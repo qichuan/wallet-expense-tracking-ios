@@ -47,21 +47,21 @@ For day-to-day development, open `CardPulse.xcodeproj` in Xcode and run/test fro
 Completion sets `hasCompletedOnboarding = true` and logs `AnalyticsTracker.Event.onboardingCompleted`. The automation step has a "Skip for now" fallback.
 
 ### Navigation
-`MainTabView` hosts four tabs: **Home** (tag 0), **Analysis** (tag 1), **Cards** (tag 2), **Settings** (tag 3). The app always uses `.preferredColorScheme(.dark)`.
+`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
 
 ### Views Structure
 ```
 Views/
-  MainTabView.swift
-  AnalysisView.swift           # Donut + stacked bar; Day/Week/Month/Year + Custom range; multi-card filter; location map; shareable recap
+  MainTabView.swift            # Tab enum + custom ChunkyTabBar
+  AnalysisView.swift           # "Recap" tab: mascot bubble, blue total hero, "Where it went" category bars, design-style bar chart; Day/Week/Month/Year + Custom range; multi-card filter; location map; shareable recap
   CardFilterSheet.swift        # Sheet wrapper around CardMultiSelectList (Analysis card filter)
   CardMultiSelectList.swift    # Reusable card multi-select checklist (Analysis + transactions filter)
   Home/
-    HomeView.swift             # Latest 10 transactions, shortcut banner
+    HomeView.swift             # "Today" tab: streak/trophy pills, mascot hero + WeekFlameStrip, min-spend card, 5 recent taps
     NotificationBanner.swift
     ShortcutsBanner.swift
   Card/
-    CardsView.swift
+    CardsView.swift            # "Card goals": mascot bubble, filter chips, goal tiles, "No target set" section
     CardDetailView.swift
     CardFormView.swift
     CardRow.swift
@@ -72,7 +72,8 @@ Views/
     TransactionRow.swift       # Reusable row used app-wide
     FilterSheetView.swift
   Settings/
-    SettingsView.swift
+    SettingsView.swift            # "Me" tab: MeProfileSection on top, then settings sections
+    MeProfileSection.swift        # Profile, stats grid, MonthActivityCalendar, badges
     CategoryManagementView.swift  # Add/edit/delete SpendingCategory records
     HowToAutoTrackingView.swift
   Onboarding/
@@ -97,7 +98,6 @@ Views/
     SegmentedPillControl.swift
     SpendingDeltaLabel.swift
     StatusPill.swift
-    SummaryHeroCard.swift
     TransactionLocationMapCard.swift  # Embedded clustering map for Analysis
   CSV/
     DocumentPickerView.swift
@@ -106,11 +106,14 @@ Views/
 ```
 
 ### Theme System
-The `Theme/` folder is the single source of truth for all visual tokens:
-- **AppColors** (`Theme/AppColors.swift`): All colors as static constants. Primary accent is `#2E6DFF` (blue), background is `#0A1428`. Never use `Color.teal` or raw hex strings in views — always reference `AppColors.*`.
-- **AppTypography** (`Theme/AppTypography.swift`): All fonts as static constants. UI files **must** use `AppTypography` tokens — never declare `.font(...)` inline.
-- **BrandHeader / BrandMark** (`Theme/BrandHeader.swift`, `Theme/BrandMark.swift`): Reusable brand chrome.
-- **CardStatus / ViewModifiers** (`Theme/CardStatus.swift`, `Theme/ViewModifiers.swift`): Status enum and shared SwiftUI view modifiers.
+The `Theme/` folder is the single source of truth for all visual tokens. The look is the "CardLah Fun" design (Claude Design project, `CardLah Fun.dc.html`): cream background, white "chunky" cards with a 2pt outline and thicker bottom edge, Fredoka + Nunito, and a mascot.
+- **AppColors** (`Theme/AppColors.swift`): All colors as static constants. Most tokens are dynamic via `Color(light:dark:)` (a `UIColor` trait provider): light is the cream palette (bg `#FFF7E8`, border `#EFE3CC`, ink `#0A1428`), dark keeps the navy surfaces (`#0A1428` / `#152238`). Primary accent is `#2E6DFF`. Gamification tokens: `streak`, `gold`, `locked`, status `*Soft`/`*Text` pairs. This file is also compiled into the widget. Never use raw hex strings in views — always reference `AppColors.*`.
+- **AppTypography** (`Theme/AppTypography.swift`): All fonts as static constants, using the bundled Fredoka (headings, amounts) and Nunito (everything else) static fonts in `Resources/Fonts` (registered under `UIAppFonts` in `Info.plist`, OFL licensed). Tokens are `relativeTo:` a text style so Dynamic Type works. UI files **must** use `AppTypography` tokens — never declare `.font(...)` inline. The widget does not bundle the fonts.
+- **ViewModifiers** (`Theme/ViewModifiers.swift`): `ChunkyBackground`, `.cardSurface()` (chunky card), `.chunkyRow()`, `.chunkySurface()` (chunky + clips content, for forms/grouped rows), `.chunkyFill(_:edge:)` (solid hero), `ChunkyProgressBar`, `ChunkyPill`, `.plainListRow()`, `.screenBackground()`.
+- **Mascot** (`Theme/Mascot.swift`): SwiftUI port of the design's card mascot, drawn in a 140×132 canvas. `Mood` (`happy`/`excited`/`worried`/`normal`) and `Motion` (`bob`/`jump`/`none`, honours Reduce Motion). Colour from `@AppStorage("mascotColor")` (`MascotPalette` Gold/Pink/Mint). `SpeechBubble` / `MascotSays` (`Theme/SpeechBubble.swift`) put a bubble beside it.
+- **CardArt** (`Theme/CardArt.swift`): Mini card glyph; `Card` has no colour field, so the colour is a stable hash of `card.id` into a fixed palette.
+- **BrandHeader / Wordmark / HeaderAddButton** (`Theme/BrandHeader.swift`) and **BrandMark**: Reusable brand chrome.
+- **CardStatus** (`Theme/CardStatus.swift`): Status enum with `color`, `softColor`, `textColor`, `icon`. Use `Card.cycleStatus` (pacing-weighted, in `CardUtils`) rather than re-deriving it.
 
 ### Analytics
 `AnalyticsTracker` (`Utils/AnalyticsTracker.swift`) is the single entry point for all Firebase Analytics calls. Use `AnalyticsTracker.log(_:_:)` for events, `.view(_:_:)` for screen views, and `.edit(_:_:)` for data edits. Event name constants live in `AnalyticsTracker.Event`. Do not call `Analytics.logEvent` directly.
@@ -140,8 +143,15 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **MapSnapshotRenderer** (`Utils/MapSnapshotRenderer.swift`): Renders a static `MKMapSnapshotter` image with cluster dots for the recap (since `ImageRenderer` can't capture a live `Map`).
 - **MinimumSpendHistory** (`Utils/MinimumSpendHistory.swift`): Pure billing-cycle bucketing for the card detail's minimum-spend badge grid (`Views/Card/MinimumSpendHistoryGrid.swift`) — last 12 completed cycles, newest first, each met / missed / no spend with the rewards earned in it (category-capped, clamped to the card-wide cycle cap), starting from the cycle with the card's first spend. Tapping a badge shows that cycle's spend and rewards in a panel under the grid. Also owns `statementDate(day:for:calendar:)`, which `Card.statementDate` delegates to. Unit-tested.
 - **CycleNudgeScheduler** (`Utils/CycleNudgeScheduler.swift`): Schedules min-spend and reward-cap local notifications (see Notifications & Nudges). Pure helpers (`resolvedLeadDays`, `reminderFireComponents`, `shouldFireCapNudge`) are unit-tested.
+- **ActivityStreak** (`Utils/ActivityStreak.swift`): Pure day-streak math from transaction dates — `currentStreak` (ending today, or yesterday if nothing logged yet today), `bestStreak`, `activeDays(inMonthOf:)`, Mon–Sun `weekStrip`. Nothing is persisted. Unit-tested.
+- **BadgeEvaluator** (`Utils/BadgeEvaluator.swift`): Pure rules for the Me tab's four badges (week warrior, target smasher, tidy tracker, month master) from best streak, transaction count and targets hit (met past cycles via `minimumSpendHistory` + current hits). Unit-tested.
+- **MascotCopy** (`Utils/MascotCopy.swift`): Pure copy + mood for the mascot bubbles on Today, Cards and Recap, from goal-card state or the period delta.
+- **AppAppearance / AppIconSwitcher** (`Utils/AppAppearance.swift`): The Me tab's theme choice, and switching the home-screen icon to match the mascot colour. The icon sets are `AppIcon` (Gold, primary), `AppIcon-Pink` and `AppIcon-Mint`, listed in the `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` build setting; iOS shows its own confirmation alert on each switch.
 - **AppLinks** (`Utils/AppLinks.swift`): Centralised external links (e.g. the App Store URL used in the recap share CTA).
 - **CurrencyUtils** (`Utils/CurrencyUtils.swift`): Multi-currency support. Holds the built-in currency list (`allCurrencies`, 15 currencies), user-defined custom currencies, enabled/default currency preferences (all in `UserDefaults`), and exchange-rate cache (via [Frankfurter API](https://www.frankfurter.app), 5-day TTL). Key methods: `parseCurrencyAndAmount(from:)` parses raw Wallet strings like `"S$12.50"` or `"MYR 8.00"`; `fetchRates(for:to:)` fetches and inverts rates; `rateToDefault(from:)` returns the cached conversion rate.
+
+### App Store art (`appstore/`)
+Debug builds launched with `-StoreDemo` use an in-memory demo store (`Models/StoreDemoData.swift`, DEBUG-only) and skip the widget write and cycle nudges; `-StoreTab <0-3>` picks the opening tab. `capture_screenshots.sh` / `record_preview.sh` drive a connected iPhone via `xcrun devicectl`, and `StoreArt.swift` + `make_preview.sh` frame screenshots and assemble the app preview, writing into `appstore/original_screenshots/`, `appstore/appstore_screenshots/` and `appstore/app_preview/`. See `appstore/README.md`.
 
 ## Key Conventions
 
@@ -151,7 +161,7 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **Rewards**: Miles and cashback are always calculated on the amount converted to the default currency — convert, then block-round, then apply the rate. Use `RewardCalculator.convertedReward(for:)` / `aggregate(_:)`; never apply a reward rate to a raw foreign-currency amount. When no FX rate is cached, the raw amount is used and UI keeps the transaction's own currency label.
 - **CSV format**: `Merchant,Amount,Currency,Category,Card,Date,Note,Latitude,Longitude,PlaceName` with date format `yyyy-MM-dd HH:mm:ss`. The `Amount` field may include a currency prefix (e.g. `S$12.50`) — `ImportExportUtils` uses `CurrencyUtils.parseCurrencyAndAmount` to parse it.
 - **Previews**: All SwiftUI `#Preview` blocks use `.modelContainer(ModelContainer.createMockContainer())` to get in-memory data.
-- **Dark mode only**: The app forces dark mode (set in `OnboardingFlow` and `MainTabView` via `.preferredColorScheme(.dark)`).
+- **Light and dark**: The theme comes from `AppAppearance` (System by default), applied at the window level; never add `.preferredColorScheme` outside previews. Add both light and dark `#Preview`s for screens. The shareable `SpendingRecapCard` and its map snapshot are pinned to light so shared images look the same everywhere.
 - **Design tokens**: Always use `AppColors.*` for colors and `AppTypography.*` for fonts. Never inline colors or fonts in views.
 
 ## Firebase

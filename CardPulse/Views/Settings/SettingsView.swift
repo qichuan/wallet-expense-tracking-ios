@@ -18,6 +18,9 @@ struct SettingsView: View {
     @AppStorage("enabledCurrencies") private var enabledCurrenciesRaw = "SGD,MYR,HKD,USD,EUR"
     @AppStorage("customCurrenciesRaw") private var customCurrenciesRaw = ""
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
+    @AppStorage("displayName") private var displayName = ""
+    @AppStorage("mascotColor") private var mascotColor = MascotPalette.gold.rawValue
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
     @State private var showingCurrencyManager = false
     @State private var showingImportPicker = false
     @State private var importMessage: String = ""
@@ -62,7 +65,28 @@ struct SettingsView: View {
                     AppColors.backgroundPrimary.ignoresSafeArea()
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
-                            BrandHeader(title: "Settings")
+                            MeProfileSection()
+                                .padding(.horizontal, 18)
+                                .padding(.top, 8)
+
+                            // PROFILE
+                            SettingsSection(title: "Profile") {
+                                SettingsTextFieldRow(title: "Your name", placeholder: "Add a name", text: $displayName)
+                                SettingsPickerRow(
+                                    title: "Theme",
+                                    selection: $appearance,
+                                    options: AppAppearance.allCases.map(\.rawValue)
+                                )
+                                SettingsPickerRow(
+                                    title: "Mascot colour",
+                                    selection: $mascotColor,
+                                    options: MascotPalette.allCases.map(\.rawValue)
+                                )
+                            }
+                            .onChange(of: mascotColor) { _, newValue in
+                                // Keep the home-screen icon in step with the mascot.
+                                AppIconSwitcher.apply(MascotPalette(rawValue: newValue) ?? .gold)
+                            }
 
                             // CURRENCY
                             SettingsSection(title: "Currency") {
@@ -510,8 +534,7 @@ struct SettingsSection<Content: View>: View {
             VStack(spacing: 0) {
                 content()
             }
-            .background(AppColors.backgroundCard)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .chunkySurface(cornerRadius: 20)
             .padding(.horizontal, 20)
         }
     }
@@ -537,13 +560,36 @@ struct SettingsValueRow: View {
                 }
                 Image(systemName: "chevron.right")
                     .font(AppTypography.chevron)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(AppColors.chevron)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+struct SettingsTextFieldRow: View {
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(AppTypography.rowTitle)
+                .foregroundColor(AppColors.textPrimary)
+            Spacer()
+            TextField(placeholder, text: $text)
+                .font(AppTypography.rowValue)
+                .foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.trailing)
+                .textInputAutocapitalization(.words)
+                .submitLabel(.done)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 }
 
@@ -778,7 +824,6 @@ struct CurrencyManagerView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Rate section header
@@ -1020,7 +1065,6 @@ struct AddCurrencyView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func addCurrency() {
@@ -1041,6 +1085,13 @@ struct AddCurrencyView: View {
     }
 }
 
-#Preview {
+#Preview("Light") {
     SettingsView()
+        .modelContainer(ModelContainer.createMockContainer())
+}
+
+#Preview("Dark") {
+    SettingsView()
+        .modelContainer(ModelContainer.createMockContainer())
+        .preferredColorScheme(.dark)
 }

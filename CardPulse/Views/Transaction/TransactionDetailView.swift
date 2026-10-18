@@ -98,7 +98,6 @@ struct TransactionDetailView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showingEdit) {
             TransactionFormView(transaction: transaction)
         }

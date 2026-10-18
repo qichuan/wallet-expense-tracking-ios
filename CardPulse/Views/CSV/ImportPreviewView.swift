@@ -78,8 +78,7 @@ struct ImportPreviewView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
-                        .background(AppColors.backgroundCard)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .chunkySurface(cornerRadius: 18)
                     }
 
                     if !plan.transactionRows.isEmpty {
@@ -107,8 +106,7 @@ struct ImportPreviewView: View {
                             }
                         }
                         .padding()
-                        .background(AppColors.backgroundCard)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .chunkySurface(cornerRadius: 18)
                     }
 
                 }
@@ -145,8 +143,7 @@ struct ImportPreviewView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .chunkySurface(cornerRadius: 18)
     }
 
     @ViewBuilder
@@ -179,8 +176,7 @@ struct ImportPreviewView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(AppColors.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .chunkySurface(cornerRadius: 18)
     }
 
     @ViewBuilder

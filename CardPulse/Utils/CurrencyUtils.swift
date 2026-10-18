@@ -122,6 +122,16 @@ struct CurrencyUtils {
         info(for: code)?.symbol ?? code
     }
 
+    /// Symbol-prefixed amount with grouping, e.g. "S$1,234" or "S$12.50".
+    static func display(_ amount: Decimal, code: String, fractionDigits: Int = 0) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = fractionDigits
+        formatter.maximumFractionDigits = fractionDigits
+        let number = formatter.string(from: amount as NSDecimalNumber) ?? "0"
+        return symbol(for: code) + number
+    }
+
     // MARK: - Reactive helpers (accept raw @AppStorage strings so callers stay reactive)
 
     static func parseCustomCurrencies(fromRaw raw: String) -> [CurrencyInfo] {
