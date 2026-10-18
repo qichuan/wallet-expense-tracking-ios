@@ -16,8 +16,9 @@ Output goes to `scripts/app-store/output/` (gitignored).
 ## Demo data
 
 Debug builds accept `-StoreDemo`, which swaps the real store for an in-memory one
-(`CardPulse/Models/StoreDemoData.swift`): made-up cards and merchants, a 12-day streak,
-one goal hit, one on track, one behind. The real store, widget and notifications are
+(`CardPulse/Models/StoreDemoData.swift`): popular Singapore cards (Citi Cashback,
+UOB Lady's, DBS Woman's World, HSBC Revolution), made-up merchants, a 12-day streak,
+one goal hit and two ahead of pace, so the mascot smiles throughout. The real store, widget and notifications are
 left alone, and every other launch argument only lasts for that launch.
 
 ## Steps

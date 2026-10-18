@@ -5,7 +5,7 @@
 //  DEBUG-only demo store for App Store screenshots and previews. Launch with
 //  `-StoreDemo` (see `scripts/app-store/README.md`) to run on an in-memory
 //  container instead of the real store, so captures never show real spending.
-//  Card and merchant names are made up to avoid third-party trademarks.
+//  Cards are popular Singapore cards so the screens feel familiar; merchants are made up.
 //
 
 #if DEBUG
@@ -31,20 +31,23 @@ extension ModelContainer {
             let today = calendar.component(.day, from: now)
             let statementDay = min(28, max(1, (today + 5 - 1) % 28 + 1))
 
-            let travel = Card(name: "Travel Miles", minimumSpendingAmount: 1000, hasMinimumSpending: true,
-                              rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
-                              baseRewardRate: 1.4, roundingBlock: 5)
-            let cashback = Card(name: "Everyday Cashback", minimumSpendingAmount: 800, hasMinimumSpending: true,
-                                rewardType: .cashback, minimumSpendingByDayOfMonth: statementDay,
-                                baseRewardRate: 1.6, maxCashbackCap: 80)
-            let dining = Card(name: "Dining Rewards", minimumSpendingAmount: 600, hasMinimumSpending: true,
-                              rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
-                              baseRewardRate: 4, roundingBlock: 1)
-            let debit = Card(name: "Debit Card", minimumSpendingAmount: 0, rewardType: .none)
-            let cards = [travel, cashback, dining, debit]
+            let citi = Card(name: "Citi Cashback", minimumSpendingAmount: 800, hasMinimumSpending: true,
+                            rewardType: .cashback, minimumSpendingByDayOfMonth: statementDay,
+                            baseRewardRate: 0.25, maxCashbackCap: 80)
+            let uob = Card(name: "UOB Lady's Card", minimumSpendingAmount: 1000, hasMinimumSpending: true,
+                           rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
+                           baseRewardRate: 0.4, roundingBlock: 5)
+            let dbs = Card(name: "DBS Woman's World", minimumSpendingAmount: 1000, hasMinimumSpending: true,
+                           rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
+                           baseRewardRate: 0.4, roundingBlock: 5)
+            let hsbc = Card(name: "HSBC Revolution", minimumSpendingAmount: 0, rewardType: .miles,
+                            minimumSpendingByDayOfMonth: statementDay, baseRewardRate: 0.4)
+            let cards = [citi, uob, dbs, hsbc]
             for card in cards { context.insert(card) }
-            context.insert(CardRewardRule(card: dining, categoryName: "Food & Drinks", rate: 4, maxRewardCap: 4000))
-            context.insert(CardRewardRule(card: cashback, categoryName: "Shopping", rate: 5))
+            context.insert(CardRewardRule(card: citi, categoryName: "Food & Drinks", rate: 6))
+            context.insert(CardRewardRule(card: uob, categoryName: "Food & Drinks", rate: 4, maxRewardCap: 4000))
+            context.insert(CardRewardRule(card: dbs, categoryName: "Shopping", rate: 4, maxRewardCap: 4000))
+            context.insert(CardRewardRule(card: hsbc, categoryName: "Entertainment", rate: 4))
 
             var generator = SeededGenerator(seed: 42)
             var transactions: [Transaction] = []
@@ -71,9 +74,15 @@ extension ModelContainer {
                 }
             }
 
-            // Pin each goal card's current-cycle spend so the screens tell a story:
-            // one card done, one on track, one a little behind.
-            let targets: [(Card, Double)] = [(cashback, 846), (dining, 452), (travel, 612)]
+            // Pin each goal card's current-cycle spend so the screens tell a happy story:
+            // one card done and two ahead of pace, so no card is behind and the
+            // mascot smiles on Today and Cards. Relative to pacing, so it holds on any date.
+            let pacing = uob.cyclePacing ?? 0.8
+            let targets: [(Card, Double)] = [
+                (citi, 846),
+                (uob, 1000 * min(0.94, pacing + 0.06)),
+                (dbs, 1000 * min(0.9, pacing + 0.02)),
+            ]
             for (card, target) in targets {
                 let inCycle = transactions.filter { $0.card === card && $0.date >= card.currentCycleStart && $0.date <= now }
                 let total = inCycle.reduce(0.0) { $0 + NSDecimalNumber(decimal: $1.amount).doubleValue }
@@ -118,10 +127,11 @@ extension ModelContainer {
 
     private static func cardFor(merchant: DemoMerchant, cards: [Card], generator: inout SeededGenerator) -> Card {
         switch merchant.category {
-        case "Food & Drinks": return generator.next() % 4 == 0 ? cards[1] : cards[2]
-        case "Shopping":      return cards[1]
-        case "Travel":        return cards[0]
-        default:              return generator.next() % 3 == 0 ? cards[3] : cards[0]
+        // cards: Citi Cashback, UOB Lady's, DBS Woman's World, HSBC Revolution
+        case "Food & Drinks": return generator.next() % 3 == 0 ? cards[0] : cards[1]
+        case "Shopping":      return cards[2]
+        case "Entertainment": return cards[3]
+        default:              return generator.next() % 2 == 0 ? cards[0] : cards[3]
         }
     }
 
