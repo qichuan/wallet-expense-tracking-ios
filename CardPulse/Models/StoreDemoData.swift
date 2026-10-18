@@ -1,0 +1,167 @@
+//
+//  StoreDemoData.swift
+//  CardPulse
+//
+//  DEBUG-only demo store for App Store screenshots and previews. Launch with
+//  `-StoreDemo` (see `scripts/app-store/README.md`) to run on an in-memory
+//  container instead of the real store, so captures never show real spending.
+//  Card and merchant names are made up to avoid third-party trademarks.
+//
+
+#if DEBUG
+import Foundation
+import SwiftData
+
+enum StoreDemo {
+    static var isEnabled: Bool {
+        ProcessInfo.processInfo.arguments.contains("-StoreDemo")
+    }
+}
+
+extension ModelContainer {
+    static func createStoreDemoContainer(now: Date = Date(), calendar: Calendar = .current) -> ModelContainer {
+        let schema = Schema([Card.self, Transaction.self, SpendingCategory.self, CardRewardRule.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        do {
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            let context = container.mainContext
+            try CategorySeeding.seedBuiltInsIfNeeded(in: context)
+
+            // Statement ~5 days out, so the hero reads "5 days left".
+            let today = calendar.component(.day, from: now)
+            let statementDay = min(28, max(1, (today + 5 - 1) % 28 + 1))
+
+            let travel = Card(name: "Travel Miles", minimumSpendingAmount: 1000, hasMinimumSpending: true,
+                              rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
+                              baseRewardRate: 1.4, roundingBlock: 5)
+            let cashback = Card(name: "Everyday Cashback", minimumSpendingAmount: 800, hasMinimumSpending: true,
+                                rewardType: .cashback, minimumSpendingByDayOfMonth: statementDay,
+                                baseRewardRate: 1.6, maxCashbackCap: 80)
+            let dining = Card(name: "Dining Rewards", minimumSpendingAmount: 600, hasMinimumSpending: true,
+                              rewardType: .miles, minimumSpendingByDayOfMonth: statementDay,
+                              baseRewardRate: 4, roundingBlock: 1)
+            let debit = Card(name: "Debit Card", minimumSpendingAmount: 0, rewardType: .none)
+            let cards = [travel, cashback, dining, debit]
+            for card in cards { context.insert(card) }
+            context.insert(CardRewardRule(card: dining, categoryName: "Food & Drinks", rate: 4, maxRewardCap: 4000))
+            context.insert(CardRewardRule(card: cashback, categoryName: "Shopping", rate: 5))
+
+            var generator = SeededGenerator(seed: 42)
+            var transactions: [Transaction] = []
+
+            for daysAgo in 0..<62 where isActive(daysAgo: daysAgo) {
+                let count = daysAgo == 0 ? 3 : (generator.next() % 3 == 0 ? 2 : 1)
+                for slot in 0..<count {
+                    let merchant = merchants[Int(generator.next() % UInt64(merchants.count))]
+                    let date = timestamp(daysAgo: daysAgo, slot: slot, now: now, calendar: calendar, generator: &generator)
+                    let spread = Double(generator.next() % 1000) / 1000
+                    let amount = merchant.low + (merchant.high - merchant.low) * spread
+                    let card = cardFor(merchant: merchant, cards: cards, generator: &generator)
+                    transactions.append(Transaction(
+                        merchant: merchant.name,
+                        amount: Decimal(string: String(format: "%.2f", amount)) ?? 10,
+                        date: date,
+                        category: merchant.category,
+                        card: card,
+                        currency: "SGD",
+                        latitude: merchant.latitude,
+                        longitude: merchant.longitude,
+                        placeName: merchant.place
+                    ))
+                }
+            }
+
+            // Pin each goal card's current-cycle spend so the screens tell a story:
+            // one card done, one on track, one a little behind.
+            let targets: [(Card, Double)] = [(cashback, 846), (dining, 452), (travel, 612)]
+            for (card, target) in targets {
+                let inCycle = transactions.filter { $0.card === card && $0.date >= card.currentCycleStart && $0.date <= now }
+                let total = inCycle.reduce(0.0) { $0 + NSDecimalNumber(decimal: $1.amount).doubleValue }
+                guard total > 0 else { continue }
+                let factor = target / total
+                for tx in inCycle {
+                    let scaled = NSDecimalNumber(decimal: tx.amount).doubleValue * factor
+                    tx.amount = Decimal(string: String(format: "%.2f", scaled)) ?? tx.amount
+                }
+            }
+
+            for tx in transactions { context.insert(tx) }
+            try context.save()
+            return container
+        } catch {
+            fatalError("Could not create demo ModelContainer: \(error)")
+        }
+    }
+
+    /// Current streak of 12 days, one missed day, then a 19-day best streak; sparser before that.
+    private static func isActive(daysAgo: Int) -> Bool {
+        switch daysAgo {
+        case 0...11:  return true
+        case 12:      return false
+        case 13...31: return true
+        case 32:      return false
+        default:      return daysAgo % 4 != 0
+        }
+    }
+
+    private static func timestamp(daysAgo: Int, slot: Int, now: Date, calendar: Calendar,
+                                  generator: inout SeededGenerator) -> Date {
+        if daysAgo == 0 {
+            // Today's taps land in the last few hours, so they show as NEW.
+            return now.addingTimeInterval(-Double(slot * 2 + 1) * 3600 - Double(generator.next() % 1800))
+        }
+        let day = calendar.date(byAdding: .day, value: -daysAgo, to: calendar.startOfDay(for: now)) ?? now
+        let hour = [8, 12, 19][slot % 3]
+        let minute = Int(generator.next() % 60)
+        return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
+    }
+
+    private static func cardFor(merchant: DemoMerchant, cards: [Card], generator: inout SeededGenerator) -> Card {
+        switch merchant.category {
+        case "Food & Drinks": return generator.next() % 4 == 0 ? cards[1] : cards[2]
+        case "Shopping":      return cards[1]
+        case "Travel":        return cards[0]
+        default:              return generator.next() % 3 == 0 ? cards[3] : cards[0]
+        }
+    }
+
+    private struct DemoMerchant {
+        let name: String
+        let category: String
+        let low: Double
+        let high: Double
+        let place: String
+        let latitude: Double
+        let longitude: Double
+    }
+
+    private static let merchants: [DemoMerchant] = [
+        .init(name: "Kopi Corner", category: "Food & Drinks", low: 2.8, high: 7.5, place: "Tiong Bahru", latitude: 1.2852, longitude: 103.8308),
+        .init(name: "Hawker Stall #12", category: "Food & Drinks", low: 4.5, high: 12, place: "Maxwell", latitude: 1.2804, longitude: 103.8448),
+        .init(name: "Noodle Bar", category: "Food & Drinks", low: 12, high: 28, place: "Tanjong Pagar", latitude: 1.2764, longitude: 103.8458),
+        .init(name: "Brunch Club", category: "Food & Drinks", low: 24, high: 58, place: "Holland Village", latitude: 1.3115, longitude: 103.7958),
+        .init(name: "Fresh Mart", category: "Shopping", low: 18, high: 96, place: "Bishan", latitude: 1.3508, longitude: 103.8485),
+        .init(name: "Orchard Books", category: "Shopping", low: 15, high: 48, place: "Orchard", latitude: 1.3040, longitude: 103.8318),
+        .init(name: "Home & Living", category: "Shopping", low: 30, high: 140, place: "Paya Lebar", latitude: 1.3180, longitude: 103.8930),
+        .init(name: "City Cabs", category: "Travel", low: 9, high: 32, place: "Raffles Place", latitude: 1.2840, longitude: 103.8514),
+        .init(name: "Airport Duty Free", category: "Travel", low: 45, high: 160, place: "Changi", latitude: 1.3573, longitude: 103.9886),
+        .init(name: "Cinema Hall", category: "Entertainment", low: 13.5, high: 32, place: "Bugis", latitude: 1.2996, longitude: 103.8553),
+        .init(name: "Neighbourhood Clinic", category: "Health", low: 25, high: 70, place: "Toa Payoh", latitude: 1.3343, longitude: 103.8505),
+        .init(name: "Mobile Plan", category: "Services", low: 28, high: 42, place: "Online", latitude: 1.2930, longitude: 103.8520),
+    ]
+}
+
+/// Deterministic generator so every demo launch produces the same data (SplitMix64).
+private struct SeededGenerator {
+    private var state: UInt64
+    init(seed: UInt64) { state = seed }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E3779B97F4A7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
+        z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
+        return z ^ (z >> 31)
+    }
+}
+#endif

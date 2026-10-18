@@ -12,7 +12,7 @@ struct MainTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query private var cards: [Card]
-    @State private var selectedTab = Tab.today.rawValue
+    @State private var selectedTab = MainTabView.initialTab
     @State private var transactionFromNotification: Transaction?
     @ObservedObject private var notificationRouter = NotificationRouter.shared
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
@@ -52,7 +52,21 @@ struct MainTabView: View {
         }
     }
 
+    /// Demo launches (`-StoreDemo -StoreTab 2`) can open on any tab for screenshot capture.
+    private static var initialTab: Int {
+        #if DEBUG
+        if StoreDemo.isEnabled, let tab = Tab(rawValue: UserDefaults.standard.integer(forKey: "StoreTab")) {
+            return tab.rawValue
+        }
+        #endif
+        return Tab.today.rawValue
+    }
+
     private func writeWidgetData() {
+        #if DEBUG
+        // Keep demo numbers out of the real widget.
+        if StoreDemo.isEnabled { return }
+        #endif
         WidgetDataWriter.refresh(using: modelContext)
     }
 
@@ -71,6 +85,9 @@ struct MainTabView: View {
 
     private func scheduleCycleNudges() {
         guard hasCompletedOnboarding else { return }
+        #if DEBUG
+        if StoreDemo.isEnabled { return }
+        #endif
         let cards = self.cards
         Task { await CycleNudgeScheduler.evaluate(cards: cards) }
     }

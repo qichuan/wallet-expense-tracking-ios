@@ -77,3 +77,4 @@ backend/.env*.local
 backend/.vercel
 backend/next-env.d.ts
 backend/*.tsbuildinfo
+scripts/app-store/output/

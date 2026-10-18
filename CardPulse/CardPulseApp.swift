@@ -28,6 +28,9 @@ struct CardPulseApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var sharedModelContainer: ModelContainer = {
+        #if DEBUG
+        if StoreDemo.isEnabled { return ModelContainer.createStoreDemoContainer() }
+        #endif
         let schema = Schema([
             Card.self,
             Transaction.self,
