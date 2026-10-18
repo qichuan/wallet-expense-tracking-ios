@@ -19,6 +19,15 @@ CardLah! takes the mental load off.
 
 # What's New in This Version
 
+v4.0
+- A whole new look — A warm, playful design with chunky cards, friendly rounded fonts, and a card mascot who cheers you on (and sweats a little when a card falls behind).
+- Light or dark — Pick a light or dark theme, or follow your device, from the Me tab.
+- Meet the mascot — A new app icon featuring the mascot. Choose Gold, Pink or Mint, and the icon changes to match.
+- Simpler tabs — Today, Cards, Recap and Me. Analysis is now Recap, and Settings lives under Me.
+- Keep your streak — A day streak and weekly flame strip on Today show the days you've logged a tap.
+- Your Me tab — See your streaks, taps logged and targets hit, a monthly activity calendar, and badges to unlock.
+- Some performance improvements and bug fixes, including lists no longer hiding behind the tab bar
+
 v3.5
 - Rewards per cycle — Tap a badge in the minimum-spend history grid to see the miles or cashback you earned in that billing cycle.
 

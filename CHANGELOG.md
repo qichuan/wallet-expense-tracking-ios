@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+
+## 4.0 - 2026-10-18
 - [CHANGED] - Fresh, playful look: a warm cream theme with chunky cards, rounded Fredoka and Nunito fonts, and a card mascot that cheers you on (or sweats a little when a card is behind)
 - [CHANGED] - Choose a light or dark theme, or follow your device, under Me
 - [CHANGED] - New app icon featuring the mascot, which changes to match the mascot colour you pick
