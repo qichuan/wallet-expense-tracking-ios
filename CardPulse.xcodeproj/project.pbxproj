@@ -89,8 +89,18 @@
 		2E0783992F701AF400F4C526 /* Exceptions for "CardPulse" folder in "CardPulseWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Resources/Fonts/Fredoka-Bold.ttf,
+				Resources/Fonts/Fredoka-Medium.ttf,
+				Resources/Fonts/Fredoka-SemiBold.ttf,
+				Resources/Fonts/Nunito-Black.ttf,
+				Resources/Fonts/Nunito-Bold.ttf,
+				Resources/Fonts/Nunito-ExtraBold.ttf,
+				Resources/Fonts/Nunito-SemiBold.ttf,
 				Theme/AppColors.swift,
+				Theme/AppTypography.swift,
+				Theme/CardArt.swift,
 				Theme/CardStatus.swift,
+				Theme/ViewModifiers.swift,
 				Utils/WidgetDataWriter.swift,
 			);
 			target = 2E0783682F7019C400F4C526 /* CardPulseWidgetExtension */;

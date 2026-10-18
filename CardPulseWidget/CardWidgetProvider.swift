@@ -13,10 +13,17 @@ struct CardWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             cards: [
                 CardSpendData(
-                    id: UUID(), name: "Chase Sapphire",
-                    monthlySpent: 850, minimumSpending: 1500,
-                    hasMinimumSpending: true, daysRemaining: 12,
-                    rewardType: "miles", spendingPeriodDisplay: "Mar 1 – Mar 31"
+                    id: UUID(), name: "Citi Cashback",
+                    monthlySpent: 850, minimumSpending: 800,
+                    hasMinimumSpending: true, daysRemaining: 5,
+                    rewardType: "cashback", spendingPeriodDisplay: "Mar 1 – Mar 31"
+                ),
+                CardSpendData(
+                    id: UUID(), name: "UOB Lady's Card",
+                    monthlySpent: 640, minimumSpending: 1000,
+                    hasMinimumSpending: true, daysRemaining: 5,
+                    rewardType: "miles", spendingPeriodDisplay: "Mar 1 – Mar 31",
+                    cyclePacing: 0.8
                 )
             ],
             lastUpdated: Date()
@@ -54,6 +61,11 @@ struct CardWidgetProvider: AppIntentTimelineProvider {
             cards = selectedIDs.compactMap { id in eligible.first { $0.id.uuidString == id } }
         }
 
-        return CardWidgetEntry(date: Date(), cards: cards, lastUpdated: snapshot?.lastUpdated ?? Date())
+        return CardWidgetEntry(
+            date: Date(),
+            cards: cards,
+            lastUpdated: snapshot?.lastUpdated ?? Date(),
+            currencySymbol: snapshot?.currencySymbol ?? "$"
+        )
     }
 }

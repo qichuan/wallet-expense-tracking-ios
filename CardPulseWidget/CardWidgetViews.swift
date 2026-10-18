@@ -2,80 +2,104 @@
 //  CardWidgetViews.swift
 //  CardPulseWidget
 //
+//  Mirrors the Today tab's min-spend card: Fredoka title, days-left pill, and a
+//  goal row per card (card art, name, chunky progress bar, status icon). Colors,
+//  fonts and status come from the app's shared theme files, so the widget follows
+//  light and dark like the app.
+//
 
 import SwiftUI
 import WidgetKit
-
-// MARK: - Design tokens
-
-private func progressTint(_ pct: Double) -> Color {
-    CardStatus.derive(progress: pct).color
-}
 
 // MARK: - Medium widget (up to 3 cards)
 
 struct MediumCardWidgetView: View {
     let entry: CardWidgetEntry
 
+    /// Soonest statement among cards still working toward their goal.
+    private var daysLeft: Int? {
+        entry.cards.filter { $0.status != .hit }.map(\.daysRemaining).min()
+    }
+
     var body: some View {
         if entry.cards.isEmpty {
             EmptyWidgetView()
         } else {
-            VStack(alignment: .leading, spacing: 0) {
-                let visible = Array(entry.cards.prefix(3))
-                ForEach(visible) { card in
-                    CardRowWidgetView(card: card)
-                    if card.id != visible.last?.id {
-                        Divider()
-                            .background(AppColors.divider)
-                            .padding(.vertical, 5)
+            let visible = Array(entry.cards.prefix(3))
+            // Three rows only fit on one line each; with fewer, show the amounts too.
+            let compact = visible.count >= 3
+            VStack(alignment: .leading, spacing: compact ? 9 : 12) {
+                HStack {
+                    Text("Min-spend")
+                        .font(AppTypography.cardTitle)
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    if let daysLeft {
+                        Text(daysLeftText(daysLeft).uppercased())
+                            .font(AppTypography.badgeTiny)
+                            .foregroundColor(AppColors.statusBehindText)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(AppColors.statusBehindSoft))
                     }
                 }
+                ForEach(visible) { card in
+                    GoalRowWidgetView(card: card, symbol: entry.currencySymbol, compact: compact)
+                }
             }
-            .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func daysLeftText(_ days: Int) -> String {
+        switch days {
+        case 0:  return "Statement today"
+        case 1:  return "1 day left"
+        default: return "\(days) days left"
         }
     }
 }
 
-// MARK: - Card row used inside medium widget
+// MARK: - Goal row (same layout as HomeView's goalRow)
 
-private struct CardRowWidgetView: View {
+private struct GoalRowWidgetView: View {
     let card: CardSpendData
-
-    private var status: CardStatus {
-        CardStatus.derive(progress: card.progressPercentage)
-    }
+    let symbol: String
+    let compact: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .firstTextBaseline) {
+        let status = card.status
+        HStack(spacing: 10) {
+            CardArt(color: CardArt.color(for: card.id), width: 26)
+            VStack(alignment: .leading, spacing: 1) {
                 Text(card.name)
-                    .font(.caption)
-                    .fontWeight(.semibold)
+                    .font(AppTypography.rowValue)
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)
-                Spacer()
-                Text("$\(Int(card.monthlySpent)) / $\(Int(card.minimumSpending))")
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(AppColors.track)
-                    Capsule()
-                        .fill(status.color)
-                        .frame(width: geo.size.width * CGFloat(max(0, min(1, card.progressPercentage))))
+                if !compact {
+                    Text("\(money(card.monthlySpent)) / \(money(card.minimumSpending))")
+                        .font(AppTypography.caption2)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
                 }
             }
-            .frame(height: 6)
-
-            Text("\(card.daysRemaining)d left · \(card.spendingPeriodDisplay)")
-                .font(.caption2)
-                .foregroundColor(AppColors.textTertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.8)
+            .frame(width: 104, alignment: .leading)
+            ChunkyProgressBar(progress: card.progressPercentage, color: status.color, height: 8)
+            Image(systemName: status.icon)
+                .font(AppTypography.iconSmall)
+                .foregroundColor(status.color)
+                .frame(width: 18, alignment: .trailing)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(card.name), \(Int(card.progressPercentage * 100)) percent, \(status.label)")
+    }
+
+    private func money(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return symbol + (formatter.string(from: NSNumber(value: value)) ?? "\(Int(value))")
     }
 }
 
@@ -90,7 +114,7 @@ struct AccessoryCircularWidgetView: View {
                 Image(systemName: "creditcard.fill")
             } currentValueLabel: {
                 Text("\(Int(card.progressPercentage * 100))%")
-                    .font(.caption2)
+                    .font(AppTypography.caption2)
             }
             .gaugeStyle(.accessoryCircular)
             .tint(AppColors.accent)
@@ -104,12 +128,10 @@ struct AccessoryCircularWidgetView: View {
 
 struct EmptyWidgetView: View {
     var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "creditcard")
-                .font(.title3)
-                .foregroundColor(AppColors.accent)
-            Text("No cards\nselected")
-                .font(.caption2)
+        VStack(spacing: 8) {
+            CardArt(color: AppColors.accent, width: 34)
+            Text("Pick up to 3 cards\nwith a min-spend goal")
+                .font(AppTypography.caption)
                 .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
         }

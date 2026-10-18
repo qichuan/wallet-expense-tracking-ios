@@ -21,9 +21,10 @@ extension WidgetDataWriter {
                 hasMinimumSpending: card.hasMinimumSpending,
                 daysRemaining: card.daysRemaining,
                 rewardType: card.rewardType.rawValue,
-                spendingPeriodDisplay: card.spendingPeriodDisplay
+                spendingPeriodDisplay: card.spendingPeriodDisplay,
+                cyclePacing: card.cyclePacing
             )
         }
-        write(spendData: spendData)
+        write(spendData: spendData, currencySymbol: CurrencyUtils.symbol(for: CurrencyUtils.defaultCurrencyCode))
     }
 }

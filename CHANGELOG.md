@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## XX.XX.XX - 20XX-XX-XX
+- [CHANGED] - The home screen widget matches the new look, in light and dark, with the same goal status as the app
 
 ## 4.0 - 2026-10-18
 - [CHANGED] - Fresh, playful look: a warm cream theme with chunky cards, rounded Fredoka and Nunito fonts, and a card mascot that cheers you on (or sweats a little when a card is behind)

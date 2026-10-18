@@ -7,6 +7,7 @@ import SwiftUI
 
 /// Tiny credit-card glyph with a gold chip. `Card` has no color field, so the
 /// color is picked from a fixed palette by a stable hash of the card's id.
+/// Also compiled into the widget; the `Card` initializer lives in `CardArt+Card.swift`.
 struct CardArt: View {
     let color: Color
     var width: CGFloat = 30
@@ -16,10 +17,6 @@ struct CardArt: View {
         self.color = color
         self.width = width
         self.raised = raised
-    }
-
-    init(card: Card, width: CGFloat = 30, raised: Bool = false) {
-        self.init(color: CardArt.color(for: card.id), width: width, raised: raised)
     }
 
     var body: some View {
@@ -56,5 +53,5 @@ struct CardArt: View {
         }
     }
     .padding()
-    .screenBackground()
+    .background(AppColors.backgroundPrimary)
 }

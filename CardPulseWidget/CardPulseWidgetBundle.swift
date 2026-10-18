@@ -16,7 +16,7 @@ struct CardSpendWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: CardWidgetIntent.self, provider: CardWidgetProvider()) { entry in
             CardSpendWidgetEntryView(entry: entry)
-                .containerBackground(AppColors.backgroundPrimary, for: .widget)
+                .containerBackground(AppColors.backgroundCard, for: .widget)
         }
         .configurationDisplayName("Card Spending")
         .description("Choose up to 3 cards to track minimum-spending progress.")

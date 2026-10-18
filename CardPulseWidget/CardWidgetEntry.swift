@@ -10,4 +10,5 @@ struct CardWidgetEntry: TimelineEntry {
     let date: Date
     let cards: [CardSpendData]
     let lastUpdated: Date
+    var currencySymbol: String = "$"
 }
