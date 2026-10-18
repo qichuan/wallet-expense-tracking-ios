@@ -20,6 +20,7 @@ struct SettingsView: View {
     @AppStorage("exchangeRates") private var exchangeRatesData: Data = Data()
     @AppStorage("displayName") private var displayName = ""
     @AppStorage("mascotColor") private var mascotColor = MascotPalette.gold.rawValue
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
     @State private var showingCurrencyManager = false
     @State private var showingImportPicker = false
     @State private var importMessage: String = ""
@@ -72,10 +73,19 @@ struct SettingsView: View {
                             SettingsSection(title: "Profile") {
                                 SettingsTextFieldRow(title: "Your name", placeholder: "Add a name", text: $displayName)
                                 SettingsPickerRow(
+                                    title: "Theme",
+                                    selection: $appearance,
+                                    options: AppAppearance.allCases.map(\.rawValue)
+                                )
+                                SettingsPickerRow(
                                     title: "Mascot colour",
                                     selection: $mascotColor,
                                     options: MascotPalette.allCases.map(\.rawValue)
                                 )
+                            }
+                            .onChange(of: mascotColor) { _, newValue in
+                                // Keep the home-screen icon in step with the mascot.
+                                AppIconSwitcher.apply(MascotPalette(rawValue: newValue) ?? .gold)
                             }
 
                             // CURRENCY

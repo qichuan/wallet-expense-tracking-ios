@@ -58,6 +58,7 @@ struct CardPulseApp: App {
 
 private struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.system.rawValue
     
     #if DEBUG
     @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
@@ -78,5 +79,11 @@ private struct RootView: View {
                 MainTabView()
             }
         }
+        .onAppear { applyAppearance() }
+        .onChange(of: appearanceRaw) { applyAppearance() }
+    }
+
+    private func applyAppearance() {
+        (AppAppearance(rawValue: appearanceRaw) ?? .system).apply()
     }
 }

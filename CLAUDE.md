@@ -47,7 +47,7 @@ For day-to-day development, open `CardPulse.xcodeproj` in Xcode and run/test fro
 Completion sets `hasCompletedOnboarding = true` and logs `AnalyticsTracker.Event.onboardingCompleted`. The automation step has a "Skip for now" fallback.
 
 ### Navigation
-`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` is drawn in a bottom `safeAreaInset`. Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. The app follows the system light/dark appearance.
+`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
 
 ### Views Structure
 ```
@@ -146,6 +146,7 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **ActivityStreak** (`Utils/ActivityStreak.swift`): Pure day-streak math from transaction dates — `currentStreak` (ending today, or yesterday if nothing logged yet today), `bestStreak`, `activeDays(inMonthOf:)`, Mon–Sun `weekStrip`. Nothing is persisted. Unit-tested.
 - **BadgeEvaluator** (`Utils/BadgeEvaluator.swift`): Pure rules for the Me tab's four badges (week warrior, target smasher, tidy tracker, month master) from best streak, transaction count and targets hit (met past cycles via `minimumSpendHistory` + current hits). Unit-tested.
 - **MascotCopy** (`Utils/MascotCopy.swift`): Pure copy + mood for the mascot bubbles on Today, Cards and Recap, from goal-card state or the period delta.
+- **AppAppearance / AppIconSwitcher** (`Utils/AppAppearance.swift`): The Me tab's theme choice, and switching the home-screen icon to match the mascot colour. The icon sets are `AppIcon` (Gold, primary), `AppIcon-Pink` and `AppIcon-Mint`, listed in the `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` build setting; iOS shows its own confirmation alert on each switch.
 - **AppLinks** (`Utils/AppLinks.swift`): Centralised external links (e.g. the App Store URL used in the recap share CTA).
 - **CurrencyUtils** (`Utils/CurrencyUtils.swift`): Multi-currency support. Holds the built-in currency list (`allCurrencies`, 15 currencies), user-defined custom currencies, enabled/default currency preferences (all in `UserDefaults`), and exchange-rate cache (via [Frankfurter API](https://www.frankfurter.app), 5-day TTL). Key methods: `parseCurrencyAndAmount(from:)` parses raw Wallet strings like `"S$12.50"` or `"MYR 8.00"`; `fetchRates(for:to:)` fetches and inverts rates; `rateToDefault(from:)` returns the cached conversion rate.
 
@@ -157,7 +158,7 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **Rewards**: Miles and cashback are always calculated on the amount converted to the default currency — convert, then block-round, then apply the rate. Use `RewardCalculator.convertedReward(for:)` / `aggregate(_:)`; never apply a reward rate to a raw foreign-currency amount. When no FX rate is cached, the raw amount is used and UI keeps the transaction's own currency label.
 - **CSV format**: `Merchant,Amount,Currency,Category,Card,Date,Note,Latitude,Longitude,PlaceName` with date format `yyyy-MM-dd HH:mm:ss`. The `Amount` field may include a currency prefix (e.g. `S$12.50`) — `ImportExportUtils` uses `CurrencyUtils.parseCurrencyAndAmount` to parse it.
 - **Previews**: All SwiftUI `#Preview` blocks use `.modelContainer(ModelContainer.createMockContainer())` to get in-memory data.
-- **Light and dark**: The app follows the system appearance; never add `.preferredColorScheme` outside previews. Add both light and dark `#Preview`s for screens. The shareable `SpendingRecapCard` and its map snapshot are pinned to light so shared images look the same everywhere.
+- **Light and dark**: The theme comes from `AppAppearance` (System by default), applied at the window level; never add `.preferredColorScheme` outside previews. Add both light and dark `#Preview`s for screens. The shareable `SpendingRecapCard` and its map snapshot are pinned to light so shared images look the same everywhere.
 - **Design tokens**: Always use `AppColors.*` for colors and `AppTypography.*` for fonts. Never inline colors or fonts in views.
 
 ## Firebase

@@ -19,14 +19,10 @@ struct WelcomeStepView: View {
     }
 
     private let samples: [SampleTx] = [
-        .init(merchant: "Lunch at Starbucks", date: "09 Apr", amount: "12.50",
-              icon: "fork.knife", tint: AppColors.categoryFoodDrinks, isMuted: false),
         .init(merchant: "Groceries", date: "08 Apr", amount: "54.20",
               icon: "cart", tint: AppColors.categoryShopping, isMuted: false),
         .init(merchant: "Movie Ticket", date: "07 Apr", amount: "15.00",
               icon: "ticket", tint: AppColors.categoryEntertainment, isMuted: false),
-        .init(merchant: "Spotify Subscription", date: "3 Apr", amount: "9.99",
-              icon: "music.note", tint: AppColors.categoryServices, isMuted: false),
         .init(merchant: "Taxi", date: "01 Apr", amount: "22.30",
               icon: "car", tint: AppColors.categoryTravel, isMuted: false),
         .init(merchant: "Train", date: "29 Mar", amount: "40.00",

@@ -87,24 +87,28 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
-                .toolbar(.hidden, for: .tabBar)
-                .tag(Tab.today.rawValue)
+        // The bar sits below the TabView rather than in a safe-area inset: pages are
+        // hosted in their own controllers and don't reliably pick up an inset, so
+        // giving the TabView a frame that ends above the bar is the only way to
+        // guarantee scroll content stops there.
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                HomeView(selectedTab: $selectedTab)
+                    .toolbar(.hidden, for: .tabBar)
+                    .tag(Tab.today.rawValue)
 
-            CardsView()
-                .toolbar(.hidden, for: .tabBar)
-                .tag(Tab.cards.rawValue)
+                CardsView()
+                    .toolbar(.hidden, for: .tabBar)
+                    .tag(Tab.cards.rawValue)
 
-            AnalysisView()
-                .toolbar(.hidden, for: .tabBar)
-                .tag(Tab.recap.rawValue)
+                AnalysisView()
+                    .toolbar(.hidden, for: .tabBar)
+                    .tag(Tab.recap.rawValue)
 
-            SettingsView()
-                .toolbar(.hidden, for: .tabBar)
-                .tag(Tab.me.rawValue)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+                SettingsView()
+                    .toolbar(.hidden, for: .tabBar)
+                    .tag(Tab.me.rawValue)
+            }
             ChunkyTabBar(selection: $selectedTab)
         }
         .tint(AppColors.accent)
