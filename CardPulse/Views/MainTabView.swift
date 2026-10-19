@@ -14,6 +14,8 @@ struct MainTabView: View {
     @Query private var cards: [Card]
     @State private var selectedTab = MainTabView.initialTab
     @State private var transactionFromNotification: Transaction?
+    /// True when the window is wider than tall, which moves the tab bar to a rail on the trailing edge.
+    @State private var usesSideBar = false
     @ObservedObject private var notificationRouter = NotificationRouter.shared
     @AppStorage("hasChosenDefaultCurrency") private var hasChosenDefaultCurrency = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -104,11 +106,18 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        // The bar sits below the TabView rather than in a safe-area inset: pages are
+        // The bar sits beside the TabView rather than in a safe-area inset: pages are
         // hosted in their own controllers and don't reliably pick up an inset, so
-        // giving the TabView a frame that ends above the bar is the only way to
+        // giving the TabView a frame that ends at the bar is the only way to
         // guarantee scroll content stops there.
-        VStack(spacing: 0) {
+        //
+        // When the window is wider than tall (iPhone Duo's outer display, its inner
+        // display in landscape, or any iPhone in landscape) the bar becomes a rail on
+        // the trailing edge, where iOS puts system tab bars, so pages keep their full
+        // height. AnyLayout swaps the stack without rebuilding the TabView, so each
+        // page keeps its navigation and scroll state through a fold or rotation.
+        let layout = usesSideBar ? AnyLayout(HStackLayout(spacing: 0)) : AnyLayout(VStackLayout(spacing: 0))
+        layout {
             TabView(selection: $selectedTab) {
                 HomeView(selectedTab: $selectedTab)
                     .toolbar(.hidden, for: .tabBar)
@@ -126,7 +135,12 @@ struct MainTabView: View {
                     .toolbar(.hidden, for: .tabBar)
                     .tag(Tab.me.rawValue)
             }
-            ChunkyTabBar(selection: $selectedTab)
+            ChunkyTabBar(selection: $selectedTab, axis: usesSideBar ? .vertical : .horizontal)
+        }
+        .onGeometryChange(for: Bool.self) { proxy in
+            proxy.size.width > proxy.size.height
+        } action: { isWide in
+            usesSideBar = isWide
         }
         .tint(AppColors.accent)
         .onAppear {
@@ -169,56 +183,80 @@ struct MainTabView: View {
     }
 }
 
-/// Bottom bar from the design: each tab is an icon in a rounded pill that
-/// fills accent-soft when selected, with a Fredoka label underneath.
+/// Tab bar from the design: each tab is an icon in a rounded pill that fills
+/// accent-soft when selected, with a Fredoka label underneath. Laid out as a
+/// bottom bar, or as a vertical rail when the window is wider than tall.
 private struct ChunkyTabBar: View {
     @Binding var selection: Int
+    var axis: Axis = .horizontal
+
+    private var isVertical: Bool { axis == .vertical }
 
     var body: some View {
-        HStack(spacing: 0) {
+        let layout = isVertical ? AnyLayout(VStackLayout(spacing: 14)) : AnyLayout(HStackLayout(spacing: 0))
+        layout {
             ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
-                let selected = selection == tab.rawValue
-                Button {
-                    selection = tab.rawValue
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: tab.symbol)
-                            .font(AppTypography.iconLarge)
-                            .frame(width: 54, height: 36)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(selected ? AppColors.accentSoft : AppColors.clear)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .strokeBorder(selected ? AppColors.accentSoftBorder : AppColors.clear, lineWidth: 2)
-                            )
-                        Text(tab.label)
-                            .font(AppTypography.tabLabel)
-                    }
-                    .foregroundColor(selected ? AppColors.accent : AppColors.textTertiary)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.label)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+                tabButton(tab)
             }
         }
         .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        .padding(.top, isVertical ? 0 : 8)
+        .padding(.bottom, isVertical ? 0 : 2)
+        .frame(maxHeight: isVertical ? .infinity : nil)
         .background(
             AppColors.backgroundCard
-                .ignoresSafeArea(edges: .bottom)
-                .overlay(alignment: .top) {
-                    Rectangle().fill(AppColors.border).frame(height: 2)
+                .ignoresSafeArea(edges: isVertical ? [.trailing, .vertical] : .bottom)
+                .overlay(alignment: isVertical ? .leading : .top) {
+                    Rectangle()
+                        .fill(AppColors.border)
+                        .frame(width: isVertical ? 2 : nil, height: isVertical ? nil : 2)
+                        .ignoresSafeArea(edges: isVertical ? .vertical : [])
                 }
         )
+    }
+
+    private func tabButton(_ tab: MainTabView.Tab) -> some View {
+        let selected = selection == tab.rawValue
+        return Button {
+            selection = tab.rawValue
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: tab.symbol)
+                    .font(AppTypography.iconLarge)
+                    .frame(width: 54, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(selected ? AppColors.accentSoft : AppColors.clear)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(selected ? AppColors.accentSoftBorder : AppColors.clear, lineWidth: 2)
+                    )
+                Text(tab.label)
+                    .font(AppTypography.tabLabel)
+            }
+            .foregroundColor(selected ? AppColors.accent : AppColors.textTertiary)
+            .frame(maxWidth: isVertical ? nil : .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.label)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
 #Preview {
     MainTabView()
         .modelContainer(ModelContainer.createMockContainer())
+}
+
+#Preview("Wide, side rail", traits: .fixedLayout(width: 951, height: 669)) {
+    MainTabView()
+        .modelContainer(ModelContainer.createMockContainer())
+}
+
+#Preview("Tall, two columns", traits: .fixedLayout(width: 669, height: 951)) {
+    MainTabView()
+        .modelContainer(ModelContainer.createMockContainer())
+        .preferredColorScheme(.dark)
 }

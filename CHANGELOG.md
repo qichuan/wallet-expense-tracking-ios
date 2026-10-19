@@ -2,6 +2,8 @@
 
 ## XX.XX.XX - 20XX-XX-XX
 - [CHANGED] - The home screen widget matches the new look, in light and dark, with the same goal status as the app
+- [ADDED] - iPhone Duo support: on the big inner display, Today becomes a dashboard, Cards shows the list and the card's detail side by side, and Recap and Me spread into two columns
+- [CHANGED] - In landscape, the tab bar moves to the side so screens keep their full height
 
 ## 4.0 - 2026-10-18
 - [CHANGED] - Fresh, playful look: a warm cream theme with chunky cards, rounded Fredoka and Nunito fonts, and a card mascot that cheers you on (or sweats a little when a card is behind)

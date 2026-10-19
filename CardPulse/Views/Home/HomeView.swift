@@ -22,8 +22,12 @@ struct HomeView: View {
     @State private var showingAddTransaction = false
     @State private var showingAllTransactions = false
     @State private var selectedTransaction: Transaction?
+    @State private var layoutWidth: LayoutWidth = .compact
 
-    private static let recentLimit = 5
+    /// Recent taps shown: a short list under the goals on a phone, a full column beside them when expanded.
+    private var recentLimit: Int {
+        layoutWidth == .expanded ? 12 : 5
+    }
 
     // MARK: - Derived state
 
@@ -61,7 +65,7 @@ struct HomeView: View {
     }
 
     private var recentTransactions: [Transaction] {
-        Array(transactions.prefix(Self.recentLimit))
+        Array(transactions.prefix(recentLimit))
     }
 
     private func isNew(_ tx: Transaction) -> Bool {
@@ -75,20 +79,28 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
-                    heroCard
-                    if !cardsWithGoals.isEmpty {
-                        minSpendCard
-                    }
-                    if transactions.isEmpty {
-                        emptyState
+                    if layoutWidth == .expanded {
+                        // Dashboard: today's goals on the left, the running list of taps on the right.
+                        HStack(alignment: .top, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 16) {
+                                goalsColumn
+                            }
+                            .frame(maxWidth: .infinity)
+                            VStack(alignment: .leading, spacing: 16) {
+                                activityColumn
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
                     } else {
-                        recentSection
+                        goalsColumn
+                        activityColumn
                     }
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
             }
+            .readLayoutWidth($layoutWidth)
             .screenBackground()
             .navigationBarHidden(true)
         }
@@ -109,6 +121,23 @@ struct HomeView: View {
         }
         .sheet(item: $selectedTransaction) { tx in
             TransactionDetailView(transaction: tx)
+        }
+    }
+
+    @ViewBuilder
+    private var goalsColumn: some View {
+        heroCard
+        if !cardsWithGoals.isEmpty {
+            minSpendCard
+        }
+    }
+
+    @ViewBuilder
+    private var activityColumn: some View {
+        if transactions.isEmpty {
+            emptyState
+        } else {
+            recentSection
         }
     }
 
@@ -329,4 +358,9 @@ struct WeekFlameStrip: View {
     HomeView(selectedTab: .constant(0))
         .modelContainer(ModelContainer.createMockContainer())
         .preferredColorScheme(.dark)
+}
+
+#Preview("Expanded", traits: .fixedLayout(width: 669, height: 951)) {
+    HomeView(selectedTab: .constant(0))
+        .modelContainer(ModelContainer.createMockContainer())
 }

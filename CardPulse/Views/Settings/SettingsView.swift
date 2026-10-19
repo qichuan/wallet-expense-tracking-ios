@@ -48,6 +48,7 @@ struct SettingsView: View {
     @State private var showingHowToAutoTracking = false
     @State private var showingTroubleshooting = false
     @State private var showingCategoryManager = false
+    @State private var layoutWidth: LayoutWidth = .compact
 
     #if DEBUG
     @AppStorage("debugAlwaysShowOnboarding") private var debugAlwaysShowOnboarding = false
@@ -58,141 +59,169 @@ struct SettingsView: View {
         return short
     }
 
+    /// Settings rows, under the profile on a phone or in their own column when expanded.
+    @ViewBuilder
+    private var settingsSections: some View {
+        // PROFILE
+        SettingsSection(title: "Profile") {
+            SettingsTextFieldRow(title: "Your name", placeholder: "Add a name", text: $displayName)
+            SettingsPickerRow(
+                title: "Theme",
+                selection: $appearance,
+                options: AppAppearance.allCases.map(\.rawValue)
+            )
+            SettingsPickerRow(
+                title: "Mascot colour",
+                selection: $mascotColor,
+                options: MascotPalette.allCases.map(\.rawValue)
+            )
+        }
+        .onChange(of: mascotColor) { _, newValue in
+            // Keep the home-screen icon in step with the mascot.
+            AppIconSwitcher.apply(MascotPalette(rawValue: newValue) ?? .gold)
+        }
+
+        // CURRENCY
+        SettingsSection(title: "Currency") {
+            SettingsPickerRow(
+                title: "Main currency",
+                selection: $defaultCurrencyCode,
+                options: enabledCurrencyList.map { $0.code }
+            )
+            SettingsValueRow(
+                title: "Enabled currencies",
+                value: "\(enabledCurrencyList.count)",
+                action: {
+                    AnalyticsTracker.view("currency_manager")
+                    showingCurrencyManager = true
+                }
+            )
+        }
+
+        // CATEGORIES
+        SettingsSection(title: "Categories") {
+            SettingsValueRow(
+                title: "Manage categories",
+                value: "",
+                action: {
+                    AnalyticsTracker.view("category_manager")
+                    showingCategoryManager = true
+                }
+            )
+        }
+
+        // AUTOMATION
+        SettingsSection(title: "Automation") {
+            SettingsValueRow(
+                title: "How to auto-track",
+                value: "Setup",
+                action: {
+                    showingHowToAutoTracking = true
+                }
+            )
+            SettingsValueRow(
+                title: "Troubleshoot auto-tracking",
+                value: "Help",
+                action: {
+                    AnalyticsTracker.view("troubleshooting")
+                    showingTroubleshooting = true
+                }
+            )
+        }
+
+        // REMINDERS
+        SettingsSection(title: "Reminders") {
+            SettingsStepperRow(
+                title: "Min-spend reminder",
+                subtitle: nudgeLeadDays == 1
+                    ? "1 day before statement"
+                    : "\(nudgeLeadDays) days before statement",
+                value: $nudgeLeadDays,
+                range: 1...14
+            )
+        }
+
+        // DATA
+        SettingsSection(title: "Data") {
+            SettingsValueRow(
+                title: "Import CSV",
+                value: "",
+                action: {
+                    AnalyticsTracker.log(AnalyticsTracker.Event.importStarted)
+                    showingImportPicker = true
+                }
+            )
+            SettingsValueRow(
+                title: "Export CSV",
+                value: "",
+                action: {
+                    AnalyticsTracker.log(AnalyticsTracker.Event.exportStarted)
+                    showingExportOptions = true
+                }
+            )
+        }
+
+        // ABOUT
+        SettingsSection(title: "About") {
+            SettingsValueRow(
+                title: "Contact the Developer",
+                value: "Email",
+                action: {
+                    AnalyticsTracker.log(AnalyticsTracker.Event.contactDeveloper)
+                    openEmail()
+                }
+            )
+            SettingsStaticRow(title: "Version", value: appVersion)
+        }
+
+        #if DEBUG
+        SettingsSection(title: "Debug") {
+            SettingsToggleRow(
+                title: "Always show onboarding",
+                isOn: $debugAlwaysShowOnboarding
+            )
+        }
+        #endif
+    }
+
     var body: some View {
         ZStack {
             NavigationStack {
                 ZStack {
                     AppColors.backgroundPrimary.ignoresSafeArea()
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
-                            MeProfileSection()
-                                .padding(.horizontal, 18)
+                    if layoutWidth == .expanded {
+                        // Who you are on the left, settings on the right, each scrolling on its own.
+                        HStack(alignment: .top, spacing: 0) {
+                            ScrollView {
+                                MeProfileSection()
+                                    .padding(.horizontal, 18)
+                                    .padding(.top, 8)
+                                    .padding(.bottom, 40)
+                            }
+                            .frame(maxWidth: .infinity)
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 24) {
+                                    settingsSections
+                                }
                                 .padding(.top, 8)
-
-                            // PROFILE
-                            SettingsSection(title: "Profile") {
-                                SettingsTextFieldRow(title: "Your name", placeholder: "Add a name", text: $displayName)
-                                SettingsPickerRow(
-                                    title: "Theme",
-                                    selection: $appearance,
-                                    options: AppAppearance.allCases.map(\.rawValue)
-                                )
-                                SettingsPickerRow(
-                                    title: "Mascot colour",
-                                    selection: $mascotColor,
-                                    options: MascotPalette.allCases.map(\.rawValue)
-                                )
+                                .padding(.bottom, 40)
                             }
-                            .onChange(of: mascotColor) { _, newValue in
-                                // Keep the home-screen icon in step with the mascot.
-                                AppIconSwitcher.apply(MascotPalette(rawValue: newValue) ?? .gold)
-                            }
-
-                            // CURRENCY
-                            SettingsSection(title: "Currency") {
-                                SettingsPickerRow(
-                                    title: "Main currency",
-                                    selection: $defaultCurrencyCode,
-                                    options: enabledCurrencyList.map { $0.code }
-                                )
-                                SettingsValueRow(
-                                    title: "Enabled currencies",
-                                    value: "\(enabledCurrencyList.count)",
-                                    action: {
-                                        AnalyticsTracker.view("currency_manager")
-                                        showingCurrencyManager = true
-                                    }
-                                )
-                            }
-
-                            // CATEGORIES
-                            SettingsSection(title: "Categories") {
-                                SettingsValueRow(
-                                    title: "Manage categories",
-                                    value: "",
-                                    action: {
-                                        AnalyticsTracker.view("category_manager")
-                                        showingCategoryManager = true
-                                    }
-                                )
-                            }
-
-                            // AUTOMATION
-                            SettingsSection(title: "Automation") {
-                                SettingsValueRow(
-                                    title: "How to auto-track",
-                                    value: "Setup",
-                                    action: {
-                                        showingHowToAutoTracking = true
-                                    }
-                                )
-                                SettingsValueRow(
-                                    title: "Troubleshoot auto-tracking",
-                                    value: "Help",
-                                    action: {
-                                        AnalyticsTracker.view("troubleshooting")
-                                        showingTroubleshooting = true
-                                    }
-                                )
-                            }
-
-                            // REMINDERS
-                            SettingsSection(title: "Reminders") {
-                                SettingsStepperRow(
-                                    title: "Min-spend reminder",
-                                    subtitle: nudgeLeadDays == 1
-                                        ? "1 day before statement"
-                                        : "\(nudgeLeadDays) days before statement",
-                                    value: $nudgeLeadDays,
-                                    range: 1...14
-                                )
-                            }
-
-                            // DATA
-                            SettingsSection(title: "Data") {
-                                SettingsValueRow(
-                                    title: "Import CSV",
-                                    value: "",
-                                    action: {
-                                        AnalyticsTracker.log(AnalyticsTracker.Event.importStarted)
-                                        showingImportPicker = true
-                                    }
-                                )
-                                SettingsValueRow(
-                                    title: "Export CSV",
-                                    value: "",
-                                    action: {
-                                        AnalyticsTracker.log(AnalyticsTracker.Event.exportStarted)
-                                        showingExportOptions = true
-                                    }
-                                )
-                            }
-
-                            // ABOUT
-                            SettingsSection(title: "About") {
-                                SettingsValueRow(
-                                    title: "Contact the Developer",
-                                    value: "Email",
-                                    action: {
-                                        AnalyticsTracker.log(AnalyticsTracker.Event.contactDeveloper)
-                                        openEmail()
-                                    }
-                                )
-                                SettingsStaticRow(title: "Version", value: appVersion)
-                            }
-
-                            #if DEBUG
-                            SettingsSection(title: "Debug") {
-                                SettingsToggleRow(
-                                    title: "Always show onboarding",
-                                    isOn: $debugAlwaysShowOnboarding
-                                )
-                            }
-                            #endif
+                            .frame(maxWidth: .infinity)
                         }
-                        .padding(.bottom, 40)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 24) {
+                                MeProfileSection()
+                                    .padding(.horizontal, 18)
+                                    .padding(.top, 8)
+
+                                settingsSections
+                            }
+                            .padding(.bottom, 40)
+                        }
                     }
                 }
+                .readLayoutWidth($layoutWidth)
                 .navigationBarHidden(true)
             }
 
@@ -1094,4 +1123,9 @@ struct AddCurrencyView: View {
     SettingsView()
         .modelContainer(ModelContainer.createMockContainer())
         .preferredColorScheme(.dark)
+}
+
+#Preview("Expanded", traits: .fixedLayout(width: 863, height: 669)) {
+    SettingsView()
+        .modelContainer(ModelContainer.createMockContainer())
 }

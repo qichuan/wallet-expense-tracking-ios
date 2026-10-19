@@ -47,7 +47,7 @@ For day-to-day development, open `CardPulse.xcodeproj` in Xcode and run/test fro
 Completion sets `hasCompletedOnboarding = true` and logs `AnalyticsTracker.Event.onboardingCompleted`. The automation step has a "Skip for now" fallback.
 
 ### Navigation
-`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
+`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. When the window is wider than tall (iPhone Duo's outer display, its inner display in landscape, any iPhone in landscape) the same bar becomes a vertical rail on the trailing edge, where iOS 27.1 puts system tab bars; an `AnyLayout` swap keeps the `TabView`'s identity so pages keep their state through a fold. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
 
 ### Views Structure
 ```
@@ -104,6 +104,16 @@ Views/
     ExportOptionsView.swift
     ImportPreviewView.swift
 ```
+
+### Adaptive layout (iPhone Duo)
+Screens pick their layout from their own size via `readLayoutWidth(_:)` (`Theme/AdaptiveLayout.swift`): `LayoutWidth.expanded` at 640pt and wider, else `.compact`. Never branch on `userInterfaceIdiom`, orientation, `UIScreen.main` or specific sizes, and don't read `horizontalSizeClass == .regular` as iPad; iPhone Duo moves one scene between a compact outer display and a regular inner display. Expanded layouts:
+- **Today**: goals (mascot hero, min-spend) on the left, a longer Recent taps column on the right.
+- **Cards**: list and detail side by side; `CardDetailView(card:isEmbedded: true)` fills the pane (no Done button). A card picked in the pane stays selected through a fold and reopens as the compact sheet.
+- **Recap**: summary and trend on the left, "Where it went" and the map on the right.
+- **Me**: profile, stats and badges in one column, settings in another, each scrolling on its own.
+- **Onboarding** stays at a 560pt readable width; the shareable recap card is capped at its 384pt image width so its aspect-filled map crops the same as the shared image.
+
+Compact layouts are unchanged from the phone design. Each screen has an "Expanded" `#Preview` with a fixed Duo-sized layout. iOS 27.1-only APIs (`ArrangementView`, `reservedRegions`, `onHingeChange`) aren't adopted yet.
 
 ### Theme System
 The `Theme/` folder is the single source of truth for all visual tokens. The look is the "CardLah Fun" design (Claude Design project, `CardLah Fun.dc.html`): cream background, white "chunky" cards with a 2pt outline and thicker bottom edge, Fredoka + Nunito, and a mascot.

@@ -20,18 +20,24 @@ struct OnboardingFlow: View {
 
     private let totalSteps = 5
 
+    /// Steps are a single column of text, lists and a pill button. On a wide display
+    /// (iPhone Duo's inner display, landscape) they stay at a readable width, centred.
+    private static let readableWidth: CGFloat = 560
+
     var body: some View {
         ZStack {
             AppColors.backgroundPrimary.ignoresSafeArea()
 
             if stepIndex == 0 {
                 WelcomeStepView(onContinue: advance)
+                    .frame(maxWidth: Self.readableWidth)
                     .transition(.asymmetric(
                         insertion: .move(edge: .leading),
                         removal:   .move(edge: .leading)
                     ))
             } else {
                 stepsContainer
+                    .frame(maxWidth: Self.readableWidth)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing),
                         removal:   .move(edge: .trailing)
