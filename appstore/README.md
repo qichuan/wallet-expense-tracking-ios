@@ -6,8 +6,8 @@ and the screenshot/preview specs in App Store Connect Help.
 
 | File | What it does |
 | --- | --- |
-| `StoreArt.swift` | Frames captures on the CardLah! cream background with a headline and the mascot; renders the preview's intro, outro and caption banners. Edit `shots` and `previewCaptions` to change copy. |
-| `capture_screenshots.sh` | Launches the demo store on each tab of a connected iPhone, captures it, then runs `StoreArt.swift`. |
+| `StoreArt.swift` | Frames captures on the CardLah! cream background with a headline and the mascot; renders the header and search results creative assets; renders the preview's intro, outro and caption banners. Edit `shots`, `creativeHeadline` and `previewCaptions` to change copy. |
+| `capture_screenshots.sh` | Launches the demo store on each tab of a connected iPhone, captures it, then runs `StoreArt.swift` for screenshots and creative assets. |
 | `record_preview.sh` | Records the iPhone's screen while you drive the demo app. |
 | `make_preview.sh` | Builds the final app preview from that recording. |
 
@@ -17,6 +17,7 @@ Everything is written straight into this folder:
 | --- | --- |
 | `original_screenshots/` | Raw device captures (`1-today.png` … `5-today-dark.png`). |
 | `appstore_screenshots/iPhone <size> (<w>x<h>)/` | Framed screenshots ready for App Store Connect. |
+| `creative_assets/` | Product page header and search results images (see below). |
 | `app_preview/app-preview.mp4` | The finished app preview. |
 | `app_preview/raw-preview.mp4`, `app_preview/cards/` | The raw recording and the intro, outro and caption images it's built from. |
 
@@ -42,8 +43,14 @@ for that launch.
    DEVICE="My iPhone UDID" appstore/capture_screenshots.sh
    ```
    Saves the raw captures to `original_screenshots/` and produces
-   `appstore_screenshots/iPhone 6.9in (1320x2868)`, `iPhone 6.5in (1284x2778)` and
-   `iPhone 6.1in (1206x2622)`: five PNGs each, no alpha.
+   `appstore_screenshots/iPhone 6.3in (1206x2622)` and `iPhone 6.1in (1179x2556)`:
+   five portrait PNGs each, no alpha. It also renders `creative_assets/`. To re-render
+   from existing captures without the phone:
+   ```bash
+   cd appstore
+   swift StoreArt.swift screenshots original_screenshots appstore_screenshots
+   swift StoreArt.swift creative original_screenshots creative_assets
+   ```
 4. App preview:
    ```bash
    DEVICE="My iPhone UDID" appstore/record_preview.sh 28
@@ -53,6 +60,29 @@ for that launch.
    about 6s each) so each caption lines up with its screen. Produces
    `app_preview/app-preview.mp4`: 886×1920, 30 fps, H.264 High@4.0, ~11 Mbps, AAC stereo,
    about 26s.
+
+## Header and search results
+
+Creative assets follow Apple's [asset best practices](https://developer.apple.com/app-store/asset-best-practices/)
+and the creative asset specifications in App Store Connect Help. They show on iOS 27 and
+iPadOS 27 or later, and are optional. Upload them under the version's **Product Page
+Information > Header and Search Results**, or to Asset Library.
+
+| File | Placement | Spec |
+| --- | --- | --- |
+| `header-21x9 (3840x1646).png` | Product page header | 21:9, 3840×1646 |
+| `search-results-3x2 (3840x2560).png` | Search results | 3:2, 1920×1280 to 3840×2560 |
+| `universal-16x9 (5244x2950).png` | Either; one asset for both | 16:9, 5244×2950 PNG |
+
+- The header carries one idea: the mascot and "Never miss credit card rewards". The phones at
+  the sides are decoration and can be cropped.
+- Search results states the purpose at a glance and shows the real UI: Today in front,
+  with Cards and Recap behind it.
+- Key art for the universal asset stays inside the overlap of its centred 21:9 and 3:2
+  crops.
+- There's no alpha channel, logo, price, URL or award claim.
+- Check the crops with App Store Connect's Preview before submitting. Apple's templates
+  define the exact safe areas; these layouts keep key art centred, with margin to spare.
 
 ## Apple's rules this follows
 

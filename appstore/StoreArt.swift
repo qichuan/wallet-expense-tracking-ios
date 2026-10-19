@@ -3,9 +3,12 @@
 //   swift appstore/StoreArt.swift screenshots <raw dir> <out dir>
 //       Frames raw device captures (see `shots` below) on a cream background with a
 //       headline and the mascot, at every iPhone size App Store Connect asks for.
-//       Writes one folder per size, e.g. "<out dir>/iPhone 6.9in (1320x2868)".
+//       Writes one folder per size, e.g. "<out dir>/iPhone 6.3in (1206x2622)".
 //   swift appstore/StoreArt.swift preview-cards <out dir>
 //       Intro/outro cards and caption banners (886×1920) for make_preview.sh.
+//   swift appstore/StoreArt.swift creative <raw dir> <out dir>
+//       Product page header (21:9), Search results (3:2) and universal (16:9) creative
+//       assets from the light captures.
 //
 // Usually run through capture_screenshots.sh / make_preview.sh rather than directly.
 //
@@ -29,7 +32,7 @@ struct Shot {
 }
 
 let shots: [Shot] = [
-    Shot(raw: "1-today.png", headline: "Never miss a **min-spend**",
+    Shot(raw: "1-today.png", headline: "Never miss **credit card rewards**",
          subline: "Every Apple Wallet tap logs itself, no typing needed.",
          tint: "2E6DFF", mood: .excited, dark: false),
     Shot(raw: "2-cards.png", headline: "Hit every **card goal**",
@@ -46,12 +49,11 @@ let shots: [Shot] = [
          tint: "7CA3FF", mood: .happy, dark: true),
 ]
 
-/// Portrait sizes App Store Connect accepts: 6.9" (Dynamic Island large),
-/// 6.5" (Face ID large) and 6.1" (Dynamic Island medium, required).
+/// Portrait iPhone sizes App Store Connect accepts for this listing: 6.3" (1206×2622)
+/// and 6.1" (1179×2556).
 let sizes: [(name: String, w: Int, h: Int)] = [
-    ("6.9in", 1320, 2868),
-    ("6.5in", 1284, 2778),
-    ("6.1in", 1206, 2622),
+    ("6.3in", 1206, 2622),
+    ("6.1in", 1179, 2556),
 ]
 
 // MARK: - Helpers
@@ -380,13 +382,158 @@ func renderPreviewCards(outDir: URL) {
     }
 }
 
+// MARK: - Header and search results creative assets
+
+/// Landscape creative assets for the product page header and Search (App Store asset
+/// best practices + creative asset specs in App Store Connect Help). Opaque PNGs, no
+/// logos, prices or URLs; key art stays inside `safe` so device crops don't clip it.
+struct Creative {
+    enum Layout {
+        case banner    // header: one idea — mascot + headline, phones peeking at the sides
+        case showcase  // search: purpose at a glance + the real UI
+    }
+    let file: String
+    let w: Int, h: Int
+    let layout: Layout
+    let safe: CGRect   // fraction of the canvas, CG coords (origin bottom-left)
+}
+
+let creativeHeadline = "Never miss **credit card rewards**"
+let creativeSubline = "Apple Wallet taps log themselves, so every card hits its goal."
+
+/// The universal 16:9 asset is cropped to 21:9 for the header and 3:2 for search,
+/// so its safe area is the intersection of both centered crops.
+let universalSafe: CGRect = {
+    let w: CGFloat = 5244, h: CGFloat = 2950
+    let cropW = h * 3 / 2, cropH = w * 9 / 21
+    return CGRect(x: (w - cropW) / 2 / w, y: (h - cropH) / 2 / h, width: cropW / w, height: cropH / h)
+}()
+
+let creatives: [Creative] = [
+    Creative(file: "header-21x9 (3840x1646).png", w: 3840, h: 1646, layout: .banner,
+             safe: CGRect(x: 0.2, y: 0.1, width: 0.6, height: 0.8)),
+    Creative(file: "search-results-3x2 (3840x2560).png", w: 3840, h: 2560, layout: .showcase,
+             safe: CGRect(x: 0.06, y: 0.06, width: 0.88, height: 0.88)),
+    Creative(file: "universal-16x9 (5244x2950).png", w: 5244, h: 2950, layout: .showcase,
+             safe: universalSafe),
+]
+
+/// Phone whose screen is `height` tall, centred on `center`, rotated by `degrees`.
+func drawPhone(_ ctx: CGContext, _ screen: CGImage, center: CGPoint, height: CGFloat, degrees: CGFloat = 0) {
+    let width = height * CGFloat(screen.width) / CGFloat(screen.height)
+    ctx.saveGState()
+    ctx.translateBy(x: center.x, y: center.y)
+    ctx.rotate(by: degrees * .pi / 180)
+    drawDevice(ctx, screen: screen, screenRect: CGRect(x: -width / 2, y: -height / 2, width: width, height: height),
+               dark: false)
+    ctx.restoreGState()
+}
+
+func renderCreatives(rawDir: URL, outDir: URL) {
+    try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
+    var screens: [String: CGImage] = [:]
+    for name in ["1-today.png", "2-cards.png", "3-recap.png", "4-me.png"] {
+        guard let image = loadImage(rawDir.appendingPathComponent(name)) else {
+            print("missing \(name) in \(rawDir.path); run capture_screenshots.sh first")
+            exit(1)
+        }
+        screens[name] = image
+    }
+    let ink = Palette.light.ink, secondary = Palette.light.secondary, accent = color("2E6DFF")
+
+    for creative in creatives {
+        let w = CGFloat(creative.w), h = CGFloat(creative.h)
+        let safe = CGRect(x: creative.safe.minX * w, y: creative.safe.minY * h,
+                          width: creative.safe.width * w, height: creative.safe.height * h)
+        let ctx = makeContext(creative.w, creative.h)
+        drawBackground(ctx, w: w, h: h, tint: "2E6DFF", palette: .light)
+
+        switch creative.layout {
+        case .banner:
+            // Decorative phones bleed off the bottom corners; cropping them is fine.
+            let phoneHeight = h * 1.05
+            drawPhone(ctx, screens["2-cards.png"]!, center: CGPoint(x: w * 0.07, y: h * 0.38),
+                      height: phoneHeight, degrees: 8)
+            drawPhone(ctx, screens["3-recap.png"]!, center: CGPoint(x: w * 0.93, y: h * 0.38),
+                      height: phoneHeight, degrees: -8)
+
+            // Mascot + headline, centred together inside the safe area. The headline
+            // shrinks until it fits on two lines and the block fits the safe height.
+            let mascotWidth = safe.height * 0.62
+            let gap = safe.width * 0.04
+            let textWidth = safe.width - mascotWidth - gap
+            let probe = makeContext(1, 1)
+            var headlineSize = safe.height * 0.24
+            var headlineHeight: CGFloat = 0, sublineHeight: CGFloat = 0, sublineSize: CGFloat = 0
+            repeat {
+                headlineSize *= 0.96
+                sublineSize = headlineSize * 0.36
+                headlineHeight = drawText(probe, creativeHeadline, in: CGRect(x: 0, y: 0, width: textWidth, height: h),
+                                          font: fredoka, size: headlineSize, color: ink, lineHeight: 0.95)
+                sublineHeight = drawText(probe, creativeSubline, in: CGRect(x: 0, y: 0, width: textWidth, height: h),
+                                         font: nunitoBold, size: sublineSize, color: secondary, lineHeight: 1.1)
+            } while headlineHeight > headlineSize * 2.3
+                || headlineHeight + sublineSize * 0.7 + sublineHeight > safe.height * 0.9
+            let blockHeight = headlineHeight + sublineSize * 0.7 + sublineHeight
+            let textTop = safe.midY + blockHeight / 2
+            let textX = safe.minX + mascotWidth + gap
+            drawMascot(ctx, mood: .excited,
+                       topLeft: CGPoint(x: safe.minX, y: safe.midY + mascotWidth * 132 / 140 / 2),
+                       width: mascotWidth)
+            drawText(ctx, creativeHeadline, in: CGRect(x: textX, y: 0, width: textWidth, height: textTop),
+                     font: fredoka, size: headlineSize, color: ink, emphasis: accent, lineHeight: 0.95)
+            drawText(ctx, creativeSubline,
+                     in: CGRect(x: textX, y: 0, width: textWidth, height: textTop - headlineHeight - sublineSize * 0.7),
+                     font: nunitoBold, size: sublineSize, color: secondary, lineHeight: 1.1)
+
+        case .showcase:
+            // Headline across the top of the safe area, large enough to read at search size.
+            let headlineSize = safe.height * 0.095
+            let used = drawText(ctx, creativeHeadline,
+                                in: CGRect(x: safe.minX, y: 0, width: safe.width, height: safe.maxY),
+                                font: fredoka, size: headlineSize, color: ink, emphasis: accent,
+                                align: .center, lineHeight: 0.95)
+            let sublineSize = headlineSize * 0.4
+            let subUsed = drawText(ctx, creativeSubline,
+                                   in: CGRect(x: safe.minX, y: 0, width: safe.width,
+                                              height: safe.maxY - used - sublineSize * 0.5),
+                                   font: nunitoBold, size: sublineSize, color: secondary, align: .center)
+
+            // Three phones of real UI that bleed off the bottom edge: Today in front.
+            let phonesTop = safe.maxY - used - sublineSize * 0.5 - subUsed - safe.height * 0.06
+            let screenHeight = (phonesTop - safe.minY) * 1.25
+            let screenWidth = screenHeight * 1170 / 2532
+            let centerY = phonesTop - screenHeight / 2
+            let spread = screenWidth * 1.08
+            drawPhone(ctx, screens["2-cards.png"]!, center: CGPoint(x: w / 2 - spread, y: centerY - screenHeight * 0.06),
+                      height: screenHeight * 0.92, degrees: 5)
+            drawPhone(ctx, screens["3-recap.png"]!, center: CGPoint(x: w / 2 + spread, y: centerY - screenHeight * 0.06),
+                      height: screenHeight * 0.92, degrees: -5)
+            drawPhone(ctx, screens["1-today.png"]!, center: CGPoint(x: w / 2, y: centerY), height: screenHeight)
+
+            // Mascot cheering beside the phones, only when it fits in the safe area without
+            // covering them (it does on the wide universal canvas, not on 3:2).
+            let mascotWidth = screenWidth * 0.62
+            let phonesRight = w / 2 + spread + screenWidth * 0.62
+            if safe.maxX - phonesRight >= mascotWidth {
+                drawMascot(ctx, mood: .excited,
+                           topLeft: CGPoint(x: safe.maxX - mascotWidth, y: safe.minY + mascotWidth * 1.05),
+                           width: mascotWidth)
+            }
+        }
+        writePNG(ctx, outDir.appendingPathComponent(creative.file), opaque: true)
+    }
+}
+
 let args = CommandLine.arguments
 switch args.count > 1 ? args[1] : "" {
 case "screenshots" where args.count == 4:
     renderScreenshots(rawDir: URL(fileURLWithPath: args[2]), outDir: URL(fileURLWithPath: args[3]))
 case "preview-cards" where args.count == 3:
     renderPreviewCards(outDir: URL(fileURLWithPath: args[2]))
+case "creative" where args.count == 4:
+    renderCreatives(rawDir: URL(fileURLWithPath: args[2]), outDir: URL(fileURLWithPath: args[3]))
 default:
-    print("usage: StoreArt.swift screenshots <raw dir> <out dir> | preview-cards <out dir>")
+    print("usage: StoreArt.swift screenshots <raw dir> <out dir> | preview-cards <out dir> | creative <raw dir> <out dir>")
     exit(1)
 }

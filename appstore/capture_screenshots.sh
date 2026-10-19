@@ -31,4 +31,5 @@ capture 3 Light 4-me.png
 capture 0 Dark  5-today-dark.png
 
 swift StoreArt.swift screenshots "$RAW" "$OUT"
-echo "Done: appstore/appstore_screenshots/"
+swift StoreArt.swift creative "$RAW" ./creative_assets
+echo "Done: appstore/appstore_screenshots/ and appstore/creative_assets/"
