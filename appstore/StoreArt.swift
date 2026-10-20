@@ -4,13 +4,18 @@
 //       Frames raw device captures (see `shots` below) on a cream background with a
 //       headline and the mascot, at every iPhone size App Store Connect asks for.
 //       Writes one folder per size, e.g. "<out dir>/iPhone 6.3in (1206x2622)".
+//   swift appstore/StoreArt.swift duo <raw dir> <out dir>
+//       Frames iPhone Duo captures, one subfolder of <raw dir> per pose (see `duoPoses`),
+//       at the matching iPhone Duo screenshot size. Writes e.g.
+//       "<out dir>/iPhone Duo open-landscape (2853x2007)".
 //   swift appstore/StoreArt.swift preview-cards <out dir>
 //       Intro/outro cards and caption banners (886×1920) for make_preview.sh.
 //   swift appstore/StoreArt.swift creative <raw dir> <out dir>
 //       Product page header (21:9), Search results (3:2) and universal (16:9) creative
 //       assets from the light captures.
 //
-// Usually run through capture_screenshots.sh / make_preview.sh rather than directly.
+// Usually run through capture_screenshots.sh / capture_duo_screenshots.sh / make_preview.sh
+// rather than directly.
 //
 // Colours mirror Theme/AppColors.swift and the mascot mirrors Theme/Mascot.swift.
 
@@ -54,6 +59,18 @@ let shots: [Shot] = [
 let sizes: [(name: String, w: Int, h: Int)] = [
     ("6.3in", 1206, 2622),
     ("6.1in", 1179, 2556),
+]
+
+/// iPhone Duo screenshot sizes App Store Connect accepts, one per pose captured by
+/// capture_duo_screenshots.sh. The larger pair is the inner display, the smaller pair
+/// the outer display. Each canvas is laid out for its own orientation, and the capture
+/// is fitted to its own aspect ratio, so a pose whose capture comes out the other way
+/// round still frames correctly.
+let duoPoses: [(folder: String, w: Int, h: Int)] = [
+    ("open-landscape", 2853, 2007),
+    ("open-portrait", 2007, 2853),
+    ("closed-landscape", 2034, 1398),
+    ("closed-portrait", 1398, 2034),
 ]
 
 // MARK: - Helpers
@@ -261,15 +278,18 @@ func drawBackground(_ ctx: CGContext, w: CGFloat, h: CGFloat, tint: String, pale
 // MARK: - Device frame
 
 /// Chunky phone: ink bezel with a thicker bottom lip (like the app's cards) and a soft shadow.
-func drawDevice(_ ctx: CGContext, screen: CGImage, screenRect: CGRect, dark: Bool) {
-    let bezel = screenRect.width * 0.028
-    let screenRadius = screenRect.width * 0.12
+/// Proportions follow the screen's short side, so portrait and landscape screens match.
+/// `cornerScale` is the screen corner radius as a fraction of the short side.
+func drawDevice(_ ctx: CGContext, screen: CGImage, screenRect: CGRect, dark: Bool, cornerScale: CGFloat = 0.12) {
+    let side = min(screenRect.width, screenRect.height)
+    let bezel = side * 0.028
+    let screenRadius = side * cornerScale
     let body = screenRect.insetBy(dx: -bezel, dy: -bezel)
     let bodyRadius = screenRadius + bezel
-    let lip = screenRect.width * 0.018
+    let lip = side * 0.018
 
     ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -screenRect.width * 0.03), blur: screenRect.width * 0.08,
+    ctx.setShadow(offset: CGSize(width: 0, height: -side * 0.03), blur: side * 0.08,
                   color: color("0A1428", dark ? 0.6 : 0.22))
     ctx.addPath(roundedRect(body.offsetBy(dx: 0, dy: -lip), bodyRadius))
     ctx.setFillColor(dark ? color("26344F") : color("1E2A45"))
@@ -299,39 +319,123 @@ func renderScreenshots(rawDir: URL, outDir: URL) {
                 print("skip \(shot.raw): not found in \(rawDir.path)")
                 continue
             }
-            let w = CGFloat(size.w), h = CGFloat(size.h)
-            let palette = shot.dark ? Palette.dark : Palette.light
             let ctx = makeContext(size.w, size.h)
-            drawBackground(ctx, w: w, h: h, tint: shot.tint, palette: palette)
-
-            // Header: headline + subline on the left, mascot on the right.
-            let margin = w * 0.07
-            let mascotWidth = w * 0.27
-            let textWidth = w - margin * 2 - mascotWidth - w * 0.02
-            let top = h - h * 0.045
-            let headlineHeight = drawText(ctx, shot.headline,
-                                          in: CGRect(x: margin, y: 0, width: textWidth, height: top),
-                                          font: fredoka, size: w * 0.083, color: palette.ink,
-                                          emphasis: color(shot.tint), lineHeight: 0.95)
-            let sublineHeight = drawText(ctx, shot.subline,
-                     in: CGRect(x: margin, y: 0, width: textWidth, height: top - headlineHeight - w * 0.025),
-                     font: nunitoBold, size: w * 0.038, color: palette.secondary, lineHeight: 1.1)
-            drawMascot(ctx, mood: shot.mood, topLeft: CGPoint(x: w - margin - mascotWidth, y: top - w * 0.01),
-                       width: mascotWidth)
-
-            // Phone fills the rest, keeping the capture's aspect ratio.
-            let textBottom = top - headlineHeight - w * 0.025 - sublineHeight - w * 0.06
-            let headerBottom = min(h * 0.765, textBottom)
-            let bottomMargin = h * 0.035
-            let screenHeight = headerBottom - bottomMargin - w * 0.06
-            let screenWidth = screenHeight * CGFloat(raw.width) / CGFloat(raw.height)
-            let screenRect = CGRect(x: (w - screenWidth) / 2, y: bottomMargin + w * 0.035,
-                                    width: screenWidth, height: screenHeight)
-            drawDevice(ctx, screen: raw, screenRect: screenRect, dark: shot.dark)
-
+            drawPortraitShot(ctx, shot: shot, raw: raw, w: CGFloat(size.w), h: CGFloat(size.h))
             writePNG(ctx, dir.appendingPathComponent(shot.raw), opaque: true)
         }
     }
+}
+
+/// Frames iPhone Duo captures: `<raw dir>/<pose>/<shot>.png` → `<out dir>/iPhone Duo <pose> (<w>x<h>)/`.
+func renderDuoScreenshots(rawDir: URL, outDir: URL) {
+    var wrote = false
+    for pose in duoPoses {
+        let poseDir = rawDir.appendingPathComponent(pose.folder)
+        guard FileManager.default.fileExists(atPath: poseDir.path) else {
+            print("skip \(pose.folder): no captures in \(poseDir.path)")
+            continue
+        }
+        let dir = outDir.appendingPathComponent("iPhone Duo \(pose.folder) (\(pose.w)x\(pose.h))")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let w = CGFloat(pose.w), h = CGFloat(pose.h)
+        for shot in shots {
+            guard let raw = loadImage(poseDir.appendingPathComponent(shot.raw)) else {
+                print("skip \(pose.folder)/\(shot.raw): not found")
+                continue
+            }
+            if (raw.width > raw.height) != (w > h) {
+                print("note: \(pose.folder)/\(shot.raw) is \(raw.width)x\(raw.height), the other way round from its canvas")
+            }
+            let ctx = makeContext(pose.w, pose.h)
+            if w > h {
+                drawLandscapeShot(ctx, shot: shot, raw: raw, w: w, h: h)
+            } else {
+                drawPortraitShot(ctx, shot: shot, raw: raw, w: w, h: h, cornerScale: 0.07)
+            }
+            writePNG(ctx, dir.appendingPathComponent(shot.raw), opaque: true)
+            wrote = true
+        }
+    }
+    if !wrote {
+        print("no iPhone Duo captures found in \(rawDir.path); run capture_duo_screenshots.sh first")
+        exit(1)
+    }
+}
+
+/// Headline and subline top left, mascot top right, phone filling the rest.
+func drawPortraitShot(_ ctx: CGContext, shot: Shot, raw: CGImage, w: CGFloat, h: CGFloat,
+                      cornerScale: CGFloat = 0.12) {
+    let palette = shot.dark ? Palette.dark : Palette.light
+    drawBackground(ctx, w: w, h: h, tint: shot.tint, palette: palette)
+
+    // Header: headline + subline on the left, mascot on the right.
+    let margin = w * 0.07
+    let mascotWidth = w * 0.27
+    let textWidth = w - margin * 2 - mascotWidth - w * 0.02
+    let top = h - h * 0.045
+    let headlineHeight = drawText(ctx, shot.headline,
+                                  in: CGRect(x: margin, y: 0, width: textWidth, height: top),
+                                  font: fredoka, size: w * 0.083, color: palette.ink,
+                                  emphasis: color(shot.tint), lineHeight: 0.95)
+    let sublineHeight = drawText(ctx, shot.subline,
+             in: CGRect(x: margin, y: 0, width: textWidth, height: top - headlineHeight - w * 0.025),
+             font: nunitoBold, size: w * 0.038, color: palette.secondary, lineHeight: 1.1)
+    drawMascot(ctx, mood: shot.mood, topLeft: CGPoint(x: w - margin - mascotWidth, y: top - w * 0.01),
+               width: mascotWidth)
+
+    // Phone fills the rest, keeping the capture's aspect ratio and staying inside the margins.
+    let textBottom = top - headlineHeight - w * 0.025 - sublineHeight - w * 0.06
+    let headerBottom = min(h * 0.765, textBottom)
+    let bottomMargin = h * 0.035
+    var screenHeight = headerBottom - bottomMargin - w * 0.06
+    var screenWidth = screenHeight * CGFloat(raw.width) / CGFloat(raw.height)
+    if screenWidth > w - margin * 2 {
+        screenWidth = w - margin * 2
+        screenHeight = screenWidth * CGFloat(raw.height) / CGFloat(raw.width)
+    }
+    let screenRect = CGRect(x: (w - screenWidth) / 2, y: bottomMargin + w * 0.035,
+                            width: screenWidth, height: screenHeight)
+    drawDevice(ctx, screen: raw, screenRect: screenRect, dark: shot.dark, cornerScale: cornerScale)
+}
+
+/// Wide canvas (iPhone Duo held sideways): mascot, headline and subline in a column on
+/// the left, the device on the right, so the two-column layouts show at full size.
+func drawLandscapeShot(_ ctx: CGContext, shot: Shot, raw: CGImage, w: CGFloat, h: CGFloat) {
+    let palette = shot.dark ? Palette.dark : Palette.light
+    drawBackground(ctx, w: w, h: h, tint: shot.tint, palette: palette)
+
+    let margin = h * 0.08
+    let columnWidth = w * 0.3
+    let mascotWidth = columnWidth * 0.5
+    let headlineSize = h * 0.072
+    let sublineSize = h * 0.034
+
+    // Text block (mascot, headline, subline) centred vertically in the column.
+    let probe = makeContext(1, 1)
+    let headlineHeight = drawText(probe, shot.headline, in: CGRect(x: 0, y: 0, width: columnWidth, height: h),
+                                  font: fredoka, size: headlineSize, color: palette.ink, lineHeight: 0.95)
+    let sublineHeight = drawText(probe, shot.subline, in: CGRect(x: 0, y: 0, width: columnWidth, height: h),
+                                 font: nunitoBold, size: sublineSize, color: palette.secondary, lineHeight: 1.1)
+    let mascotHeight = mascotWidth * 132 / 140
+    let gap = h * 0.04
+    let blockHeight = mascotHeight + gap + headlineHeight + sublineSize * 0.7 + sublineHeight
+    let blockTop = h / 2 + blockHeight / 2
+    drawMascot(ctx, mood: shot.mood, topLeft: CGPoint(x: margin, y: blockTop), width: mascotWidth)
+    let headlineTop = blockTop - mascotHeight - gap
+    drawText(ctx, shot.headline, in: CGRect(x: margin, y: 0, width: columnWidth, height: headlineTop),
+             font: fredoka, size: headlineSize, color: palette.ink, emphasis: color(shot.tint), lineHeight: 0.95)
+    drawText(ctx, shot.subline,
+             in: CGRect(x: margin, y: 0, width: columnWidth, height: headlineTop - headlineHeight - sublineSize * 0.7),
+             font: nunitoBold, size: sublineSize, color: palette.secondary, lineHeight: 1.1)
+
+    // Device fitted to the remaining area, keeping the capture's aspect ratio.
+    let area = CGRect(x: margin + columnWidth + w * 0.04, y: margin * 1.3,
+                      width: w - (margin + columnWidth + w * 0.04) - margin, height: h - margin * 2.3)
+    let scale = min(area.width / CGFloat(raw.width), area.height / CGFloat(raw.height))
+    let screenSize = CGSize(width: CGFloat(raw.width) * scale, height: CGFloat(raw.height) * scale)
+    let screenRect = CGRect(x: area.midX - screenSize.width / 2, y: area.midY - screenSize.height / 2,
+                            width: screenSize.width, height: screenSize.height)
+    drawDevice(ctx, screen: raw, screenRect: screenRect, dark: shot.dark, cornerScale: 0.07)
 }
 
 /// Caption banners overlaid on the preview, in order. Keep them short: previews play muted.
@@ -529,11 +633,13 @@ let args = CommandLine.arguments
 switch args.count > 1 ? args[1] : "" {
 case "screenshots" where args.count == 4:
     renderScreenshots(rawDir: URL(fileURLWithPath: args[2]), outDir: URL(fileURLWithPath: args[3]))
+case "duo" where args.count == 4:
+    renderDuoScreenshots(rawDir: URL(fileURLWithPath: args[2]), outDir: URL(fileURLWithPath: args[3]))
 case "preview-cards" where args.count == 3:
     renderPreviewCards(outDir: URL(fileURLWithPath: args[2]))
 case "creative" where args.count == 4:
     renderCreatives(rawDir: URL(fileURLWithPath: args[2]), outDir: URL(fileURLWithPath: args[3]))
 default:
-    print("usage: StoreArt.swift screenshots <raw dir> <out dir> | preview-cards <out dir> | creative <raw dir> <out dir>")
+    print("usage: StoreArt.swift screenshots <raw dir> <out dir> | duo <raw dir> <out dir> | preview-cards <out dir> | creative <raw dir> <out dir>")
     exit(1)
 }
