@@ -89,7 +89,29 @@ for file in ["Fredoka-Bold.ttf", "Fredoka-SemiBold.ttf", "Nunito-Bold.ttf", "Nun
     CTFontManagerRegisterFontsForURL(fontsDir.appendingPathComponent(file) as CFURL, .process, nil)
 }
 
-func font(_ name: String, _ size: CGFloat) -> CTFont { CTFontCreateWithName(name as CFString, size, nil) }
+// PostScript name → bundled filename, for the direct-load fallback below.
+let fontFiles: [String: String] = [
+    "FredokaLight-Bold":       "Fredoka-Bold.ttf",
+    "FredokaLight-SemiBold":   "Fredoka-SemiBold.ttf",
+    "NunitoExtraLight-Bold":   "Nunito-Bold.ttf",
+    "NunitoExtraLight-Black":  "Nunito-Black.ttf",
+]
+
+// Creates a CTFont by PostScript name. If the name-lookup returns the wrong font (registration
+// silently failed), falls back to loading directly from the .ttf file so the correct weight
+// is always used.
+func font(_ name: String, _ size: CGFloat) -> CTFont {
+    let f = CTFontCreateWithName(name as CFString, size, nil)
+    if (CTFontCopyPostScriptName(f) as String) == name { return f }
+    if let file = fontFiles[name],
+       let descs = CTFontManagerCreateFontDescriptorsFromURL(
+           fontsDir.appendingPathComponent(file) as CFURL) as? [CTFontDescriptor],
+       let desc = descs.first {
+        return CTFontCreateWithFontDescriptor(desc, size, nil)
+    }
+    return f
+}
+
 let fredoka = "FredokaLight-Bold"
 let nunitoBold = "NunitoExtraLight-Bold"
 let nunitoBlack = "NunitoExtraLight-Black"
@@ -404,11 +426,14 @@ func drawLandscapeShot(_ ctx: CGContext, shot: Shot, raw: CGImage, w: CGFloat, h
     let palette = shot.dark ? Palette.dark : Palette.light
     drawBackground(ctx, w: w, h: h, tint: shot.tint, palette: palette)
 
-    let margin = h * 0.08
-    let columnWidth = w * 0.3
-    let mascotWidth = columnWidth * 0.5
-    let headlineSize = h * 0.072
-    let sublineSize = h * 0.034
+    let margin = h * 0.07
+    // Scale fonts to canvas WIDTH (same as portrait's w*0.083/w*0.038) so the text
+    // carries the same visual weight when images are compared at the same display width.
+    let headlineSize = w * 0.065
+    let sublineSize  = w * 0.030
+    // Column wide enough for the larger headline to wrap at the same 3 lines as portrait.
+    let columnWidth  = w * 0.40
+    let mascotWidth  = min(columnWidth * 0.45, h * 0.20)
 
     // Text block (mascot, headline, subline) centred vertically in the column.
     let probe = makeContext(1, 1)

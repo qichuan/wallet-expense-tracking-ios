@@ -31,10 +31,10 @@ xcrun simctl status_bar "$SIMULATOR" override --time "9:41" --dataNetwork wifi -
   --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
 trap 'xcrun simctl status_bar "$SIMULATOR" clear' EXIT
 
-capture() { # <dir> <tab> <appearance> <file>
+capture() { # <dir> <tab> <appearance> <file> <display_flag>
   launch_demo "$2" "$3"
   sleep 4 # let the mascot settle and charts animate in
-  xcrun simctl io "$SIMULATOR" screenshot --type=png "$1/$4" >/dev/null
+  xcrun simctl io "$SIMULATOR" screenshot --type=png ${5:+--display="$5"} "$1/$4" >/dev/null
   echo "captured $1/$4"
 }
 
@@ -42,11 +42,20 @@ for pose in "${POSE_LIST[@]}"; do
   read -r -p "Set the simulator to ${pose/-/, } in Device Hub, then press Return " _
   dir="$RAW/$pose"
   mkdir -p "$dir"
-  capture "$dir" 0 Light 1-today.png
-  capture "$dir" 1 Light 2-cards.png
-  capture "$dir" 2 Light 3-recap.png
-  capture "$dir" 3 Light 4-me.png
-  capture "$dir" 0 Dark  5-today-dark.png
+  # open poses use the inner display (larger, portrait ~2007×2853 or landscape ~2853×2007)
+  # closed poses use the outer display (smaller, portrait ~1398×2034 or landscape ~2034×1398)
+  # Pass the display flag only when both displays are visible to simctl; use the primary-1
+  # display id for open poses and the primary display id for closed poses.
+  case "$pose" in
+    open-*)   DISPLAY_FLAG="3" ;;  # LCD-1 (primary-1) inner display
+    closed-*) DISPLAY_FLAG="1" ;;  # LCD   (primary)   outer display
+    *)        DISPLAY_FLAG=""  ;;
+  esac
+  capture "$dir" 0 Light 1-today.png   "$DISPLAY_FLAG"
+  capture "$dir" 1 Light 2-cards.png   "$DISPLAY_FLAG"
+  capture "$dir" 2 Light 3-recap.png   "$DISPLAY_FLAG"
+  capture "$dir" 3 Light 4-me.png      "$DISPLAY_FLAG"
+  capture "$dir" 0 Dark  5-today-dark.png "$DISPLAY_FLAG"
 done
 
 swift StoreArt.swift duo "$RAW" "$OUT"
