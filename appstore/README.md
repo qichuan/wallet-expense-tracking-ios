@@ -8,6 +8,7 @@ and the screenshot/preview specs in App Store Connect Help.
 | --- | --- |
 | `StoreArt.swift` | Frames captures on the CardLah! cream background with a headline and the mascot; renders the header and search results creative assets; renders the preview's intro, outro and caption banners. Edit `shots`, `creativeHeadline` and `previewCaptions` to change copy. |
 | `capture_screenshots.sh` | Launches the demo store on each tab of a connected iPhone, captures it, then runs `StoreArt.swift` for screenshots and creative assets. |
+| `capture_duo_screenshots.sh` | Does the same on the iPhone Duo simulator, once per pose, then frames the captures at the iPhone Duo sizes. |
 | `record_preview.sh` | Records the iPhone's screen while you drive the demo app. |
 | `make_preview.sh` | Builds the final app preview from that recording. |
 
@@ -16,7 +17,9 @@ Everything is written straight into this folder:
 | Path | Contents |
 | --- | --- |
 | `original_screenshots/` | Raw device captures (`1-today.png` … `5-today-dark.png`). |
+| `original_screenshots/duo/<pose>/` | Raw iPhone Duo simulator captures, one folder per pose. |
 | `appstore_screenshots/iPhone <size> (<w>x<h>)/` | Framed screenshots ready for App Store Connect. |
+| `appstore_screenshots/iPhone Duo <pose> (<w>x<h>)/` | Framed iPhone Duo screenshots. |
 | `creative_assets/` | Product page header and search results images (see below). |
 | `app_preview/app-preview.mp4` | The finished app preview. |
 | `app_preview/raw-preview.mp4`, `app_preview/cards/` | The raw recording and the intro, outro and caption images it's built from. |
@@ -51,7 +54,29 @@ for that launch.
    swift StoreArt.swift screenshots original_screenshots appstore_screenshots
    swift StoreArt.swift creative original_screenshots creative_assets
    ```
-4. App preview:
+4. iPhone Duo screenshots, on a Mac with Xcode 27.1 and the iPhone Duo simulator. Run the
+   **TapTrack** scheme (Debug) on the simulator once, then:
+   ```bash
+   SIMULATOR="iPhone Duo" appstore/capture_duo_screenshots.sh
+   ```
+   Before each pose the script pauses: set the pose in Device Hub, then press Return. It
+   captures all five tabs, with a 9:41 status bar, in each pose:
+
+   | Pose | Display | Screenshot size |
+   | --- | --- | --- |
+   | `open-landscape` | Inner | 2853×2007 |
+   | `open-portrait` | Inner | 2007×2853 |
+   | `closed-landscape` | Outer | 2034×1398 |
+   | `closed-portrait` | Outer | 1398×2034 |
+
+   Capture fewer with `POSES="open-landscape open-portrait"`. Wide canvases put the mascot
+   and headline in a column beside the device; tall ones use the phone layout. Each capture
+   is fitted by its own aspect ratio, so the framing holds even if a pose's capture comes out
+   the other way round (the script prints a note when it does). If `simctl` captures the
+   wrong display, add `--display=<display>` to the `simctl io` line. To re-frame existing
+   captures: `cd appstore && swift StoreArt.swift duo original_screenshots/duo appstore_screenshots`.
+   Submitting iPhone Duo screenshots shows the iPhone Duo badge on the product page.
+5. App preview:
    ```bash
    DEVICE="My iPhone UDID" appstore/record_preview.sh 28
    appstore/make_preview.sh

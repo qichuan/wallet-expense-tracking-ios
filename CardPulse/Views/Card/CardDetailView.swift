@@ -8,6 +8,9 @@ import SwiftData
 
 struct CardDetailView: View {
     let card: Card
+    /// Shown as the detail pane beside the card list (expanded layout) rather than
+    /// as a sheet, so there's nothing to dismiss.
+    var isEmbedded = false
 
     @Environment(\.dismiss) private var dismiss
     @AppStorage("defaultCurrency") private var defaultCurrencyCode = "SGD"
@@ -99,9 +102,11 @@ struct CardDetailView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.textSecondary)
+                if !isEmbedded {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Done") { dismiss() }
+                            .foregroundColor(AppColors.textSecondary)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Edit") { showingEdit = true }

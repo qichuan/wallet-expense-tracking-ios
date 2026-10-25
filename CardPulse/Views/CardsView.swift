@@ -15,6 +15,7 @@ struct CardsView: View {
     @State private var showingAddGoal = false
     @State private var selectedCard: Card?
     @State private var filter: Filter = .all
+    @State private var layoutWidth: LayoutWidth = .compact
     @ObservedObject private var notificationRouter = NotificationRouter.shared
 
     /// Persisted card display order as a JSON array of UUID strings.
@@ -122,25 +123,65 @@ struct CardsView: View {
         saveOrder((goals + others).map(\.id))
     }
 
-    var body: some View {
-        NavigationStack {
-            Group {
-                if cards.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        titleRow
-                        emptyState
-                    }
-                } else {
-                    cardList
-                }
+    /// List and detail side by side when there's room for both (iPhone Duo's
+    /// inner display); a list with a detail sheet otherwise.
+    private var showsDetailPane: Bool {
+        layoutWidth == .expanded && !cards.isEmpty
+    }
+
+    /// Card shown in the detail pane: the one tapped, else the first in the list.
+    private var paneCard: Card? {
+        selectedCard ?? filteredCards.first ?? orderedCards.first
+    }
+
+    /// Drives the detail sheet only in the compact layout. A card picked in the
+    /// pane stays selected through a fold, so it reopens as a sheet on the outer
+    /// display; the sheet closing because the device unfolded doesn't clear it.
+    private var detailSheetCard: Binding<Card?> {
+        Binding(
+            get: { showsDetailPane ? nil : selectedCard },
+            set: { newValue in
+                if newValue != nil || !showsDetailPane { selectedCard = newValue }
             }
-            .screenBackground()
-            .navigationBarHidden(true)
+        )
+    }
+
+    private static let listColumnWidth: CGFloat = 320
+
+    var body: some View {
+        // AnyLayout keeps the list's identity, so its scroll position survives a fold.
+        let layout = showsDetailPane ? AnyLayout(HStackLayout(spacing: 0)) : AnyLayout(ZStackLayout())
+        layout {
+            NavigationStack {
+                Group {
+                    if cards.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            titleRow
+                            emptyState
+                        }
+                    } else {
+                        cardList
+                    }
+                }
+                .screenBackground()
+                .navigationBarHidden(true)
+            }
+            .frame(width: showsDetailPane ? Self.listColumnWidth : nil)
+
+            if showsDetailPane {
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 2)
+                    .ignoresSafeArea(edges: .vertical)
+                detailPane
+                    .frame(maxWidth: .infinity)
+            }
         }
+        .readLayoutWidth($layoutWidth)
         .sheet(isPresented: $showingAddGoal) {
             CardFormView()
         }
-        .sheet(item: $selectedCard) { card in
+        .sheet(item: detailSheetCard) { card in
             CardDetailView(card: card)
         }
         .sheet(item: $cardForGoal) { card in
@@ -153,6 +194,28 @@ struct CardsView: View {
         }
         .onAppear { consumePendingNotificationCard() }
         .onChange(of: notificationRouter.pendingCardId) { consumePendingNotificationCard() }
+    }
+
+    @ViewBuilder
+    private var detailPane: some View {
+        if let card = paneCard {
+            CardDetailView(card: card, isEmbedded: true)
+                .id(card.id)
+        } else {
+            VStack(spacing: 8) {
+                Mascot(mood: .normal, size: 90)
+                Text("Pick a card to see its cycle")
+                    .font(AppTypography.footnote)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .screenBackground()
+        }
+    }
+
+    /// Outlines the card showing in the detail pane.
+    private func isShowingInPane(_ card: Card) -> Bool {
+        showsDetailPane && paneCard?.id == card.id
     }
 
     private var titleRow: some View {
@@ -183,8 +246,13 @@ struct CardsView: View {
             ForEach(filteredCards) { card in
                 Button(action: { selectedCard = card }) {
                     CardRow(card: card, status: status(for: card))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .strokeBorder(isShowingInPane(card) ? AppColors.accent : AppColors.clear, lineWidth: 2.5)
+                        )
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(isShowingInPane(card) ? .isSelected : [])
                 .listRowInsets(EdgeInsets(top: 6, leading: 18, bottom: 6, trailing: 18))
                 .plainListRow()
             }
@@ -203,8 +271,13 @@ struct CardsView: View {
                 ForEach(noGoalCards) { card in
                     Button(action: { selectedCard = card }) {
                         noGoalRow(card)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .strokeBorder(isShowingInPane(card) ? AppColors.accent : AppColors.clear, lineWidth: 2.5)
+                            )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(isShowingInPane(card) ? .isSelected : [])
                     .listRowInsets(EdgeInsets(top: 4, leading: 18, bottom: 4, trailing: 18))
                     .plainListRow()
                 }
@@ -296,4 +369,9 @@ struct CardsView: View {
     CardsView()
         .modelContainer(ModelContainer.createMockContainer())
         .preferredColorScheme(.dark)
+}
+
+#Preview("Expanded", traits: .fixedLayout(width: 863, height: 669)) {
+    CardsView()
+        .modelContainer(ModelContainer.createMockContainer())
 }

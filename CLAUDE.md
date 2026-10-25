@@ -47,7 +47,7 @@ For day-to-day development, open `CardPulse.xcodeproj` in Xcode and run/test fro
 Completion sets `hasCompletedOnboarding = true` and logs `AnalyticsTracker.Event.onboardingCompleted`. The automation step has a "Skip for now" fallback.
 
 ### Navigation
-`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
+`MainTabView` hosts four tabs, tagged by `MainTabView.Tab`: **Today** (`HomeView`, 0), **Cards** (`CardsView`, 1), **Recap** (`AnalysisView`, 2), **Me** (`SettingsView`, 3). The system tab bar is hidden; a custom `ChunkyTabBar` sits *below* the `TabView` in a `VStack`, so pages physically end above it (a `safeAreaInset` didn't reach the pages' scroll views). Analytics screen names keep the old values (`home`, `cards`, `analytics`, `settings`) via `Tab.analyticsName`. When the window is wider than tall (iPhone Duo's outer display, its inner display in landscape, any iPhone in landscape) the same bar becomes a vertical rail on the trailing edge, where iOS 27.1 puts system tab bars; an `AnyLayout` swap keeps the `TabView`'s identity so pages keep their state through a fold. The theme follows the user's choice on the Me tab (`AppAppearance`: System / Light / Dark, `@AppStorage("appearance")`), applied by `RootView` in `CardPulseApp.swift` via each window's `overrideUserInterfaceStyle`.
 
 ### Views Structure
 ```
@@ -105,6 +105,16 @@ Views/
     ImportPreviewView.swift
 ```
 
+### Adaptive layout (iPhone Duo)
+Screens pick their layout from their own size via `readLayoutWidth(_:)` (`Theme/AdaptiveLayout.swift`): `LayoutWidth.expanded` at 640pt and wider, else `.compact`. Never branch on `userInterfaceIdiom`, orientation, `UIScreen.main` or specific sizes, and don't read `horizontalSizeClass == .regular` as iPad; iPhone Duo moves one scene between a compact outer display and a regular inner display. Expanded layouts:
+- **Today**: goals (mascot hero, min-spend) on the left, a longer Recent taps column on the right.
+- **Cards**: list and detail side by side; `CardDetailView(card:isEmbedded: true)` fills the pane (no Done button). A card picked in the pane stays selected through a fold and reopens as the compact sheet.
+- **Recap**: summary and trend on the left, "Where it went" and the map on the right.
+- **Me**: profile, stats and badges in one column, settings in another, each scrolling on its own.
+- **Onboarding** stays at a 560pt readable width; the shareable recap card is capped at its 384pt image width so its aspect-filled map crops the same as the shared image.
+
+Compact layouts are unchanged from the phone design. Each screen has an "Expanded" `#Preview` with a fixed Duo-sized layout. iOS 27.1-only APIs (`ArrangementView`, `reservedRegions`, `onHingeChange`) aren't adopted yet.
+
 ### Theme System
 The `Theme/` folder is the single source of truth for all visual tokens. The look is the "CardLah Fun" design (Claude Design project, `CardLah Fun.dc.html`): cream background, white "chunky" cards with a 2pt outline and thicker bottom edge, Fredoka + Nunito, and a mascot.
 - **AppColors** (`Theme/AppColors.swift`): All colors as static constants. Most tokens are dynamic via `Color(light:dark:)` (a `UIColor` trait provider): light is the cream palette (bg `#FFF7E8`, border `#EFE3CC`, ink `#0A1428`), dark keeps the navy surfaces (`#0A1428` / `#152238`). Primary accent is `#2E6DFF`. Gamification tokens: `streak`, `gold`, `locked`, status `*Soft`/`*Text` pairs. This file is also compiled into the widget. Never use raw hex strings in views — always reference `AppColors.*`.
@@ -151,7 +161,7 @@ A minimal Next.js App Router project deployed to Vercel, with one route: `POST /
 - **CurrencyUtils** (`Utils/CurrencyUtils.swift`): Multi-currency support. Holds the built-in currency list (`allCurrencies`, 15 currencies), user-defined custom currencies, enabled/default currency preferences (all in `UserDefaults`), and exchange-rate cache (via [Frankfurter API](https://www.frankfurter.app), 5-day TTL). Key methods: `parseCurrencyAndAmount(from:)` parses raw Wallet strings like `"S$12.50"` or `"MYR 8.00"`; `fetchRates(for:to:)` fetches and inverts rates; `rateToDefault(from:)` returns the cached conversion rate.
 
 ### App Store art (`appstore/`)
-Debug builds launched with `-StoreDemo` use an in-memory demo store (`Models/StoreDemoData.swift`, DEBUG-only) and skip the widget write and cycle nudges; `-StoreTab <0-3>` picks the opening tab. `capture_screenshots.sh` / `record_preview.sh` drive a connected iPhone via `xcrun devicectl`, and `StoreArt.swift` + `make_preview.sh` frame screenshots (1206×2622 and 1179×2556), render the header/search results creative assets, and assemble the 886×1920 app preview, writing into `appstore/original_screenshots/`, `appstore/appstore_screenshots/`, `appstore/creative_assets/` and `appstore/app_preview/`. See `appstore/README.md`.
+Debug builds launched with `-StoreDemo` use an in-memory demo store (`Models/StoreDemoData.swift`, DEBUG-only) and skip the widget write and cycle nudges; `-StoreTab <0-3>` picks the opening tab. `capture_screenshots.sh` / `record_preview.sh` drive a connected iPhone via `xcrun devicectl` (or a simulator via `xcrun simctl` when `SIMULATOR` is set), `capture_duo_screenshots.sh` captures each iPhone Duo pose in the simulator, and `StoreArt.swift` + `make_preview.sh` frame screenshots (1206×2622 and 1179×2556; iPhone Duo 2853×2007, 2007×2853, 2034×1398 and 1398×2034), render the header/search results creative assets, and assemble the 886×1920 app preview, writing into `appstore/original_screenshots/`, `appstore/appstore_screenshots/`, `appstore/creative_assets/` and `appstore/app_preview/`. See `appstore/README.md`.
 
 ## Key Conventions
 

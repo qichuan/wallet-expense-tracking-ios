@@ -53,6 +53,7 @@ struct AnalysisView: View {
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedTransaction: Transaction?
     @State private var showingRecap = false
+    @State private var layoutWidth: LayoutWidth = .compact
     @State private var showingCardFilter = false
     /// Custom-range bounds, used only when `selectedGranularity == .custom`.
     @State private var customStartDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
@@ -473,36 +474,32 @@ struct AnalysisView: View {
 
                             cardFilterBar
 
-                            MascotSays(mood: recapLine.mood, mascotSize: 84,
-                                       motion: recapLine.mood == .excited ? .jump : .bob) {
-                                Text(recapLine.text)
-                            }
-
-                            totalSpendCard
-
-                            if rewardSummary.miles > 0 || rewardSummary.cashback > 0 {
-                                rewardsCard
-                            }
-
-                            donutCard
-
-                            if selectedGranularity == .day {
-                                dayTransactionsCard
-                            } else {
-                                stackedBarCard
-
-                                if !mapPoints.isEmpty {
-                                    TransactionLocationMapCard(
-                                        points: mapPoints,
-                                        currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode)
-                                    )
+                            if layoutWidth == .expanded {
+                                // How much and when on the left; where it went on the right.
+                                HStack(alignment: .top, spacing: 16) {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        summarySection
+                                        trendCard
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        donutCard
+                                        mapCard
+                                    }
+                                    .frame(maxWidth: .infinity)
                                 }
+                            } else {
+                                summarySection
+                                donutCard
+                                trendCard
+                                mapCard
                             }
                         }
                         .padding(.horizontal, 18)
                     }
                     .padding(.bottom, 28)
                 }
+                .readLayoutWidth($layoutWidth)
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -525,6 +522,40 @@ struct AnalysisView: View {
                 // Drop any filter selection whose card was deleted.
                 selectedCardIDs = selectedCardIDs.intersection(Set(cards.map { $0.id }))
             }
+        }
+    }
+
+    @ViewBuilder
+    private var summarySection: some View {
+        MascotSays(mood: recapLine.mood, mascotSize: 84,
+                   motion: recapLine.mood == .excited ? .jump : .bob) {
+            Text(recapLine.text)
+        }
+
+        totalSpendCard
+
+        if rewardSummary.miles > 0 || rewardSummary.cashback > 0 {
+            rewardsCard
+        }
+    }
+
+    /// The day's taps for Day, otherwise the spend-by-period bars.
+    @ViewBuilder
+    private var trendCard: some View {
+        if selectedGranularity == .day {
+            dayTransactionsCard
+        } else {
+            stackedBarCard
+        }
+    }
+
+    @ViewBuilder
+    private var mapCard: some View {
+        if selectedGranularity != .day && !mapPoints.isEmpty {
+            TransactionLocationMapCard(
+                points: mapPoints,
+                currencySymbol: CurrencyUtils.symbol(for: defaultCurrencyCode)
+            )
         }
     }
 
@@ -865,4 +896,9 @@ struct AnalysisView: View {
     AnalysisView()
         .modelContainer(ModelContainer.createMockContainer())
         .preferredColorScheme(.dark)
+}
+
+#Preview("Expanded", traits: .fixedLayout(width: 669, height: 951)) {
+    AnalysisView()
+        .modelContainer(ModelContainer.createMockContainer())
 }

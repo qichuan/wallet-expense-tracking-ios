@@ -12,6 +12,11 @@ import UIKit
 struct SpendingRecapView: View {
     let recap: SpendingRecap
 
+    /// Width the shared image is rendered at. The on-screen card is capped to it, so a
+    /// wide sheet (e.g. on iPhone Duo's inner display) doesn't stretch the card and crop
+    /// its aspect-filled map differently from the image that's shared.
+    private static let imageWidth: CGFloat = 384
+
     @Environment(\.dismiss) private var dismiss
     @State private var mapImage: UIImage?
     @State private var shareImage: UIImage?
@@ -24,6 +29,8 @@ struct SpendingRecapView: View {
                 ScrollView {
                     SpendingRecapCard(recap: recap, mapImage: mapImage)
                         .padding()
+                        .frame(maxWidth: Self.imageWidth)
+                        .frame(maxWidth: .infinity)
                 }
             }
             .navigationTitle("Recap")
@@ -72,7 +79,7 @@ struct SpendingRecapView: View {
         let renderer = ImageRenderer(
             content: SpendingRecapCard(recap: recap, mapImage: mapImage)
                 .padding(12)
-                .frame(width: 384)
+                .frame(width: Self.imageWidth)
                 .background(AppColors.backgroundPrimary)
                 .environment(\.colorScheme, .light)
         )
